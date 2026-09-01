@@ -392,3 +392,63 @@ Hash parts are joined with `\x1f` and `None` renders as `\x00`, so `("ab", "c")`
 impossible. `HASH_LENGTH = 16` hex characters (64 bits) is the truncation, justified in
 the module docstring by the birthday bound at this corpus size; the full digest remains
 available.
+
+---
+
+## ADR-0019 — M3 does not discriminate in the offline embedding space, and is documented as such
+
+**Status:** accepted (Wave 1, orchestrator finding)
+
+**Context.** Running the delivered Wave-1 components as a fast loop over the real
+20-response India sample produced 174 code↔evidence pairs. Their fit scores under the
+offline lexical embedder (`lexical-v1-512`):
+
+```
+n=174   min 0.000   median 0.000   mean 0.087   max 0.475
+
+tau_fit   0.05   0.10   0.15   0.20   0.30
+escalate   51%    59%    76%    86%    95%
+```
+
+The **median is zero**: after stoplisting and stemming, a code's `name: description`
+and a survey-response fragment share no tokens at all in about half of all pairs. No
+threshold separates good pairs from bad ones, because the signal is not present.
+
+The same run's M2 code↔code scores are perfectly bimodal — 79 pairs at exactly 1.000
+and 18 below 0.45, with **nothing in the grey zone**.
+
+**The cause is structural, not a tuning error.** M1, M2 and M4 compare a code to a
+code: two short, similarly-shaped strings drawn from the same vocabulary. M3 compares a
+code to a *quote*: a curated label against raw respondent prose. These are different
+geometries, and a threshold calibrated on one cannot be reused on the other. The
+project has one τ_high and one τ_low precisely because code↔code comparison is one
+space; τ_fit was specified as if it belonged to the same family, and it does not.
+
+**Decision.** Three things, none of which is a silent change to a threshold:
+
+1. τ_fit stays at 0.30. It is not lowered to chase the offline distribution, because
+   even τ_fit = 0.05 escalates 51% — there is nothing to tune towards.
+2. **M3's offline behaviour is documented as non-discriminating.** Its WARNs in an
+   offline run are an artefact of the fallback embedder, not findings about the coding,
+   and the run report must say so rather than presenting 166 warnings as substance.
+3. τ_fit calibration requires **both** the PI's golden set **and** a live embedding
+   model. `gaf/checks/health.py::calibrate_thresholds` already produces the curve and
+   never writes to `CodingRules`; it needs real inputs, not more code.
+
+**Consequences.** The cost argument for the fast loop — "the judge is consulted only
+where the geometry is ambiguous" — holds for M1/M2 but is **unproven for M3**. If a
+live embedding space does not separate code↔quote pairs substantially better, M3 as
+specified would escalate most quotes and the frontier-call budget would not hold. That
+is a risk to surface in the methods write-up, not to paper over.
+
+A design alternative exists and is deliberately **not** implemented here, because it
+exceeds the brief: compare a quote against the code's existing *evidence centroid*
+(quote-to-quote, one geometry) rather than against its label and description. That
+would make M3 the same kind of comparison as the rest. It should be put to the PI as a
+question before anyone builds it.
+
+Related: the same run shows M2's routing decided by exact name identity under the
+lexical fallback (79 of 97 at cosine 1.000). A2 independently measured that a
+paraphrased candidate retrieves its true match at only 0.385 — below τ_low — so the
+router would create a duplicate. Offline dedup counts are therefore not evidence about
+the codebook, and must not be reported as such.

@@ -213,6 +213,14 @@ def validate_enum(value: Any, allowed: Sequence[str], default: str) -> str:
 # Fail-safe defaults — a malformed reply must never destroy data
 # --------------------------------------------------------------------------- #
 
+#: Whitelists for the judge's enum-valued replies. They live here, beside the
+#: fail-safe defaults, so that every client and every check validates against one
+#: definition — the alternative is a copy per provider module, which is how a
+#: whitelist quietly drifts. `FIT_VERDICTS` lives in `gaf.checks.contracts`, next to
+#: the taxonomy it mirrors.
+DISPUTE_VERDICTS: tuple[str, ...] = ("KEEP", "DROP")
+ROUTE_VERDICTS: tuple[str, ...] = ("MERGE", "CREATE")
+
 FAIL_SAFE_DEFAULTS: dict[TaskType, dict[str, Any]] = {
     # Invent nothing: an unreadable coding contributes no candidates.
     TaskType.CODE: {"candidates": [], "_fail_safe": True},
