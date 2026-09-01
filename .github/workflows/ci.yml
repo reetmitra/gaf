@@ -26,22 +26,20 @@ env:
   PYTHONUNBUFFERED: "1"
   # Coverage floor on the `gaf/` package, enforced by pytest-cov below.
   #
-  # Measured 2026-09-01 with the full offline suite green (604 tests): 80.5% over 7318
-  # statements. The floor sits just below that, with headroom because the package was
-  # still growing while this was written.
+  # Measured 2026-09-01 at wave-3 close, full offline suite green (668 tests):
+  # 95% over 7328 statements in `gaf/`. The floor sits just below, with a couple of
+  # points of headroom so an unrelated refactor does not redden the build.
   #
-  # Two things a future reader should know before touching this number.
+  # This replaces an earlier floor of 78, set while `gaf/cli.py` and `gaf/report/**`
+  # were still untested and dragged the total to 80.5%. Their tests have since landed.
   #
-  # 1. It is depressed by `gaf/cli.py` (735 statements) and `gaf/report/**` (413), which
-  #    were at 0% when this was measured because their tests had not landed yet. Over
-  #    the 6170 statements that do have tests, coverage is 95.5%.
-  # 2. Re-measure and raise it once those tests exist:
+  # Re-measure before moving it:
   #
   #       uv run pytest --cov=gaf --cov-report=term-missing
   #
   # A gate above the current coverage is a broken build; a gate far below it is
   # decoration. Keep it just under the real number, and move it when the number moves.
-  COVERAGE_FLOOR: "78"
+  COVERAGE_FLOOR: "93"
 
 jobs:
   offline-suite:
