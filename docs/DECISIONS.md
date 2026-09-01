@@ -507,3 +507,73 @@ PI's, not the pipeline's:
 On this sample the late breaks give 2 clusters (stage 18) or 3 clusters (stage 17); the
 predecessor study expected 3 and produced 2, which is the failure this project exists
 to avoid — so the number must not be arrived at by accident.
+
+---
+
+## ADR-0021 — Coders read the frozen snapshot; integration routes against the working codebook
+
+**Status:** accepted (Wave 2, B2 — verified by the orchestrator)
+
+**Context.** §4 of the brief places the frozen snapshot behind both the coder's context
+and M2's integration routing. Taken literally, every candidate in a batch routes against
+the codebook as it stood at the batch boundary — so within batch 1 nothing can ever
+MERGE, because nothing has been created yet. On the real 20-response sample that yields
+roughly 48 codes where the design intends 18.
+
+**Decision.** Split the two uses of the snapshot:
+
+* **Coders read the frozen snapshot.** This is the order-dependence guard, and it is
+  where the guarantee actually lives: what a coder proposes must not depend on which
+  responses came first.
+* **Integration routes against the working codebook**, which accumulates within the
+  batch. A new snapshot is frozen at the batch boundary.
+
+**Consequences — and why this does not reintroduce order dependence.** The concern is
+real and was tested rather than argued. Three properties hold, verified by the
+orchestrator on the *real* corpus, not on fixtures:
+
+1. Two runs in the same order produce byte-identical codebook JSON, assignments,
+   findings and snapshot sequence.
+2. **Three independent shuffles of the real corpus (seeds 1, 7, 99) produce a
+   byte-identical final codebook and an identical assignment set.** Order genuinely
+   does not change the result.
+3. Re-running a batch from the snapshot frozen at its start reproduces the full run's
+   final codebook, snapshot tail and assignments (B2's own test).
+
+Property 2 holds because code identity is content-addressed on the name and evidence is
+sorted by content (response, span, quote) rather than by insertion — ADR-0017's ordering
+rule doing the work it was written for. Had evidence been insertion-ordered, the
+codebook bytes would differ under a shuffle and the snapshot ids with them.
+
+The integration path remains non-restructuring: MERGE attaches evidence to an existing
+code, CREATE admits a new one, and a CREATE whose name is already taken is integrated as
+a MERGE, because S6 treats a duplicate name as an ERROR. Nothing splits, re-parents or
+renames in the fast loop — asserted against the module source.
+
+---
+
+## ADR-0022 — M3 is 84% of frontier calls on the real sample
+
+**Status:** accepted (Wave 2, orchestrator measurement)
+
+**Context.** ADR-0019 predicted, from the fit-score distribution, that M3 would escalate
+most quotes and that the cost argument for the fast loop would not hold for it. The
+production loop over the real 20-response sample now quantifies it:
+
+```
+llm calls   256 total
+            code       40   (2 coders x 20 responses)
+            judge_fit 216   (84% of all calls)
+            judge_route 0
+```
+
+**Decision.** No change to the loop. `RunStats.caveats` carries the ADR-0019 sentence on
+every offline run, so the run report cannot present the M3 warning wall as findings about
+the coding.
+
+**Consequences.** "The frontier model is consulted only where the geometry is genuinely
+ambiguous" is demonstrably true for M1 and M2 — zero dispute escalations and zero route
+escalations on this sample — and demonstrably false for M3 under the fallback embedder.
+Whether it becomes true under a live embedding space is an empirical question that the
+first live run answers. Until then the cost estimate in the solution design should be
+quoted with M3 excluded, or with an explicit worst case of one judge call per quote.
