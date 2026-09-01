@@ -866,7 +866,7 @@ class LexicalReport:
 
     def to_markdown(self) -> str:
         lines = [
-            "# Lexical validation — continuous vs binarised framings",
+            "# Lexical validation — continuous vs binarised targets",
             "",
             "```",
             self.distribution.to_text(),
@@ -1347,14 +1347,14 @@ def _interpret(headline: Mapping[str, float], config: LexicalConfig) -> str:
         verdict = (
             f"One of the two binarised cuts agrees with the continuous model at or above "
             f"the floor of {floor:g} and the other does not (ge1 {continuous_ge1:.2f}, "
-            f"ge3 {continuous_ge3:.2f}). The framing is doing some work: report the "
+            f"ge3 {continuous_ge3:.2f}). The choice of cut is doing some work: report the "
             "continuous model as primary and the disagreeing cut as a finding about "
             "where the threshold falls, not as a failed check."
         )
     else:
         verdict = (
             f"Both continuous-to-binarised overlaps fall below the agreement floor of "
-            f"{floor:g} (ge1 {continuous_ge1:.2f}, ge3 {continuous_ge3:.2f}). The framing "
+            f"{floor:g} (ge1 {continuous_ge1:.2f}, ge3 {continuous_ge3:.2f}). The choice of cut "
             "does change the extracted vocabulary, so the binary presentation is not a "
             "harmless simplification here. This is a finding to report, not a failed "
             "test — the check itself has not gone wrong."

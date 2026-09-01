@@ -577,3 +577,46 @@ escalations on this sample — and demonstrably false for M3 under the fallback 
 Whether it becomes true under a live embedding space is an empirical question that the
 first live run answers. Until then the cost estimate in the solution design should be
 quoted with M3 excluded, or with an explicit worst case of one judge call per quote.
+
+---
+
+## ADR-0023 — Where "framing" is permitted, and where it is not
+
+**Status:** accepted (Wave 3, orchestrator ruling on a violation C2 reported)
+
+**Context.** ADR-0005 bans framing-analysis vocabulary from this project's output: the
+study is inductive grounded theory, the PI reads grounded theory, and the words
+*frame*, *framing* and *frame element* must not appear where *code*, *family*, *cluster*
+or *theme* belongs. C2 found that `gaf/analysis/lexical.py` emitted "framing" in
+user-facing output and, correctly, reported it rather than editing another agent's file.
+
+**The distinction that resolves it.** There are two unrelated senses of the word:
+
+* **Entman's sense** — a frame as an interpretive structure in a text. This is what
+  ADR-0005 bans, because it would describe a *code* as a *frame* and misrepresent the
+  method.
+* **The statistical sense** — how a target variable is posed, continuous versus
+  binarised. This is the sense used by the Max Planck engineer who designed the §13
+  lexical check, in his own specification: *"compared with a simpler binary framing"*.
+
+The lexical module never describes a code as a frame. It was using the second sense.
+
+**Decision.**
+
+1. **Generated commentary is reworded**: the markdown heading now reads "continuous vs
+   binarised targets", and the interpretation prose says "the choice of cut" rather than
+   "the framing". A grounded-theory reader skimming the output should not have to
+   disambiguate.
+2. **The verbatim specification quotation is left exactly as written.** It is a quotation
+   of the method's designer and altering it would misrepresent the source.
+3. **`methods_paragraph()` keeps its echo of that wording.** It is prose for the
+   write-up's methods section, where describing a test in the terms its designer used is
+   correct practice, not a vocabulary slip.
+4. Internal docstrings may use the statistical sense freely. They are not output.
+
+**Consequences.** A naive package-wide substring ban on "frame" would be wrong: it also
+catches "framework" (as in *HITL computational grounded theory framework*, the Alqazlan
+paper this pipeline's check layer implements) and `hca.py`'s deliberate disclaimer "not a
+frame". The vocabulary tests therefore scope to **output** — CLI help, the run report,
+the HTML explorer, prompt templates — which is where the ban has force. That is what B1's
+and C2's tests already do.
