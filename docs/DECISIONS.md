@@ -339,3 +339,56 @@ downstream of ingest would mean spans pointing into mangled text; repairing insi
 place both problems are absent. After repair plus normalisation all twenty real
 responses are pure ASCII. The repair is recorded on the response's metadata rather than
 applied silently — a silent data mutation is what the transparency principle forbids.
+
+---
+
+## ADR-0017 — Store write semantics: immutable-by-content, and a total order on every read
+
+**Status:** accepted (Wave 1, A1)
+
+**Context.** Acceptance requires byte-identical artefacts across runs. Two things
+quietly break that: a re-write that silently reconciles differing content under an
+existing key, and a read whose row order depends on insertion timing rather than
+content.
+
+**Decision.**
+
+1. *Immutable by content.* Re-writing an identical snapshot, response or run config is
+   a no-op. Writing **different** content under the same key raises
+   (`SnapshotIntegrityError` / `StoreConflictError`) rather than reconciling.
+2. *Every read has a total `ORDER BY`.* Insertion order (`rowid` / `event_id`) is used
+   only where insertion order *is* the meaning — the audit log, findings read back as a
+   `CheckReport`, LLM calls, snapshots. Everywhere else the order is by content:
+   responses by `(source, response_id)`, assignments by
+   `(response_id, code_name, span_start, assignment_id)`.
+
+**Consequences.** The occurrence matrix is independent of the order in which the fast
+loop happened to finish responses, so a parallel run and a serial run produce the same
+matrix. A partial-tie `ORDER BY` would have been a latent non-determinism that only
+appeared under concurrency, which is the worst kind to debug.
+
+Two mutating methods exist beyond the read/append surface — `update_candidate` (status,
+resolution, code id) and `decide_checkpoint` (the human gate's per-operation verdicts).
+Neither table is trigger-protected, because a candidate's fate and a human's decision
+are genuinely state transitions rather than facts. The immutable tables remain
+`snapshots` and `audit`.
+
+---
+
+## ADR-0018 — Content-addressed ids carry an ordinal where content can legitimately repeat
+
+**Status:** accepted (Wave 1, A1)
+
+**Context.** Ids must be pure functions of content so that two runs mint the same ids.
+But some content legitimately repeats: the same finding can be emitted twice, one
+coding can propose the same candidate name twice, one run can make the same LLM call
+twice.
+
+**Decision.** `candidate_id`, `finding_id` and `llm_call_id` take an `ordinal`.
+Hash parts are joined with `\x1f` and `None` renders as `\x00`, so `("ab", "c")` and
+`("a", "bc")` — and `None` versus `""` — cannot collide.
+
+**Consequences.** Ids stay deterministic while a primary-key collision becomes
+impossible. `HASH_LENGTH = 16` hex characters (64 bits) is the truncation, justified in
+the module docstring by the birthday bound at this corpus size; the full digest remains
+available.
