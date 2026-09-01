@@ -287,3 +287,55 @@ A4 codes against it and tests with `tests/fixtures/embedding.py::StubEmbedder`.
 rendering are defined in exactly one place — which is what makes τ_high mean the same
 thing in M1, M2 and M4. Same reasoning applies to `gaf/store/schema.py`, frozen apart
 from A1's repository API.
+
+---
+
+## ADR-0015 — S2b also bounds a quote by word count
+
+**Status:** accepted (Wave 1, orchestrator amendment to a frozen contract)
+
+**Context.** S2b enforces the PI's rule that "Coding is applied on the level of phrase
+or sentence" by counting sentence terminators in a verified quote. Profiling the real
+seed sample showed that **three of the twenty responses contain no sentence terminator
+at all** — ids 18, 21 and 56, at 107, 107 and 102 words respectively. A quote of such a
+response in full counts as one sentence and passes S2b untouched, so on 15% of the real
+corpus the rule does not bind.
+
+**Decision.** Add `CodingRules.max_quote_words: int = 40` as a second S2b condition,
+with its own finding marker. 40 is the word-equivalent of the existing two-sentence
+bound: this corpus runs about 20 words per sentence (median 5 sentences per ~105-word
+response). This is not a new rule — it is the same rule of the PI's, made enforceable
+on text that lacks the punctuation the terminator count relies on.
+
+**Consequences.** The frozen contract `gaf/config.py` gained a field mid-wave. The
+change is **additive with a default**, so nothing that already reads `CodingRules`
+breaks; the frozen-contract rule exists to prevent incompatible change, not to prevent
+a compatible extension the real data demands. Re-broadcast to A3, who owns S2b.
+
+Related, and deliberately *not* changed: S4 clusters quotes by span overlap, so an
+unpunctuated response is only a problem if a coder quotes it whole. The fix belongs in
+the coder (quote at phrase level, splitting on clause boundaries when punctuation is
+absent), not in the check. A3 must not assume every response contains a full stop.
+
+---
+
+## ADR-0016 — Mojibake is repaired at ingest, never in normalisation
+
+**Status:** accepted (Wave 1)
+
+**Context.** Response 57 of the real seed sample contains `‚ÄúNot now. I am tired‚Äù` —
+UTF-8 curly quotes decoded once as a legacy codepage (`“` is UTF-8 `E2 80 9C`, which
+read as MacRoman renders `‚Äú`). Responses 9 and 10 contain a genuine `…` and a stray
+`‚` that must not be touched.
+
+**Decision.** Repair at **ingest**, in `gaf/ingest/`, before the text becomes
+`Response.content` and before the content hash is computed. `gaf/textnorm.py` is not
+changed. A repair is accepted only when re-encoding strictly *reduces* the count of
+suspicious characters, which is what keeps the genuine ellipsis and the lone `‚` intact.
+
+**Consequences.** Every persisted span indexes into `normalise(content)`, so repairing
+downstream of ingest would mean spans pointing into mangled text; repairing inside
+`normalise` would change the frozen span contract for every caller. Ingest is the only
+place both problems are absent. After repair plus normalisation all twenty real
+responses are pure ASCII. The repair is recorded on the response's metadata rather than
+applied silently — a silent data mutation is what the transparency principle forbids.

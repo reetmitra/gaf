@@ -94,6 +94,13 @@ class CodingRules:
 
     # S2b — "Coding is applied on the level of phrase or sentence."
     max_quote_sentences: int = 2
+    #: S2b, second condition. Three of the twenty real seed responses contain NO
+    #: sentence terminator at all (ids 18, 21, 56 — 107 to 115 words each), so a
+    #: terminator count alone cannot enforce the PI's phrase/sentence rule: a quote of
+    #: an entire unpunctuated response counts as one sentence and passes. This bound is
+    #: the word-equivalent of the two-sentence one (this corpus averages ~20 words per
+    #: sentence), not a new rule. See ADR-0015.
+    max_quote_words: int = 40
 
     # S3 / S6 — "a codebook with two levels of codes".
     hierarchy_depth: int = 2
