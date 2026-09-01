@@ -452,3 +452,58 @@ lexical fallback (79 of 97 at cosine 1.000). A2 independently measured that a
 paraphrased candidate retrieves its true match at only 0.385 — below τ_low — so the
 router would create a duplicate. Offline dedup counts are therefore not evidence about
 the codebook, and must not be reported as such.
+
+---
+
+## ADR-0020 — Chan's cluster-count rule is not robust at n = 20, and is not silently repaired
+
+**Status:** accepted (Wave 1, orchestrator finding)
+
+**Context.** Chan (2025), quoting Essary (2022), chooses the cluster count by finding
+the largest break in the agglomeration coefficients and then taking
+`n_clusters = n_samples − break_stage`. His worked example: 50 articles, largest break
+entering stage 47, therefore 3 clusters. Our implementation reproduces that example
+exactly (verified independently).
+
+Applied to the real 20-response seed sample it returns **18 clusters**. The schedule
+shows why:
+
+```
+stage  distance    delta
+    1    0.0000   0.0000     two responses with identical code-vectors merge for free
+    2    1.0000   1.0000  <- the largest delta in the whole schedule
+   ...
+   17    2.9059   0.4227     -> would give 3 clusters
+   18    3.7268   0.8208     -> would give 2 clusters
+   19    4.0042   0.2774
+```
+
+Twenty responses yield only 19 distinct code-vectors, so the first merge costs nothing
+and the second necessarily jumps. That jump is the largest in the schedule, the rule
+selects stage 2, and `20 − 2 = 18`.
+
+**The rule silently assumes the largest break is near the root.** In Chan's data it was
+3 merges from the end. At n = 20 with sparse binary vectors it is at the leaf end, and
+the rule's arithmetic then reads the tree backwards.
+
+**Decision.** Do **not** patch the rule. `choose_n_clusters` continues to implement it
+literally, emits a warning when the result is degenerate, and `AnalysisConfig.n_clusters`
+provides an explicit override that is recorded as `n_clusters_source = "config_override"`
+rather than being passed off as a derived result.
+
+**Consequences.** The cluster count is the headline of the analysis — it is how many
+themes the study reports — so choosing it by a rule that misfires on the seed sample
+would put a false number in the write-up. Three options exist and the choice is the
+PI's, not the pipeline's:
+
+1. run the analysis on the full corpus, where n is large enough for the break to fall
+   near the root as Chan's does;
+2. restrict the break search to the last k stages, which is what Chan's example does
+   implicitly — a defensible amendment, but an amendment to a published method and so
+   not one to make unilaterally;
+3. state the count explicitly and record it as an override, which is what the current
+   configuration supports.
+
+On this sample the late breaks give 2 clusters (stage 18) or 3 clusters (stage 17); the
+predecessor study expected 3 and produced 2, which is the failure this project exists
+to avoid — so the number must not be arrived at by accident.
