@@ -1,0 +1,754 @@
+{
+  "codes": [
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "AI is expected to reshape how society at large operates.",
+      "evidence": [
+        {
+          "quote": "Clerical posts in the district office vanish quietly",
+          "response_id": 203,
+          "score": 1.0,
+          "span": [
+            93,
+            145
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in.",
+          "response_id": 207,
+          "score": 1.0,
+          "span": [
+            37,
+            159
+          ],
+          "verified": true
+        },
+        {
+          "quote": "They pick the music and the news.",
+          "response_id": 212,
+          "score": 1.0,
+          "span": [
+            50,
+            83
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Rainfall models will set release schedules for the reservoirs",
+          "response_id": 217,
+          "score": 1.0,
+          "span": [
+            65,
+            126
+          ],
+          "verified": true
+        },
+        {
+          "quote": "the engineers will spend their days arguing with the forecast rather than reading gauges",
+          "response_id": 217,
+          "score": 1.0,
+          "span": [
+            132,
+            220
+          ],
+          "verified": true
+        },
+        {
+          "quote": "a district that never digitised its land registry gets worse answers than one that did",
+          "response_id": 218,
+          "score": 1.0,
+          "span": [
+            86,
+            172
+          ],
+          "verified": true
+        },
+        {
+          "quote": "the output looks equally confident either way",
+          "response_id": 218,
+          "score": 1.0,
+          "span": [
+            200,
+            245
+          ],
+          "verified": true
+        },
+        {
+          "quote": "By 2050 I expect an assistant that drafts my correspondence",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            0,
+            59
+          ],
+          "verified": true
+        },
+        {
+          "quote": "books the appointments",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            61,
+            83
+          ],
+          "verified": true
+        },
+        {
+          "quote": "tells me what was decided in a meeting I missed.",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            88,
+            136
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Whether that leaves me freer",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            137,
+            165
+          ],
+          "verified": true
+        },
+        {
+          "quote": "nobody is asking that yet.",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            220,
+            246
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Freight is where I notice it first.",
+          "response_id": 234,
+          "score": 1.0,
+          "span": [
+            0,
+            35
+          ],
+          "verified": true
+        },
+        {
+          "quote": "The port employs fewer people and moves twice the tonnage.",
+          "response_id": 234,
+          "score": 1.0,
+          "span": [
+            167,
+            225
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Everything arrives pre-sorted for you",
+          "response_id": 245,
+          "score": 1.0,
+          "span": [
+            0,
+            37
+          ],
+          "verified": true
+        },
+        {
+          "quote": "the course you are advised to take",
+          "response_id": 245,
+          "score": 1.0,
+          "span": [
+            63,
+            97
+          ],
+          "verified": true
+        },
+        {
+          "quote": "then you discover how narrow the door has become.",
+          "response_id": 245,
+          "score": 1.0,
+          "span": [
+            222,
+            271
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-4ba5131c9424da17",
+      "meta": {},
+      "name": "adoption-social_change",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "Physical or clerical work is carried out by machines instead of by people.",
+      "evidence": [
+        {
+          "quote": "Packing and sorting went to machines in my mother's factory years ago.",
+          "response_id": 239,
+          "score": 1.0,
+          "span": [
+            0,
+            70
+          ],
+          "verified": true
+        },
+        {
+          "quote": "By 2050 the whole line runs without a shift supervisor.",
+          "response_id": 239,
+          "score": 1.0,
+          "span": [
+            71,
+            126
+          ],
+          "verified": true
+        },
+        {
+          "quote": "People say \"the machines will decide for us\" and I don't accept that.",
+          "response_id": 244,
+          "score": 1.0,
+          "span": [
+            127,
+            196
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-38b20c3776316706",
+      "meta": {},
+      "name": "applications-automation",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "Systems that learn from accumulated data direct everyday decisions.",
+      "evidence": [
+        {
+          "quote": "no retraining scheme arrives.",
+          "response_id": 203,
+          "score": 1.0,
+          "span": [
+            151,
+            180
+          ],
+          "verified": true
+        },
+        {
+          "quote": "is why I keep saying the record-keeping matters more than the algorithm",
+          "response_id": 218,
+          "score": 1.0,
+          "span": [
+            252,
+            323
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Whole categories of work nobody has named yet will exist by then, the way nobody could have described a data-centre technician in 1975.",
+          "response_id": 258,
+          "score": 1.0,
+          "span": [
+            0,
+            135
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-fd80110313bb11f2",
+      "meta": {},
+      "name": "applications-data_driven_systems",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "AI changes how teaching and learning are delivered.",
+      "evidence": [
+        {
+          "quote": "Maintaining the systems becomes the new entry point, but it demands qualifications most school leavers in my district never had the chance to earn.",
+          "response_id": 207,
+          "score": 1.0,
+          "span": [
+            160,
+            307
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Teaching changes most, I think.",
+          "response_id": 226,
+          "score": 1.0,
+          "span": [
+            0,
+            31
+          ],
+          "verified": true
+        },
+        {
+          "quote": "A tutor that never tires, adjusting to one child's pace, would reach pupils our classrooms lose by year three.",
+          "response_id": 226,
+          "score": 1.0,
+          "span": [
+            32,
+            142
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-2b8757c069db2d06",
+      "meta": {},
+      "name": "applications-education",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "AI is applied to diagnosis, treatment or access to medical care.",
+      "evidence": [
+        {
+          "quote": "Rural clinics get diagnostic support",
+          "response_id": 203,
+          "score": 1.0,
+          "span": [
+            0,
+            36
+          ],
+          "verified": true
+        },
+        {
+          "quote": "the treatment you are offered.",
+          "response_id": 245,
+          "score": 1.0,
+          "span": [
+            99,
+            129
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-250a1e9e823839be",
+      "meta": {},
+      "name": "applications-healthcare",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "AI is deployed across industry, agriculture, transport and infrastructure.",
+      "evidence": [
+        {
+          "quote": "Picture one municipal system balancing traffic lights, reservoir levels and the power grid, adjusting itself hourly from whatever the sensors report.",
+          "response_id": 212,
+          "score": 1.0,
+          "span": [
+            124,
+            273
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Municipal water boards will lean on forecasting engines by then.",
+          "response_id": 217,
+          "score": 1.0,
+          "span": [
+            0,
+            64
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Containers routed by a system that knows the weather three ports ahead, drivers dispatched to the yard the moment a lorry is free.",
+          "response_id": 234,
+          "score": 1.0,
+          "span": [
+            36,
+            166
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-8688cf35c2ec128a",
+      "meta": {},
+      "name": "applications-industry_and_transport",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "Services are tailored to each individual from that person's own data.",
+      "evidence": [
+        {
+          "quote": "Recommendation engines already shape my evenings.",
+          "response_id": 212,
+          "score": 1.0,
+          "span": [
+            0,
+            49
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-04e71252b9d51c65",
+      "meta": {},
+      "name": "applications-personalisation",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "The respondent sketches a specific scenario for the years up to 2050.",
+      "evidence": [
+        {
+          "quote": "the nearest specialist stops being four hours away.",
+          "response_id": 203,
+          "score": 1.0,
+          "span": [
+            41,
+            92
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Clerical posts in the district office vanish quietly",
+          "response_id": 203,
+          "score": 1.0,
+          "span": [
+            93,
+            145
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in.",
+          "response_id": 207,
+          "score": 1.0,
+          "span": [
+            37,
+            159
+          ],
+          "verified": true
+        },
+        {
+          "quote": "They pick the music and the news.",
+          "response_id": 212,
+          "score": 1.0,
+          "span": [
+            50,
+            83
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Rainfall models will set release schedules for the reservoirs",
+          "response_id": 217,
+          "score": 1.0,
+          "span": [
+            65,
+            126
+          ],
+          "verified": true
+        },
+        {
+          "quote": "the engineers will spend their days arguing with the forecast rather than reading gauges",
+          "response_id": 217,
+          "score": 1.0,
+          "span": [
+            132,
+            220
+          ],
+          "verified": true
+        },
+        {
+          "quote": "a district that never digitised its land registry gets worse answers than one that did",
+          "response_id": 218,
+          "score": 1.0,
+          "span": [
+            86,
+            172
+          ],
+          "verified": true
+        },
+        {
+          "quote": "By 2050 I expect an assistant that drafts my correspondence",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            0,
+            59
+          ],
+          "verified": true
+        },
+        {
+          "quote": "books the appointments",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            61,
+            83
+          ],
+          "verified": true
+        },
+        {
+          "quote": "tells me what was decided in a meeting I missed.",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            88,
+            136
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Whether that leaves me freer",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            137,
+            165
+          ],
+          "verified": true
+        },
+        {
+          "quote": "nobody is asking that yet.",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            220,
+            246
+          ],
+          "verified": true
+        },
+        {
+          "quote": "The risk is that we then stop funding the teachers who notice why a child stopped trying.",
+          "response_id": 226,
+          "score": 1.0,
+          "span": [
+            143,
+            232
+          ],
+          "verified": true
+        },
+        {
+          "quote": "A tool has an owner, and the question is who.",
+          "response_id": 244,
+          "score": 1.0,
+          "span": [
+            197,
+            242
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Everything arrives pre-sorted for you",
+          "response_id": 245,
+          "score": 1.0,
+          "span": [
+            0,
+            37
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-d6c7550fb62740dd",
+      "meta": {},
+      "name": "future-imagined_scenario",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-4041159865476169",
+      "description": "What AI will do next is treated as genuinely unknown.",
+      "evidence": [
+        {
+          "quote": "It is the twenty years of transition that will be ugly, and averages hide exactly that.",
+          "response_id": 258,
+          "score": 1.0,
+          "span": [
+            173,
+            260
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-959b63a61fcb9a1d",
+      "meta": {},
+      "name": "future-uncertainty",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "People lose the ability, or the habit, of working without the system.",
+      "evidence": [
+        {
+          "quote": "the thing people forget is that these systems only know what we bothered to record",
+          "response_id": 218,
+          "score": 1.0,
+          "span": [
+            0,
+            82
+          ],
+          "verified": true
+        },
+        {
+          "quote": "merely busier depends on who sets the targets",
+          "response_id": 221,
+          "score": 1.0,
+          "span": [
+            169,
+            214
+          ],
+          "verified": true
+        },
+        {
+          "quote": "We will forget how to do it ourselves.",
+          "response_id": 253,
+          "score": 1.0,
+          "span": [
+            0,
+            38
+          ],
+          "verified": true
+        },
+        {
+          "quote": "If the scheduling system is down for a week, nobody in the depot will remember how the rota used to be built.",
+          "response_id": 253,
+          "score": 1.0,
+          "span": [
+            39,
+            148
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-cae8afe7b151eece",
+      "meta": {},
+      "name": "negative_impacts-dependence",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "Existing categories of paid work disappear as AI replaces human labour.",
+      "evidence": [
+        {
+          "quote": "My worry is the ladder disappearing.",
+          "response_id": 207,
+          "score": 1.0,
+          "span": [
+            0,
+            36
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Those households had one wage between four people, and I have not heard a single proposal for what replaces it.",
+          "response_id": 239,
+          "score": 1.0,
+          "span": [
+            127,
+            238
+          ],
+          "verified": true
+        },
+        {
+          "quote": "That dependence worries me more than any job losses.",
+          "response_id": 253,
+          "score": 1.0,
+          "span": [
+            149,
+            201
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-36970a56237694b9",
+      "meta": {},
+      "name": "negative_impacts-job_loss",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "AI extends services to people who cannot reach them today.",
+      "evidence": [
+        {
+          "quote": "By 2050 that reach will be wider still.",
+          "response_id": 212,
+          "score": 1.0,
+          "span": [
+            84,
+            123
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-46697fdf41a8a235",
+      "meta": {},
+      "name": "positive_impacts-access",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-8c8e1bb384bd3da4",
+      "description": "AI solves problems respondents believe people cannot solve alone.",
+      "evidence": [
+        {
+          "quote": "strikes me as a real improvement in how that work is done.",
+          "response_id": 217,
+          "score": 1.0,
+          "span": [
+            228,
+            286
+          ],
+          "verified": true
+        },
+        {
+          "quote": "I am hopeful - these tools will help us with problems too large to hold in one head, like drought planning and drug discovery.",
+          "response_id": 244,
+          "score": 1.0,
+          "span": [
+            0,
+            126
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Quality of life improves on average.",
+          "response_id": 258,
+          "score": 1.0,
+          "span": [
+            136,
+            172
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-501aa6af5eefaa00",
+      "meta": {},
+      "name": "positive_impacts-problem_solving",
+      "parent_id": null
+    },
+    {
+      "created_in_snapshot": "snap-4041159865476169",
+      "description": "Everyday life becomes easier, safer or more comfortable.",
+      "evidence": [
+        {
+          "quote": "It is convenient right up to the moment you want something the profile did not predict",
+          "response_id": 245,
+          "score": 1.0,
+          "span": [
+            130,
+            216
+          ],
+          "verified": true
+        },
+        {
+          "quote": "Quality of life improves on average.",
+          "response_id": 258,
+          "score": 1.0,
+          "span": [
+            136,
+            172
+          ],
+          "verified": true
+        }
+      ],
+      "id": "code-0154457d5dcd5ab4",
+      "meta": {},
+      "name": "positive_impacts-quality_of_life",
+      "parent_id": null
+    }
+  ]
+}

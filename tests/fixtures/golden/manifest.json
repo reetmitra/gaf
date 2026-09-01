@@ -1,0 +1,105 @@
+{
+  "corpus": "tests.fixtures.corpus.synthetic_corpus",
+  "counts": {
+    "assignments": 61,
+    "codes": 14,
+    "families": 5,
+    "llm_calls": 90,
+    "responses": 14,
+    "segments": 40,
+    "snapshots": 3
+  },
+  "embedding": {
+    "dim": 512,
+    "mode": "lexical",
+    "model": null,
+    "space_id": "lexical-v1-512"
+  },
+  "models": {
+    "coder_a": {
+      "input_usd_per_mtok": 0.0,
+      "max_output_tokens": 4096,
+      "model": "mock-coder-a",
+      "output_usd_per_mtok": 0.0,
+      "provider": "mock",
+      "role": "coder_a",
+      "temperature": 0.0
+    },
+    "coder_b": {
+      "input_usd_per_mtok": 0.0,
+      "max_output_tokens": 4096,
+      "model": "mock-coder-b",
+      "output_usd_per_mtok": 0.0,
+      "provider": "mock",
+      "role": "coder_b",
+      "temperature": 0.0
+    },
+    "judge": {
+      "input_usd_per_mtok": 0.0,
+      "max_output_tokens": 4096,
+      "model": "mock-judge",
+      "output_usd_per_mtok": 0.0,
+      "provider": "mock",
+      "role": "judge",
+      "temperature": 0.0
+    },
+    "refactorer": {
+      "input_usd_per_mtok": 0.0,
+      "max_output_tokens": 4096,
+      "model": "mock-refactorer",
+      "output_usd_per_mtok": 0.0,
+      "provider": "mock",
+      "role": "refactorer",
+      "temperature": 0.0
+    }
+  },
+  "prompts": {
+    "coder/coder-v1": "cce676f3d993df78",
+    "judge/judge-v1": "e631c43de48e5226",
+    "refactorer/refactorer-v1": "8c39dcc1f078ff63"
+  },
+  "regenerate_with": "uv run python -m tests.test_golden --regenerate",
+  "response_ids": [
+    203,
+    207,
+    212,
+    217,
+    218,
+    221,
+    226,
+    231,
+    234,
+    239,
+    244,
+    245,
+    253,
+    258
+  ],
+  "rules": {
+    "check_name_grammar": true,
+    "fuzzy_threshold": 0.85,
+    "hierarchy_depth": 2,
+    "max_codes_per_response": 12,
+    "max_codes_per_segment": 2,
+    "max_quote_sentences": 2,
+    "max_quote_words": 40,
+    "min_codes_per_response": 2,
+    "prefer_subcode_first": true,
+    "require_description": true,
+    "segment_overlap_threshold": 0.5,
+    "tau_fit": 0.3,
+    "tau_high": 0.8,
+    "tau_low": 0.45
+  },
+  "run": {
+    "batch_size": 10,
+    "offline": true,
+    "question_variant": "v2",
+    "recycle_human_corrections": false,
+    "retrieval_top_k": 8,
+    "run_id": "golden",
+    "seed": 1729,
+    "snapshot_policy": "per_batch"
+  },
+  "space_id": "lexical-v1-512"
+}

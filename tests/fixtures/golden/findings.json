@@ -1,0 +1,48 @@
+{
+  "errors": [
+    {
+      "check_id": "M3",
+      "count": 1,
+      "marker": "candidate_dropped_no_evidence",
+      "scope": "candidate",
+      "subject": "applications-healthcare"
+    },
+    {
+      "check_id": "M3",
+      "count": 1,
+      "marker": "candidate_dropped_no_evidence",
+      "scope": "candidate",
+      "subject": "positive_impacts-quality_of_life"
+    },
+    {
+      "check_id": "S2",
+      "count": 1,
+      "marker": "no_verified_evidence",
+      "scope": "candidate",
+      "subject": "future-superintelligence"
+    }
+  ],
+  "severities": {
+    "ERROR": 3,
+    "INFO": 141,
+    "WARN": 9
+  },
+  "summary": {
+    "M1": {
+      "INFO": 36,
+      "WARN": 6
+    },
+    "M2": {
+      "INFO": 43
+    },
+    "M3": {
+      "ERROR": 2,
+      "INFO": 61,
+      "WARN": 3
+    },
+    "S2": {
+      "ERROR": 1,
+      "INFO": 1
+    }
+  }
+}

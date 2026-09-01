@@ -1,0 +1,42 @@
+[
+  {
+    "code": "positive_impacts-healthcare",
+    "response_id": 203,
+    "segment": "Rural clinics get diagnostic support"
+  },
+  {
+    "code": "negative_impacts-job_destruction",
+    "response_id": 203,
+    "segment": "Clerical posts in the district office vanish quietly"
+  },
+  {
+    "code": "negative_impacts-job_destruction",
+    "response_id": 207,
+    "segment": "Firms will hand ticket triage and first-draft paperwork to software"
+  },
+  {
+    "code": "negative_impacts-lack_of_inclusion",
+    "response_id": 207,
+    "segment": "it demands qualifications most school leavers in my district never had"
+  },
+  {
+    "code": "negative_impacts-lack_of_inclusion",
+    "response_id": 239,
+    "segment": "Those households had one wage between four people"
+  },
+  {
+    "code": "positive_impacts-problem-solving",
+    "response_id": 244,
+    "segment": "these tools will help us with problems too large to hold in one head"
+  },
+  {
+    "code": "negative_impacts-misuse",
+    "response_id": 245,
+    "segment": "you discover how narrow the door has become"
+  },
+  {
+    "code": "positive_impacts-healthcare",
+    "response_id": 226,
+    "segment": "A tutor that never tires, adjusting to one child's pace"
+  }
+]

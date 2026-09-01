@@ -1,0 +1,132 @@
+# The offline gate. Everything below runs from a clean clone with no API keys, no
+# secrets and no network beyond installing the locked dependencies -- which is the
+# whole point: `offline=True` is the default path and the only path CI takes, so a
+# green build here is evidence that the pipeline, the checks and the golden-set
+# harness reproduce without a provider account.
+#
+# Nothing in this file may reference a secret. If a step ever needs one, that step
+# does not belong in this workflow.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A second push to the same branch supersedes the first; the default branch is never
+# cancelled, so a merge always produces a complete result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+env:
+  PYTHONUNBUFFERED: "1"
+  # Coverage floor on the `gaf/` package, enforced by pytest-cov below.
+  #
+  # Measured 2026-09-01 with the full offline suite green (604 tests): 80.5% over 7318
+  # statements. The floor sits just below that, with headroom because the package was
+  # still growing while this was written.
+  #
+  # Two things a future reader should know before touching this number.
+  #
+  # 1. It is depressed by `gaf/cli.py` (735 statements) and `gaf/report/**` (413), which
+  #    were at 0% when this was measured because their tests had not landed yet. Over
+  #    the 6170 statements that do have tests, coverage is 95.5%.
+  # 2. Re-measure and raise it once those tests exist:
+  #
+  #       uv run pytest --cov=gaf --cov-report=term-missing
+  #
+  # A gate above the current coverage is a broken build; a gate far below it is
+  # decoration. Keep it just under the real number, and move it when the number moves.
+  COVERAGE_FLOOR: "78"
+
+jobs:
+  offline-suite:
+    name: ruff + mypy + pytest (offline, no keys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv, with the environment cached
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          # Rebuild the cache when the lockfile or the interpreter pin changes.
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+            .python-version
+
+      - name: Provision the pinned interpreter
+        # Reads .python-version (3.12, ADR-0012). uv brings its own interpreter, so the
+        # build does not depend on the runner image's Python being healthy.
+        run: |
+          uv python install
+          uv run python -c "import sys; print(sys.version)"
+
+      - name: Install dependencies from the lockfile
+        # --locked fails if uv.lock is stale against pyproject.toml, so lockfile drift
+        # is caught here rather than discovered on someone else's machine.
+        # --all-groups installs the dev group. It deliberately does NOT install the
+        # `openai` / `gemini` / `anthropic` extras: no provider SDK belongs in CI.
+        run: uv sync --locked --all-groups
+
+      - name: Assert the offline guarantee
+        # Cheap, and it is the claim the whole workflow rests on: no provider SDK is
+        # importable and no API key is present, so nothing green here can have reached
+        # a model.
+        run: |
+          uv run python - <<'PY'
+          import importlib.util
+          import os
+          import sys
+
+          def installed(name: str) -> bool:
+              try:  # find_spec raises when a parent package is itself absent
+                  return importlib.util.find_spec(name) is not None
+              except ModuleNotFoundError:
+                  return False
+
+          sdks = [n for n in ("openai", "google.genai", "anthropic") if installed(n)]
+          # The three names in .env.example, and nothing broader: GitHub's own runner
+          # sets ACTIONS_RUNTIME_TOKEN, which is not a model credential.
+          keys = [k for k in ("OPENAI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY")
+                  if os.environ.get(k)]
+          if sdks:
+              sys.exit(f"provider SDKs installed in CI: {sdks}")
+          if keys:
+              sys.exit(f"model credentials present in CI: {keys}")
+          print("offline: no provider SDK, no model credentials")
+          PY
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Type-check (mypy)
+        run: uv run mypy
+
+      - name: Test with coverage
+        # ~361 FutureWarnings from LogisticRegressionCV are expected and documented
+        # (ADR-0011). They are neither suppressed globally nor promoted to errors;
+        # pyproject.toml already errors only on DeprecationWarning from gaf.*.
+        run: >
+          uv run pytest
+          --cov=gaf
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=${{ env.COVERAGE_FLOOR }}
+
+      - name: Upload the coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn
+          retention-days: 14
