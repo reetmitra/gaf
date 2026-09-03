@@ -110,8 +110,11 @@ duplicate-code proliferation documented in the predecessor study.
 ### 3.3 Escalation
 
 A frontier model from a **third provider** acts as judge, and is consulted only where
-the deterministic layers cannot decide: a cross-coder dispute, a grey-zone similarity,
-or a low code–evidence fit. **Coder disagreement is the escalation signal.** Agreement,
+the deterministic layers cannot decide: a **grey-zone** similarity between the two
+thresholds, or a low code–evidence fit. A pair scoring *below* τ_low is disputed and is
+kept and flagged rather than escalated — the coders proposed genuinely different codes,
+and resolving that would mean dropping one on a meaning judgment the fast loop does not
+make. **Coder divergence is the escalation signal.** Agreement,
 the common case, costs nothing extra — so epistemic diversity and cost control are the
 same mechanism rather than competing ones.
 
@@ -168,9 +171,13 @@ snapshot that admitted it rather than when it was created. Two runs of the pipel
 over the same corpus with the same configuration therefore produce **byte-identical
 codebook JSON and an identical snapshot-id sequence**.
 
-Order independence was verified rather than assumed: shuffling the corpus and re-running
-produces the same final codebook, because code identity derives from content and
-evidence is ordered by content rather than by arrival.
+Order independence rests on three mechanisms. The fast loop sorts the corpus by
+`(source, id)` before any coding, so the order a corpus arrives in never reaches the
+pipeline at all; code identity derives from content; and evidence is ordered by content
+rather than by arrival. Under a genuine reorder the analytic result — the code set,
+their descriptions, their evidence and every assignment — is identical. One field
+legitimately varies: `created_in_snapshot`, which records which batch admitted a code,
+and is therefore provenance about that traversal rather than a property of the codebook.
 
 The audit log is append-only, enforced by database triggers rather than by convention;
 snapshots are immutable on the same basis. Every model call records its prompt version,

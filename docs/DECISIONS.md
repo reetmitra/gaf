@@ -535,15 +535,29 @@ orchestrator on the *real* corpus, not on fixtures:
 1. Two runs in the same order produce byte-identical codebook JSON, assignments,
    findings and snapshot sequence.
 2. **Three independent shuffles of the real corpus (seeds 1, 7, 99) produce a
-   byte-identical final codebook and an identical assignment set.** Order genuinely
-   does not change the result.
+   byte-identical final codebook and an identical assignment set.**
 3. Re-running a batch from the snapshot frozen at its start reproduces the full run's
    final codebook, snapshot tail and assignments (B2's own test).
 
-Property 2 holds because code identity is content-addressed on the name and evidence is
-sorted by content (response, span, quote) rather than by insertion — ADR-0017's ordering
-rule doing the work it was written for. Had evidence been insertion-ordered, the
-codebook bytes would differ under a shuffle and the snapshot ids with them.
+**Correction (Wave 4).** Property 2 as originally stated overclaimed, and the test
+cited for it could not reach the property. `fast_loop._ordered` sorts the corpus by
+`(source, id)` before anything is coded, and every fixture response shares one `source`
+— so shuffling the *list* is undone before the first coder call. The shuffle test pins
+that the sort exists and is load-bearing; it does not by itself demonstrate order
+independence, because it never produces a different processing order.
+
+Tested where it can actually fail — by varying `source` to permute the traversal, ids
+and text untouched — the result is: **the codebook's substance is identical** (code set,
+names, descriptions, evidence, and every assignment), while **`created_in_snapshot`
+differs** on some codes. That field records which batch admitted a code; under a
+different traversal a code is genuinely admitted in a different batch, and a value that
+stayed constant would be recording a falsehood. So the honest claim is that the
+*analytic result* is order-independent, not that the JSON is byte-identical.
+
+`tests/test_golden.py::test_a_genuine_reorder_changes_only_provenance` now tests this,
+and the two mechanisms that make it true are the sort (operative) plus content-addressed
+identity and content-ordered evidence (which make the substance stable once the
+traversal changes).
 
 The integration path remains non-restructuring: MERGE attaches evidence to an existing
 code, CREATE admits a new one, and a CREATE whose name is already taken is integrated as
@@ -572,8 +586,16 @@ every offline run, so the run report cannot present the M3 warning wall as findi
 the coding.
 
 **Consequences.** "The frontier model is consulted only where the geometry is genuinely
-ambiguous" is demonstrably true for M1 and M2 — zero dispute escalations and zero route
-escalations on this sample — and demonstrably false for M3 under the fallback embedder.
+ambiguous" is demonstrably true for M2 — zero route escalations on this sample — and
+demonstrably false for M3 under the fallback embedder.
+
+**Correction (Wave 4).** An earlier version of this ADR also cited "zero dispute
+escalations" as evidence for M1. That number is a **structural constant, not a
+measurement**: `router.escalates()` returns true only for the grey band, so a disputed
+pair can never reach the judge on any sample. The zero was guaranteed, and citing it as
+evidence was wrong. Four documents additionally described a dispute as escalating; they
+have been corrected. The behaviour itself is deliberate and follows the brief's detailed
+M1 specification — a dispute is a WARN — rather than its summary diagram.
 Whether it becomes true under a live embedding space is an empirical question that the
 first live run answers. Until then the cost estimate in the solution design should be
 quoted with M3 excluded, or with an explicit worst case of one judge call per quote.
@@ -620,3 +642,73 @@ paper this pipeline's check layer implements) and `hca.py`'s deliberate disclaim
 frame". The vocabulary tests therefore scope to **output** — CLI help, the run report,
 the HTML explorer, prompt templates — which is where the ban has force. That is what B1's
 and C2's tests already do.
+
+---
+
+## ADR-0024 — Real respondent text reached git history, and what was done about it
+
+**Status:** accepted (Wave 4, after an independent adversarial review)
+
+**Context.** The brief's hardest constraint was that human survey responses must never
+enter git history. It was verified four times during the build by listing tracked files
+and matching **file extensions** — `git ls-files | grep -E '\.(xlsx|docx|csv)$'` — which
+reported clean every time. `.gitignore` guards the same way.
+
+That check cannot see respondent text pasted into a `.py` or a `.md`, and an independent
+reviewer found exactly that: **ten tracked files containing 28 verbatim runs of 40
+characters or more**, the longest 129 characters, across five commits. The worst case was
+`tests/fixtures/corpus.py`, whose own docstring read *"No human survey response appears
+in this repository; every fixture is invented"* — written immediately after profiling the
+real file, and drawing on its phrasing. Nine of its fourteen "synthetic" ids were real
+sample ids.
+
+**Decision.** With the PI's authorisation:
+
+1. **The fixture corpus was rewritten from scratch** on ids in the 200s, which cannot
+   collide with a real sample. Different scenarios, different vocabulary. The planted
+   check material was preserved but relocated.
+2. **`gaf/agents/prompts/coder_v1.py` was scrubbed.** Its granularity examples quoted
+   respondents, and that template is sent to model providers on every coding call. The
+   examples are now paraphrased and say so; the PI's *code names* remain, since those are
+   his codebook labels and carry the actual lesson.
+3. **`docs/CODING_RULES.md` keeps its quotations**, by the PI's explicit decision. They
+   come from his own `GPTPrompts.docx` and the brief required his rules verbatim. The
+   README no longer makes a blanket claim that contradicts this.
+4. **Git history was rewritten**, which was cheap and clean because the repository had no
+   remote and had never been pushed.
+
+**Consequences — the lesson worth keeping.** The verification was structurally incapable
+of detecting the defect it was run to detect, and being repeated four times added
+confidence without adding evidence. Extension matching answers *"is a data file
+committed?"*; the question was *"is respondent text committed?"* The repository now
+tests the actual property: `tests/test_golden.py` asserts every golden segment is
+locatable in the synthetic corpus — something copied or paraphrased real text could not
+satisfy — and the same longest-common-substring scan against the real corpus is the check
+to run before any future publication.
+
+A second lesson: `tests/fixtures/golden/human_coding.json` was **missed by the first
+remediation pass**, because it is deliberately excluded from fixture regeneration so that
+a regeneration can never overwrite a human coding. A correct safety property hid a leak
+from an automated fix. Scan, then regenerate, then scan again.
+
+---
+
+## ADR-0025 — Findings of the Wave 4 adversarial review
+
+**Status:** accepted (Wave 4)
+
+An independent reviewer, given only the brief and the repository, audited the build. It
+confirmed twelve of the thirteen acceptance criteria and found one blocker (ADR-0024) and
+five substantive defects. All six are fixed. The pattern it named is worth recording:
+
+> the prose is written to the design, and the design is largely right; the drift is that
+> claims about *what was measured* outran what the tests can actually observe.
+
+| # | Finding | Resolution |
+|---|---|---|
+| M1 | Four documents described a cross-coder **dispute** as escalating to the judge; `router.escalates()` returns true only for the grey band, so a dispute can never escalate. ADR-0022 cited the resulting "zero dispute escalations" as a measurement. | Docs corrected. The behaviour is right and follows the brief's detailed M1 spec (a dispute is a WARN); the brief's summary diagram was the loose one. ADR-0022 now records that the zero was a structural constant, not evidence. |
+| M2 | ADR-0020 promised a degeneracy warning; `choose_n_clusters` warned only when the count fell below 2 or reached the sample size, so the ADR's own worked case (18 clusters from 20 responses) produced none. The `clusters.md` artefact carried no caveat at all. | A leaf-end-break warning was added, naming the late breaks and the counts they would give. Chan's worked example is unaffected. `ClusterResult.to_markdown` now renders warnings into the artefact a reader keeps, not only to the operator's terminal. |
+| M3 | The run report's saturation table omitted responses that ended with no assignment, silently re-cutting the batches. It disagreed with `gaf analyse` and with the frozen snapshots. | The row universe now comes from the run's own outcomes. Report and `analyse` agree. |
+| M4 | Order independence is achieved by sorting the corpus before coding; the docs credited content-addressing instead, and the test could not produce a different processing order. Under a genuine reorder the codebook is **not** byte-identical. | A test that varies `source` was added. The honest claim — substance identical, `created_in_snapshot` legitimately different — replaces the overclaim in ADR-0021, METHODS and VALIDATION. |
+| M5 | The run report printed *"The fast loop never edits the codebook: MERGE attaches evidence to an existing code and CREATE admits a new one"* — a sentence refuting itself mid-clause. | Now "never **restructures**". The accurate distinction was always in ADR-0021. |
+| — | `gaf/checks/structural.py` truncated quotes to 120 characters inside finding `data` payloads, contradicting its own documented contract that the full text always goes to `data`. A quote longer than that could not be recovered from the audit log. | `data` now carries full text; `_excerpt` is documented as being for subjects and messages only. Found by a test that was repaired rather than weakened. |

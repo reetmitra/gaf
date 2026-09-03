@@ -54,7 +54,7 @@ what makes a threshold a meaningful number rather than a floating constant.
 
 | id | What it validates | Escalates when | Why it exists |
 |---|---|---|---|
-| **M1** | cross-coder agreement, by Hungarian assignment over the two coders' proposals | a dispute, or a score in the grey band | the epistemic-diversity mechanism. Two models from different providers agreeing is evidence the code is in the data. **Disagreement is also the router's escalation signal**, so diversity and cost control are one mechanism |
+| **M1** | cross-coder agreement, by Hungarian assignment over the two coders' proposals | a score in the **grey band** only; a dispute below τ_low is kept and flagged | the epistemic-diversity mechanism. Two models from different providers agreeing is evidence the code is in the data. **Disagreement is also the router's escalation signal**, so diversity and cost control are one mechanism |
 | **M2** | integration routing against the codebook, in a two-threshold band | a score between τ_low and τ_high | contains the **dedup gate**: a new code is never created while a near neighbour sits above τ_high. Prevention, not cleanup |
 | **M3** | whether a code fits the evidence it was applied to | fit below τ_fit | the investigator's four categories of coding error, made checkable. `UNNECESSARY` removes the quote; `IMPRECISE` and `INCOMPLETE` flag for the human and **never cause a replacement code to be invented** |
 | **M4** | near-duplicate codes within a family | never | feeds the slow-loop refactor proposal. **Never auto-merges** — merging is a human-gated decision |
@@ -178,9 +178,14 @@ Every claim above is only as good as the run being reproducible.
 - Codebook JSON contains **no wall-clock time**; a code records the snapshot that
   admitted it. Two runs produce byte-identical output and an identical snapshot-id
   sequence.
-- **Order independence** is verified, not assumed: shuffling the corpus produces the
-  same final codebook, because code identity is content-addressed and evidence is
-  ordered by content rather than arrival.
+- **Order independence** rests on three things, and the first is the operative one:
+  the fast loop sorts the corpus by `(source, id)` before coding, so the order a corpus
+  arrives in never reaches the pipeline; code identity is content-addressed on the name;
+  and evidence is ordered by content rather than arrival. Under a *genuine* reorder the
+  codebook's substance — codes, names, descriptions, evidence, assignments — is
+  identical, while `created_in_snapshot` legitimately differs, because it records which
+  batch admitted a code and is provenance about that traversal rather than a property of
+  the codebook.
 - The **audit log is append-only and snapshots are immutable**, enforced by database
   triggers that abort the write — not by convention.
 - Every model call records its **prompt version**, so a change of wording is an event in

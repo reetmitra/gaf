@@ -50,7 +50,7 @@ FAST LOOP — per response (cheap, parallel, stateless)
     -> Coder A (provider 1) and Coder B (provider 2), independently, identical context
     -> STRUCTURAL checks S1-S6   (deterministic; no embeddings, no LLM)
     -> SEMANTIC   checks M1-M4   (embedding-first; judge only in the grey zone)
-    -> agree? accept  |  disagree / grey zone? -> Judge (frontier, provider 3)
+    -> agree? accept  |  grey zone? -> Judge (frontier, provider 3)
     -> integrate (merge / create) -> write to the blackboard
 
 SLOW LOOP — per checkpoint (rare, expensive, HUMAN-GATED)

@@ -41,7 +41,7 @@ from gaf.analysis.hca import SaturationCurve, saturation_curve
 from gaf.analysis.matrix import build_matrix
 from gaf.checks.contracts import CHECK_IDS, CheckReport
 from gaf.config import AnalysisConfig, RunConfig
-from gaf.models import Assignment, Codebook
+from gaf.models import Assignment, Codebook, Response
 from gaf.pipeline.fast_loop import FastLoopResult, RunStats
 
 __all__ = [
@@ -200,15 +200,32 @@ class RunArtefact:
         return AnalysisConfig(**{k: v for k, v in raw.items() if k in known})
 
     def saturation(self) -> SaturationCurve:
-        """The saturation curve over this run's assignments.
+        """The saturation curve over every response this run coded.
 
         Built from the **unfiltered** matrix: the low-frequency filter removes exactly
         the rare codes whose first appearance is the interesting part of this curve.
+
+        The row universe is every response the run *processed*, taken from the run's
+        outcomes — not merely those that ended with an assignment. A response whose
+        every candidate was dropped (an unverifiable quote, an UNNECESSARY fit ruling)
+        still consumed a place in the batch, and omitting it silently re-cuts the
+        batches and shifts the new-code counts. Theoretical saturation is a headline
+        grounded-theory claim; it must describe the batches that actually ran.
         """
         analysis = self.analysis_config()
         unfiltered = replace(analysis, min_code_frequency=1, min_code_frequency_fraction=None)
-        matrix = build_matrix(self.assignments, config=unfiltered)
+        matrix = build_matrix(self.assignments, config=unfiltered, responses=self.coded_responses())
         return saturation_curve(matrix, config=analysis)
+
+    def coded_responses(self) -> list[Response]:
+        """Every response this run processed, as the row universe for the matrix.
+
+        Reconstructed from the run outcomes rather than the corpus, so the report needs
+        no second source of truth. Only the id is load-bearing here; the matrix uses it
+        to fix the rows.
+        """
+        ids = sorted({int(o["response_id"]) for o in self.outcomes if "response_id" in o})
+        return [Response(id=i, question="", content="", source="") for i in ids]
 
 
 # --------------------------------------------------------------------------- #
@@ -527,7 +544,7 @@ def _coding(stats: RunStats) -> list[str]:
     lines.append("")
     lines.extend(
         _paragraph(
-            "The fast loop never edits the codebook: MERGE attaches evidence to an "
+            "The fast loop never RESTRUCTURES the codebook: MERGE attaches evidence to an "
             "existing code and CREATE admits a new one. Splitting, re-parenting and "
             "renaming happen only behind the human gate in the slow loop (ADR-0004)."
         )

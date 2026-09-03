@@ -251,6 +251,29 @@ def schedule_from_distances(
             f"gives {suggested} clusters for {n_samples} responses — every response "
             "is its own cluster."
         )
+    elif suggested > n_samples / 2:
+        # The rule assumes the largest break falls near the ROOT of the tree, as it did
+        # in Chan's 50-article study (stage 47 of 49). When it falls at the leaf end
+        # instead — which happens on small samples with sparse code vectors, where the
+        # first merges are between near-identical rows and cost almost nothing — the
+        # arithmetic reads the tree backwards and returns a count close to the sample
+        # size. On the 20-response seed sample it returns 18. That is not a partition;
+        # it is the rule misfiring, and the caller must be told so, because the cluster
+        # count is the study's headline result. See ADR-0020.
+        warnings.append(
+            f"the largest break is at stage {break_step.stage} of {len(steps)} — near "
+            f"the LEAF end of the tree — so the Essary rule gives {suggested} clusters "
+            f"for {n_samples} responses, more than half of them. The rule assumes the "
+            "largest break falls near the root; at this sample size it does not, and "
+            "this count is degenerate rather than a finding. Take the count from a "
+            "larger corpus, or set AnalysisConfig.n_clusters explicitly and report it "
+            "as an override. Late breaks in this schedule: "
+            + ", ".join(
+                f"stage {st.stage} (delta {st.delta:.4f}) -> {n_samples - st.stage} clusters"
+                for st in sorted(steps[1:], key=lambda x: -x.delta)[:3]
+                if n_samples - st.stage <= n_samples / 2
+            )
+        )
 
     return AgglomerationSchedule(
         n_samples=n_samples,
@@ -386,6 +409,17 @@ class ClusterResult:
             f"{len(self.response_ids)} responses x {len(self.code_names)} codes; "
             f"{self.n_clusters} clusters ({source}).",
             "",
+        ]
+        # The warnings belong in the artefact, not only on the operator's terminal.
+        # clusters.md is what a reader keeps and quotes from; a caveat that scrolled
+        # past in a shell is not a caveat. The cluster count is this study's headline.
+        if self.warnings:
+            lines.append("> **Read this before quoting the cluster count.**")
+            lines.append(">")
+            for warning in self.warnings:
+                lines.append(f"> - {warning}")
+            lines.append("")
+        lines += [
             "| cluster | n | share | prominent codes (mean >= "
             f"{self.highlight:g}) |",
             "|---:|---:|---:|---|",

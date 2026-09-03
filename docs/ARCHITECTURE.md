@@ -34,7 +34,8 @@ FAST LOOP — per response (cheap, parallel, stateless)
     → Coder B (mid-tier model, provider 2)  ┘  independent, same context
     → STRUCTURAL checks  S1–S6   (deterministic; no embeddings, no LLM)
     → SEMANTIC checks    M1–M4   (embedding-first; judge only in the grey zone)
-    → agree? → accept   |   disagree / grey zone → Judge (frontier model, provider 3)
+    → agree? → accept   |   grey zone → Judge (frontier model, provider 3)
+      (a dispute below τ_low is kept and flagged, not escalated — see below)
     → integrate into the codebook (auto-merge / auto-create / judge-decided)
     → write to the blackboard
 
@@ -93,6 +94,14 @@ All state lives in one SQLite database. Every model call is stateless and re-gro
 from canonical sources. Handoffs carry ids, not prose. The audit log is append-only.
 
 ### 4. Disagreement routing — against cost, and for epistemic diversity
+
+**What actually escalates.** Only the **grey band** reaches the judge: a cross-coder
+score between τ_low and τ_high, an M2 route in the same band, or an M3 fit below τ_fit.
+A pair scoring *below* τ_low is **disputed and kept-and-flagged**, not escalated — the
+two coders proposed genuinely different codes, and there is no single question a judge
+could answer that would not amount to dropping one of them on a meaning call the fast
+loop is not allowed to make. `router.escalates()` is the one place this rule is
+written.
 
 Two mid-tier coders from *different providers* code the same response against the same
 context. Agreement — the common case — costs nothing extra. Only disagreement and

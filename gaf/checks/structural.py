@@ -93,6 +93,12 @@ def _subject(candidate: Candidate, index: int) -> str:
 
 
 def _excerpt(text: str) -> str:
+    """Shorten text for a *subject* or a *message* only.
+
+    Never use this on a value going into a finding's ``data`` payload: the audit log is
+    the record a methods reviewer replays from, and a truncated quote cannot be located
+    in the source. Subjects and messages are for human reading; ``data`` is the record.
+    """
     return text if len(text) <= _EXCERPT_CHARS else text[: _EXCERPT_CHARS - 3] + "..."
 
 
@@ -292,7 +298,7 @@ def check_s1(
                     "Description is a verbatim copy of the candidate's own quote, so it "
                     "explains nothing about the segment.",
                     **{MARKER_KEY: "description_copies_quote"},
-                    quote=_excerpt(copied),
+                    quote=copied,
                 )
         kept.append(candidate)
     return kept, report
@@ -340,7 +346,7 @@ def check_s2(
                 "Quote could not be located in the response and has been dropped from "
                 "the candidate's evidence.",
                 **{MARKER_KEY: "quote_unverified"},
-                quote=_excerpt(evidence.quote),
+                quote=evidence.quote,
                 score=round(score, 4),
                 threshold=rules.fuzzy_threshold,
                 response_id=response.id,
@@ -355,7 +361,7 @@ def check_s2(
                 "no evidence left to stand on.",
                 **{MARKER_KEY: "no_verified_evidence"},
                 response_id=response.id,
-                quotes=[_excerpt(e.quote) for e in candidate.evidence],
+                quotes=[e.quote for e in candidate.evidence],
             )
             continue
         kept.append(replace(candidate, evidence=verified))
@@ -404,7 +410,7 @@ def check_s2b(
                     sentences=sentences,
                     max_quote_sentences=rules.max_quote_sentences,
                     words=words,
-                    quote=_excerpt(evidence.quote),
+                    quote=evidence.quote,
                 )
             if words > rules.max_quote_words:
                 report.add(
@@ -418,7 +424,7 @@ def check_s2b(
                     words=words,
                     max_quote_words=rules.max_quote_words,
                     sentences=sentences,
-                    quote=_excerpt(evidence.quote),
+                    quote=evidence.quote,
                 )
     return report
 
@@ -595,7 +601,7 @@ def check_s4(
             response_id=response.id,
             span=[start, stop],
             segment_text=segment_text,
-            quotes=[_excerpt(quotes[i]) for i in members],
+            quotes=[quotes[i] for i in members],
             max_codes_per_segment=rules.max_codes_per_segment,
             segment_overlap_threshold=rules.segment_overlap_threshold,
         )
