@@ -84,10 +84,22 @@ tail. **Anything in that diagram without a model name is plain Python.**
 
 ## Data
 
-**No human survey response is ever committed.** `data/` is gitignored except
-`data/synthetic/`, and every spreadsheet and document extension is excluded
-repository-wide. Real corpora live outside the repository. The test suite builds its own
-workbooks in-process and codes an invented corpus.
+Real corpora live **outside** the repository. `data/` is gitignored except
+`data/synthetic/`, every spreadsheet and document extension is excluded repository-wide,
+and the test suite builds its own workbooks in-process and codes a wholly invented
+corpus on response ids in the 200s, which cannot collide with a real sample.
+
+**One deliberate exception.** `docs/CODING_RULES.md` reproduces the principal
+investigator's own negative examples from his `GPTPrompts.docx`, and those quote
+respondents by id. They are kept at his explicit request: they are his working
+document, and the coding rules are only defensible with the quotation attached. They
+appear nowhere else — in particular the coder prompt, which is sent to model providers,
+carries paraphrases instead.
+
+That distinction exists because an earlier version of this repository made an
+unconditional claim here that was false: fixture text drawn from real responses had been
+committed, and a check that matched *file extensions* could not see it. See ADR-0024 for
+what happened and what now tests the actual property.
 
 ## Three things a newcomer should know before trusting a number
 
