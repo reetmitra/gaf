@@ -9,15 +9,34 @@ Input is open-ended survey responses about AI in 2050. Output is a two-level gro
 codebook, a per-response binary occurrence matrix, a hierarchical cluster analysis of
 that matrix, and a verification dossier a methods reviewer can audit line by line.
 
+## Start here
+
+```bash
+uv sync --all-groups
+```
+
+```bash
+make demo
+```
+
+That codes a synthetic corpus end to end — two coders, every check, the router, the
+store — and writes a run report, a codebook and an HTML explorer to `runs/demo/`. It
+needs **no API key and no network**. Run it twice: the codebook JSON and the
+snapshot-id sequence are byte-identical.
+
+```bash
+make check-all      # ruff, mypy, and the full offline suite
+```
+
 ## Three properties, non-negotiable
 
-1. **Offline-first.** The whole pipeline runs end to end with mock model clients, a
-   lexical embedding fallback, zero API keys and zero network, and produces
-   byte-identical output across runs. Live models are an opt-in flag, never a
-   prerequisite for tests or CI.
-2. **Auditable.** Every artefact is content-addressed and replayable. A finding, a
-   code, a merge, a judge ruling, a dropped quote — each is a row with an id, a
-   timestamp, a snapshot reference and the inputs that produced it.
+1. **Offline-first.** The whole pipeline runs with mock model clients and a lexical
+   embedding fallback, producing byte-identical output across runs. Live models are an
+   opt-in flag, never a prerequisite for tests or CI.
+2. **Auditable.** Every artefact is content-addressed and replayable. A finding, a code,
+   a merge, a judge ruling, a dropped quote — each is a row with an id, a timestamp, a
+   snapshot reference and the inputs that produced it. The audit log is append-only and
+   snapshots are immutable, enforced by database triggers rather than by convention.
 3. **Simple in the flow, complex in the substrate.** Complexity may live in
    infrastructure. It may not live in the control flow.
 
@@ -27,60 +46,60 @@ that matrix, and a verification dossier a methods reviewer can audit line by lin
 FAST LOOP — per response (cheap, parallel, stateless)
   response + its survey question
     -> deterministic prep: segmentation, dedup check, context assembly
-    -> Coder A (mid-tier, provider 1)  +  Coder B (mid-tier, provider 2)
+       (top-k codes by embedding + hierarchy skeleton, from a FROZEN snapshot)
+    -> Coder A (provider 1) and Coder B (provider 2), independently, identical context
     -> STRUCTURAL checks S1-S6   (deterministic; no embeddings, no LLM)
     -> SEMANTIC   checks M1-M4   (embedding-first; judge only in the grey zone)
-    -> agree? accept   |   disagree / grey zone? Judge (frontier, provider 3)
-    -> integrate into the codebook -> write to the blackboard
+    -> agree? accept  |  disagree / grey zone? -> Judge (frontier, provider 3)
+    -> integrate (merge / create) -> write to the blackboard
 
-SLOW LOOP — per checkpoint (rare, expensive, human-gated)
-  blackboard -> health + saturation metrics -> Refactorer proposes an edit script
-    -> HUMAN GATE (accept / reject / edit per operation) -> apply -> new snapshot
+SLOW LOOP — per checkpoint (rare, expensive, HUMAN-GATED)
+  health + saturation metrics -> Refactorer proposes an edit script
+    (split / re-parent / merge / batch-rename)
+    -> HUMAN GATE: accept, reject or edit each operation
+    -> apply -> new snapshot -> changelog
 
 ANALYSIS TAIL (deterministic, no models)
   binary occurrence matrix -> low-frequency filter -> Ward's HCA
     -> agglomeration schedule -> cluster means
-  respondent metadata is joined ONLY here, never during coding
+  respondent metadata joined ONLY here, never during coding
 
 VALIDATION (deterministic, no models)
   human-vs-machine agreement on the golden set; L1 lexical vocabulary check
 ```
 
-Two loops. Three LLM roles (Coder, Judge, Refactorer). One store. One deterministic
-tail. Anything in that diagram without a model name is plain Python.
+Two loops. Three LLM roles — Coder, Judge, Refactorer. One store. One deterministic
+tail. **Anything in that diagram without a model name is plain Python.**
 
-## Getting started
+## Documentation
 
-```bash
-uv sync --all-groups
-```
-
-```bash
-uv run pytest
-```
-
-The suite is fully offline: no API keys, no network, no real survey data.
-
-## Project state
-
-Wave 0 (contracts and fixtures) is complete. The frozen contracts are:
-
-| Module | What it fixes |
+| Document | What it is for |
 |---|---|
-| `gaf/models.py` | the shared vocabulary — Response, Segment, Evidence, Candidate, Code, Codebook, Assignment, Operation |
-| `gaf/config.py` | CodingRules, RunConfig, every threshold, the model registry, the survey-question variants |
-| `gaf/checks/contracts.py` | Severity, CheckFinding, CheckReport, the four M3 fit verdicts |
-| `gaf/llm/base.py` | the LLMClient protocol, JSON parsing, enum whitelisting, fail-safe defaults, retry, accounting |
-| `gaf/embed/protocol.py` | the Embedder protocol, `code_text`, the MERGE/CREATE/JUDGE routing band |
-| `gaf/store/schema.py` | the SQLite blackboard, with an append-only audit log enforced by triggers |
-| `gaf/textnorm.py` | the single normalisation function every character span is defined against |
-
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design and its rationale,
-[`docs/CODING_RULES.md`](docs/CODING_RULES.md) for the PI's rules with the verbatim
-quotation behind each, and [`docs/DECISIONS.md`](docs/DECISIONS.md) for the ADR log.
+| [`docs/METHODS.md`](docs/METHODS.md) | methods-appendix prose, quotable in the paper |
+| [`docs/VALIDATION.md`](docs/VALIDATION.md) | the verification dossier — every check, why it exists, and what it cannot see |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | operator guide, including the human-gate workflow |
+| [`docs/CODING_RULES.md`](docs/CODING_RULES.md) | the PI's rules, each with the verbatim quotation behind it |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the design law, and where the complexity actually lives |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | the ADR log — every non-obvious choice, including the ones that turned out badly |
 
 ## Data
 
 **No human survey response is ever committed.** `data/` is gitignored except
-`data/synthetic/`, and every spreadsheet extension is excluded repository-wide. The
-test suite builds its own workbooks in-process and codes an invented corpus.
+`data/synthetic/`, and every spreadsheet and document extension is excluded
+repository-wide. Real corpora live outside the repository. The test suite builds its own
+workbooks in-process and codes an invented corpus.
+
+## Three things a newcomer should know before trusting a number
+
+- **The thresholds are uncalibrated.** τ_high = 0.80, τ_low = 0.45 and τ_fit = 0.30 were
+  set against a stand-in embedder and have never been checked against human judgment.
+  The calibration module is built and produces a full curve the day the PI's
+  hand-codings arrive.
+- **Offline similarity statistics describe the fallback embedder, not the codebook.**
+  In particular the code–evidence fit check does not discriminate offline, so its
+  warnings in a `make demo` run are artefacts. The run report says so where the counts
+  appear. See ADR-0019 and ADR-0022.
+- **Read the agglomeration schedule before quoting a cluster count.** The inherited rule
+  assumes the largest break falls near the root of the tree; on a small sample it may
+  not, and the rule then returns a degenerate answer. It was deliberately left
+  unpatched. See ADR-0020.
