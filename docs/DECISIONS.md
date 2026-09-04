@@ -778,3 +778,70 @@ The brief specifies exactly this behaviour for M3.
 artefact containing a code with no evidence is invalid whatever produced it. But the
 claim "a meaning judgment can drive the exit code" is now answerable in one sentence
 rather than looking like a contradiction between two files.
+
+---
+
+## ADR-0027 — What the history rewrite cost, and what was done about it
+
+**Status:** accepted (Wave 4, second adversarial review)
+
+**Context.** ADR-0024 recorded that git history was rewritten to purge respondent text.
+It did not record the cost, and the second reviewer measured it: **17 of the 19 commits
+carrying tests could not collect their own test suite.** `tests/fixtures/corpus.py` had
+been back-ported into every commit by the rewrite, while `tests/fixtures/candidates.py`
+and the test modules were fixed only forward — so every intermediate commit paired a
+200-range corpus with fixtures hard-coding id 3, and died at import with `KeyError: 3`.
+
+For a project whose stated value is an auditable, replayable, wave-gated build, `git
+bisect` was impossible and no Wave 1, 2 or 3 commit was reproducible.
+
+**Decision.** Extend the rewrite to back-port `tests/fixtures/candidates.py`, the
+remaining golden fixtures and the test modules — **only into commits where those paths
+already existed**, so nothing is added to a commit that never had it. All 20 commits
+with tests now collect.
+
+**Consequences, stated rather than left implicit.**
+
+*What is faithful.* The commit graph, order, dates and messages are unchanged. Every
+`gaf/` module is exactly what that wave delivered, so the diff of a wave's own work is
+intact and `git bisect` over behaviour works.
+
+*What is not.* The **test tree at any historical commit is the final one**, not the tree
+that wave shipped. Commits therefore collect but will not all fully pass: a Wave 1 commit
+carries tests written against Wave 4 behaviour. Bisecting a *test* change is meaningless;
+bisecting a *behaviour* change is not. A commit message describes the work it did, not
+every byte of the tree it now carries.
+
+*Why not go further.* Making every historical commit fully pass would mean collapsing all
+of history into one state, which destroys the wave structure the history exists to show.
+The trade taken is: faithful production code, contaminated test tree, said out loud.
+
+An earlier measurement of this put the figure at 19 of 21 and included commits that were
+in fact fine; the harness was running the repository's editable install rather than the
+extracted tree. The 17-of-19 figure is from a corrected harness with `PYTHONPATH` set to
+the extraction. Recorded because the wrong number was nearly acted on.
+
+---
+
+## ADR-0028 — `.gitignore` protects git, not the directory
+
+**Status:** accepted (Wave 4, second adversarial review)
+
+**Context.** Git history is clean. The **working directory is not**: after coding a real
+corpus, `runs/` and `.gaf_cache/` hold every response verbatim, with codes, spans and
+findings attached — at the time of writing, 30 files and 480 cache entries carrying the
+full India sample. Both are gitignored, so no commit can contain them, and equally no
+`.gitignore` rule survives a zip, a backup, an rsync or a directory copy.
+
+The first review's lesson was that the verification answered the wrong question. "Is
+respondent text committed?" is now asked correctly and answered by a real test. **"Is
+respondent text in the directory the researcher will share?" was not being asked at all.**
+
+**Decision.** Add `make scrub`, which removes `runs/` and `.gaf_cache/`, and document in
+`docs/RUNBOOK.md` that it must be run before the directory leaves the machine. The
+outputs are reproducible from the corpus, so nothing of value is lost.
+
+**Consequences.** This is a procedure, not a guarantee, and it should be described that
+way: no automated check can know when a directory is about to be shared. It is the same
+class of control as the provenance scan — a check the researcher runs deliberately, at
+the moment it matters, rather than a property the repository can enforce on its own.

@@ -58,7 +58,13 @@ uv run gaf ingest --xlsx "../Grounded AI Futures/data/NarrativeState(IndiaSample
 
 Real survey data lives **outside the repository** and stays there. `data/` is gitignored
 except `data/synthetic/`, and every spreadsheet and document extension is excluded
-repository-wide. If you ever find a respondent file staged for commit, stop and remove
+repository-wide.
+
+**But `.gitignore` only protects git.** Once you have coded a real corpus, `runs/` and
+`.gaf_cache/` hold that corpus verbatim — every response, with its codes, spans and
+findings attached. Those directories are invisible to a commit and completely visible to
+a zip, a backup, an rsync or a directory copy. **Run `make scrub` before this directory
+leaves your machine**, and re-create the outputs with `make demo` or another run. If you ever find a respondent file staged for commit, stop and remove
 it from the index — do not attempt a history rewrite alone.
 
 Ingest attaches the survey question to every record (it is absent from the workbook),

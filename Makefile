@@ -14,7 +14,7 @@ DEMO_DIR ?= runs/demo
 DEMO_CORPUS := $(DEMO_DIR)/corpus.json
 DEMO_ANALYSIS := $(DEMO_DIR)/analysis
 
-.PHONY: help install test lint typecheck check-all demo check analyse
+.PHONY: help install test lint typecheck check-all scrub demo check analyse
 
 help:
 	@echo "make install    — uv sync (core + dev)"
@@ -22,6 +22,7 @@ help:
 	@echo "make lint       — ruff"
 	@echo "make typecheck  — mypy on gaf/"
 	@echo "make check-all  — lint + typecheck + test"
+	@echo "make scrub      — delete run outputs and the cache; run before sharing this directory"
 	@echo "make demo       — code the synthetic corpus offline; run report + codebook explorer"
 	@echo "make check      — run every check over the demo codebook (exit 1 iff an ERROR)"
 	@echo "make analyse    — occurrence matrix, Ward's HCA and the saturation curve"
@@ -58,3 +59,12 @@ check: $(DEMO_CORPUS)
 analyse: $(DEMO_CORPUS)
 	@test -f $(DEMO_DIR)/assignments.json || $(MAKE) demo
 	uv run gaf analyse --assignments $(DEMO_DIR)/assignments.json --data $(DEMO_CORPUS) --out $(DEMO_ANALYSIS)
+
+# Run outputs and the LLM cache contain the corpus you coded, verbatim, with codes and
+# findings attached. They are gitignored, so they never reach a commit — but .gitignore
+# does not protect a zip, a backup, an rsync or a directory copy. Run this before this
+# directory leaves your machine.
+scrub:
+	@echo "removing run outputs and the response cache..."
+	@rm -rf runs/ .gaf_cache/
+	@echo "done. runs/ and .gaf_cache/ removed; re-create them with: make demo"
