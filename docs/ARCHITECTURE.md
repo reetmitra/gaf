@@ -117,7 +117,7 @@ of restructuring it accreted parallel concepts, then merged semantically differe
 ideas on superficial lexical overlap, and the downstream clustering collapsed to two
 clusters where three were expected.
 
-Here the fast loop **never edits the codebook** — coders only propose. Structural
+Here the fast loop **never restructures the codebook** — coders only propose, and integration may merge evidence into a code or admit a new one, but nothing splits, re-parents or renames. Structural
 edits happen only in the human-gated slow loop, and `Operation` includes `split` and
 `reparent` precisely because their absence is the documented cause of the failure.
 

@@ -63,6 +63,7 @@ from typing import Any
 from gaf.agents.coder import CoderAgent, CodingProposal, subject_for
 from gaf.agents.judge import JudgeAgent
 from gaf.checks.contracts import CheckFinding, CheckReport, Severity
+from gaf.checks.health import checkpoint_signals, codebook_health
 from gaf.checks.semantic import (
     Judge,
     check_code_evidence_fit,
@@ -263,6 +264,11 @@ class RunStats:
     llm: dict[str, Any]
     snapshot_ids: list[str]
     caveats: list[str]
+    #: Whether the slow loop is due, and why. Computed at the end of the run from the
+    #: health metrics and `CheckpointPolicy`; the fast loop reports it and never acts on
+    #: it, because opening the gate needs a human at a terminal and a batch run cannot
+    #: block for one. `gaf checkpoint` is how the operator acts on it. See ADR-0027.
+    checkpoint_due: dict[str, Any]
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -291,6 +297,7 @@ class RunStats:
             "llm": dict(self.llm),
             "snapshot_ids": list(self.snapshot_ids),
             "caveats": list(self.caveats),
+            "checkpoint_due": dict(self.checkpoint_due),
         }
 
 
@@ -988,6 +995,24 @@ def run_fast_loop(
             for record in outcome.assignments:
                 rows.setdefault(record.assignment_id, record)
 
+    # Is the slow loop due? Reported, never acted on: the human gate needs a terminal
+    # and a batch run must not block for one, so the operator acts with `gaf checkpoint`.
+    # Field names are read directly rather than through getattr: a defensive default here
+    # once silently reported "not due" for every run because the attribute did not exist.
+    _metrics = codebook_health(working, components.embedder, config.rules)
+    _signals = checkpoint_signals(
+        _metrics,
+        config.checkpoints,
+        responses_coded=len(ordered),
+        responses_since_checkpoint=len(ordered),
+    )
+    checkpoint_due = {
+        "fires": bool(_signals.recommend_checkpoint),
+        "trigger": "health" if (_signals.near_duplicates_exceeded or _signals.new_codes_exceeded)
+                   else ("floor" if _signals.hard_floor_reached else "none"),
+        "reason": "; ".join(_signals.reasons),
+    }
+
     closing = CheckReport()
     closing.extend(check_codebook(working, [response.id for response in ordered], config.rules))
     closing.extend(check_near_duplicate_leaves(working, components.embedder, config.rules).report)
@@ -999,6 +1024,7 @@ def run_fast_loop(
 
     ordered_assignments = [record.to_assignment() for record in _assignment_order(rows.values())]
     stats = _stats(
+        checkpoint_due=checkpoint_due,
         config=config,
         components=components,
         outcomes=outcomes,
@@ -1039,6 +1065,7 @@ def _stats(
     codebook: Codebook,
     assignments: Sequence[Assignment],
     snapshot_ids: Sequence[str],
+    checkpoint_due: Mapping[str, Any],
 ) -> RunStats:
     """Fold the per-response outcomes into the run report's numbers. Pure."""
     proposed: Counter[str] = Counter()
@@ -1098,4 +1125,5 @@ def _stats(
         llm=components.call_log.summary(),
         snapshot_ids=list(snapshot_ids),
         caveats=[_OFFLINE_CAVEAT] if config.offline else [],
+        checkpoint_due=dict(checkpoint_due),
     )

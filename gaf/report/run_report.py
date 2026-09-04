@@ -529,6 +529,12 @@ def _coding(stats: RunStats) -> list[str]:
     lines.append(_field("responses coded", stats.n_responses))
     lines.append(_field("duplicate responses", stats.n_duplicate_responses))
     lines.append(_field("segments prepared", stats.n_segments))
+    due = stats.checkpoint_due or {}
+    if due.get("fires"):
+        lines.append(_field("slow loop", f"DUE — {due.get('trigger', '?')}: {due.get('reason', '')}"))
+        lines.append(_field("", "run `gaf checkpoint --run <dir> --interactive` to review the proposal"))
+    else:
+        lines.append(_field("slow loop", f"not due ({due.get('trigger', 'none')})"))
     lines.append("")
     lines.append(_field("candidates proposed", f"{proposed}  ({_counts(stats.candidates_proposed)})"))
     lines.append(_field("candidates survived", f"{survived}  ({_counts(stats.candidates_survived)})"))
@@ -544,7 +550,7 @@ def _coding(stats: RunStats) -> list[str]:
     lines.append("")
     lines.extend(
         _paragraph(
-            "The fast loop never RESTRUCTURES the codebook: MERGE attaches evidence to an "
+            "The fast loop never restructures the codebook: MERGE attaches evidence to an "
             "existing code and CREATE admits a new one. Splitting, re-parenting and "
             "renaming happen only behind the human gate in the slow loop (ADR-0004)."
         )

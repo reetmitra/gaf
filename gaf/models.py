@@ -199,8 +199,8 @@ class Evidence:
 class Candidate:
     """What a coder *proposes*, before admission to the codebook.
 
-    A candidate is not a code. The fast loop never edits the codebook; it accepts,
-    routes and integrates candidates. ``parent_hint`` is the coder's suggestion of a
+    A candidate is not a code. The fast loop never *restructures* the codebook; it
+    accepts, routes and integrates candidates. ``parent_hint`` is the coder's suggestion of a
     family, honoured only by the integration router, never trusted as structure.
     ``raw`` keeps the model's original object so a decision can be replayed.
     """

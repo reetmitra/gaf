@@ -39,6 +39,14 @@ class Severity(Enum):
     in the source, a name that is not unique, a parent that does not exist. Anything
     that requires a judgment about meaning is at most a WARN, because the structural
     layer does not make meaning judgments.
+
+    One case looks like an exception and is not. A judge's UNNECESSARY ruling is a
+    meaning judgment, and it is recorded as a WARN. But it *removes a quote*, and when
+    it removes the last one the candidate is left with no verified evidence at all —
+    which is the same structurally invalid state S2 raises an ERROR for, reached by a
+    different route. The ERROR is about the empty evidence, never about the ruling.
+    Reading the trigger as "the judge said so" gets the rule backwards; the trigger is
+    "nothing in the corpus supports this code any longer". See ADR-0026.
     """
 
     ERROR = "ERROR"  # structural certainty of invalidity -> candidate dropped / CLI exit 1

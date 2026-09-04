@@ -13,13 +13,16 @@ What this module does. Three questions, answered per response, in this order:
 3. **How is that action applied?** `integrate` is the *only* function in the fast loop
    that changes the codebook, and it has exactly two branches.
 
-**Which pairs reach a model is this module's decision, and it is one rule: coder
-disagreement is the escalation signal.** Agreement — the common case — costs nothing
-extra, because two coders landing at or above tau_high need no third opinion. Only a
-dispute or a grey-zone score is escalated. Epistemic diversity and cost control are
-therefore the same mechanism rather than two competing ones: the reason to run two
-coders from different providers is that their disagreement is informative, and the
-reason the frontier judge is affordable is that disagreement is rare. `escalates` is
+**Which pairs reach a model is this module's decision, and it is one rule: a score in
+the grey band between tau_low and tau_high is the escalation signal.** Agreement — the
+common case — costs nothing extra, because two coders landing at or above tau_high need
+no third opinion. A *dispute* below tau_low is not escalated either: the coders proposed
+genuinely different codes, and resolving that would mean dropping one of them on a
+meaning judgment the fast loop is not allowed to make, so both are kept and flagged for
+the human. Only the band in between is genuinely ambiguous. Epistemic diversity and cost
+control are therefore the same mechanism rather than two competing ones: the reason to
+run two coders from different providers is that their divergence is informative, and the
+reason the frontier judge is affordable is that genuine ambiguity is rare. `escalates` is
 that rule, written once.
 
 **This module emits no findings.** Checks report; the router decides; the audit log

@@ -245,13 +245,12 @@ def schedule_from_distances(
             "cluster structure at this sample size — set AnalysisConfig.n_clusters "
             "explicitly if a partition is wanted anyway."
         )
-    if suggested >= n_samples:
-        warnings.append(
-            f"the largest break is at stage {break_step.stage}, so the Essary rule "
-            f"gives {suggested} clusters for {n_samples} responses — every response "
-            "is its own cluster."
-        )
-    elif suggested > n_samples / 2:
+    # There is deliberately no "every response is its own cluster" branch: `break_step`
+    # is chosen from `steps[1:]`, so its stage is always >= 2, so
+    # `suggested = n_samples - stage <= n_samples - 2`. That branch existed and was
+    # unreachable; a search over 4000 random schedules never entered it, and the
+    # arithmetic says it cannot. The reachable failure is the leaf-end break below.
+    if suggested > n_samples / 2:
         # The rule assumes the largest break falls near the ROOT of the tree, as it did
         # in Chan's 50-article study (stage 47 of 49). When it falls at the leaf end
         # instead — which happens on small samples with sparse code vectors, where the

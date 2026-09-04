@@ -48,8 +48,9 @@ FAST LOOP — per response (cheap, parallel, stateless)
     -> deterministic prep: segmentation, dedup check, context assembly
        (top-k codes by embedding + hierarchy skeleton, from a FROZEN snapshot)
     -> Coder A (provider 1) and Coder B (provider 2), independently, identical context
-    -> STRUCTURAL checks S1-S6   (deterministic; no embeddings, no LLM)
-    -> SEMANTIC   checks M1-M4   (embedding-first; judge only in the grey zone)
+    -> STRUCTURAL checks S1-S5   (deterministic; no embeddings, no LLM)
+    -> SEMANTIC   checks M1-M3   (embedding-first; judge only in the grey zone)
+       [S6 codebook invariants and M4 near-duplicate leaves run once, at run close]
     -> agree? accept  |  grey zone? -> Judge (frontier, provider 3)
     -> integrate (merge / create) -> write to the blackboard
 

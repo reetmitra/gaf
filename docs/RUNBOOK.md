@@ -34,7 +34,7 @@ gaf check       structural|semantic|all
                 (--codebook X.json | --assignments A.json) [--data corpus.json]
 gaf analyse     --assignments A.json [--data corpus.json] --out DIR
 gaf validate    agreement --human H.json --machine M.json [--data corpus.json]
-gaf validate    lexical --table T.json [--score-col NAME | --score-from codes]
+gaf validate    lexical --table T.json (--score-col NAME | --score-from codes --codebook C.json)
 gaf report      --run DIR
 gaf checkpoint  --run DIR [--interactive]
 ```
@@ -138,8 +138,26 @@ from a corpus large enough for the rule to behave, or state it and say that you 
 
 ```bash
 uv run gaf validate agreement --human golden.json --machine runs/india/assignments.json --data runs/india/corpus.json
-uv run gaf validate lexical --table scored.json --score-from codes
+# --score-from codes derives the score from each response's codes, so it needs the codebook
+uv run gaf validate lexical --table runs/india/scored.json --score-from codes \
+  --codebook runs/india/codebook.json
 ```
+
+No command writes `scored.json` — it is a pooled table of `(response_id, text, score,
+group)` that you assemble from whatever score the study is testing. From a completed run,
+with the score derived from the codes:
+
+```bash
+uv run python -c "
+import json
+from gaf.ingest.corpus import load_corpus
+rows = [{'response_id': r.id, 'text': r.content, 'group': r.source}
+        for r in load_corpus('runs/india/corpus.json')]
+json.dump(rows, open('runs/india/scored.json', 'w'), indent=2)
+"
+```
+
+With a score column of your own instead, pass `--score-col NAME` and skip `--codebook`.
 
 The lexical check **refuses to fit** when a binarised cut has fewer than ten positives
 or negatives. On a 20-response sample it will refuse, and that is correct behaviour, not
@@ -160,10 +178,30 @@ through the assignments shape — and the file stays outside the repository. Unt
 set, one test skips, which is the correct state rather than a failure.
 
 **Once it exists, run the threshold calibration.** τ_high = 0.80, τ_low = 0.45 and
-τ_fit = 0.30 are provisional and uncalibrated; the calibration module produces a full
-precision/recall curve and a recommendation. It reports and never silently changes a
-constant — moving a threshold is a decision to record in `docs/DECISIONS.md`, not an
-edit to make quietly.
+τ_fit = 0.30 are provisional and uncalibrated.
+
+There is **no CLI subcommand for this** — it is a Python API, because it is run once when
+the golden set arrives rather than routinely:
+
+```bash
+uv run python -c "
+import json
+from gaf.checks.health import calibrate_thresholds
+from gaf.config import CodingRules
+from gaf.embed.service import EmbeddingService
+from gaf.ingest.xlsx import read_coded_xlsx
+from gaf.models import Assignment
+
+human = read_coded_xlsx('../Grounded AI Futures/data/<his file>.xlsx')
+machine = [Assignment.from_json(r) for r in json.load(open('runs/india/assignments.json'))]
+report = calibrate_thresholds(human, machine, EmbeddingService(), CodingRules())
+print(report.paragraph())
+json.dump(report.to_json(), open('runs/india/calibration_report.json', 'w'), indent=2)
+"
+```
+
+It reports and never silently changes a constant — moving a threshold is a decision to
+record in `docs/DECISIONS.md`, not an edit to make quietly.
 
 ---
 

@@ -674,17 +674,51 @@ sample ids.
 3. **`docs/CODING_RULES.md` keeps its quotations**, by the PI's explicit decision. They
    come from his own `GPTPrompts.docx` and the brief required his rules verbatim. The
    README no longer makes a blanket claim that contradicts this.
+
+   **Two consequences the first version of this ADR did not state.**
+
+   *The acceptance criterion does not hold as written.* The brief's criterion 12 is "no
+   real survey data anywhere in git history". Three verbatim runs of 62-73 characters
+   remain, in 18 of 21 commits. The honest statement is: **no real survey data in git
+   history except the PI's own negative examples in `docs/CODING_RULES.md`, retained by
+   his explicit decision and named in the README.** The remediation scoped the finding
+   rather than eliminating it, and scoping it is defensible — but the criterion must be
+   restated to match, not left standing while the README contradicts it.
+
+   *This is an ethics question, not only a citation-practice one.* Those quotations carry
+   **respondent ids** — "Response 57", "Response 50". Quotation plus a stable identifier
+   is a re-identification surface, and whether that is acceptable is governed by the
+   study's consent language and its ethics approval, not by a repository convention.
+   **Before this repository is shared beyond the research team, that should be checked
+   against the approval under which the survey was collected.** The pipeline cannot
+   answer that question and does not try to.
 4. **Git history was rewritten**, which was cheap and clean because the repository had no
    remote and had never been pushed.
 
 **Consequences — the lesson worth keeping.** The verification was structurally incapable
 of detecting the defect it was run to detect, and being repeated four times added
 confidence without adding evidence. Extension matching answers *"is a data file
-committed?"*; the question was *"is respondent text committed?"* The repository now
-tests the actual property: `tests/test_golden.py` asserts every golden segment is
-locatable in the synthetic corpus — something copied or paraphrased real text could not
-satisfy — and the same longest-common-substring scan against the real corpus is the check
-to run before any future publication.
+committed?"*; the question was *"is respondent text committed?"*
+
+**Correction (second review).** An earlier version of this ADR claimed the property was
+now tested, on the grounds that `test_every_golden_segment_is_locatable_in_the_synthetic_corpus`
+asserts something copied text could not satisfy. **That reasoning is invalid.** That test
+compares two fixtures with each other: if the fixture corpus itself had been copied from
+real responses, every golden segment would still be locatable in it. It establishes
+consistency, not provenance — and no test reading the real corpus existed at all.
+
+Writing that claim inside the ADR whose own stated lesson is *"claims about what was
+measured outran what the tests can observe"* is the same failure, one level up. It was
+found by the second adversarial review, not by us.
+
+The property is now genuinely tested:
+`tests/test_golden.py::test_no_tracked_file_contains_real_respondent_text` reads the real
+corpus in place and fails on any 30-character shared run in any tracked file, with
+`docs/CODING_RULES.md` as the single declared exemption. It skips when the real file is
+absent — CI and every clean clone — because the real file must never be in the
+repository; it is the check the researcher runs before publishing. **It failed on first
+run**, catching a 30-character phrase in `tests/test_llm.py` that had previously been
+dismissed by hand as generic. That is the difference between a test and a conviction.
 
 A second lesson: `tests/fixtures/golden/human_coding.json` was **missed by the first
 remediation pass**, because it is deliberately excluded from fixture regeneration so that
@@ -712,3 +746,35 @@ five substantive defects. All six are fixed. The pattern it named is worth recor
 | M4 | Order independence is achieved by sorting the corpus before coding; the docs credited content-addressing instead, and the test could not produce a different processing order. Under a genuine reorder the codebook is **not** byte-identical. | A test that varies `source` was added. The honest claim — substance identical, `created_in_snapshot` legitimately different — replaces the overclaim in ADR-0021, METHODS and VALIDATION. |
 | M5 | The run report printed *"The fast loop never edits the codebook: MERGE attaches evidence to an existing code and CREATE admits a new one"* — a sentence refuting itself mid-clause. | Now "never **restructures**". The accurate distinction was always in ADR-0021. |
 | — | `gaf/checks/structural.py` truncated quotes to 120 characters inside finding `data` payloads, contradicting its own documented contract that the full text always goes to `data`. A quote longer than that could not be recovered from the audit log. | `data` now carries full text; `_excerpt` is documented as being for subjects and messages only. Found by a test that was repaired rather than weakened. |
+
+---
+
+## ADR-0026 — A meaning ruling never *is* an ERROR, but it can leave a state that is
+
+**Status:** accepted (Wave 4, second adversarial review)
+
+**Context.** The frozen contract says ERROR is reserved for structural certainty of
+invalidity and that "anything requiring a judgment about meaning is at most a WARN". The
+second reviewer found `gaf/checks/semantic.py` emitting ERROR when an LLM judge rules a
+quote UNNECESSARY, and asked, reasonably, which of the two was wrong.
+
+**Neither.** The reviewer read the trigger one step too early. The ruling itself is
+recorded as a WARN. What it does is *remove a quote*, and when it removes the last one
+the candidate is left with **no verified evidence** — which is precisely the condition S2
+raises an ERROR for (`no_verified_evidence`), reached by a different route. A code that
+nothing in the corpus supports is structurally invalid regardless of how it got there.
+The brief specifies exactly this behaviour for M3.
+
+**Decision.** Keep the behaviour. Fix the wording, which did not carry the distinction:
+
+* `contracts.py`'s severity docstring now states the case explicitly.
+* The M3 finding's own message now names the condition that fired — "it now has no
+  verified evidence… the ERROR is the empty evidence, not the ruling" — so a reviewer
+  reading the audit log sees the reasoning without having to reconstruct it.
+* `docs/VALIDATION.md`'s severity table said ERROR means the candidate is dropped, which
+  is false for S4 and S6 — both emit ERROR at codebook scope and drop nothing. Corrected.
+
+**Consequences.** `gaf check` can still exit 1 on a run of this kind, and it should: an
+artefact containing a code with no evidence is invalid whatever produced it. But the
+claim "a meaning judgment can drive the exit code" is now answerable in one sentence
+rather than looking like a contradiction between two files.

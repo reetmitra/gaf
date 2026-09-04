@@ -95,7 +95,7 @@ class CodingRules:
     # S2b — "Coding is applied on the level of phrase or sentence."
     max_quote_sentences: int = 2
     #: S2b, second condition. Three of the twenty real seed responses contain NO
-    #: sentence terminator at all (ids 18, 21, 56 — 107 to 115 words each), so a
+    #: sentence terminator at all (ids 18, 21, 56 — 102 to 115 words each), so a
     #: terminator count alone cannot enforce the PI's phrase/sentence rule: a quote of
     #: an entire unpunctuated response counts as one sentence and passes. This bound is
     #: the word-equivalent of the two-sentence one (this corpus averages ~20 words per
@@ -170,8 +170,8 @@ class ModelRegistry:
 
     Three LLM roles exist (Coder, Judge, Refactorer); four bindings, because the two
     coders must come from *different providers* — that difference is the epistemic
-    diversity mechanism and, because disagreement is the escalation signal, also the
-    cost-control mechanism. Nothing is hard-coded anywhere else in the package.
+    diversity mechanism and, because only a grey-zone score between the two coders
+    escalates to the judge, also the cost-control mechanism. Nothing is hard-coded anywhere else in the package.
     """
 
     coder_a: ModelSpec

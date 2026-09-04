@@ -114,7 +114,7 @@ the deterministic layers cannot decide: a **grey-zone** similarity between the t
 thresholds, or a low code–evidence fit. A pair scoring *below* τ_low is disputed and is
 kept and flagged rather than escalated — the coders proposed genuinely different codes,
 and resolving that would mean dropping one on a meaning judgment the fast loop does not
-make. **Coder divergence is the escalation signal.** Agreement,
+make. **A grey-zone score is the escalation signal.** Agreement,
 the common case, costs nothing extra — so epistemic diversity and cost control are the
 same mechanism rather than competing ones.
 

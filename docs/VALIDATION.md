@@ -18,7 +18,7 @@ findings and nothing else, and the router holds no report at all.
 
 | Severity | Meaning | Consequence |
 |---|---|---|
-| **ERROR** | structural certainty of invalidity | the candidate or quote is dropped; `gaf check` exits 1 |
+| **ERROR** | structural certainty of invalidity | at the candidate gate the candidate or quote is dropped; at codebook scope (S4, S6) nothing is dropped and the finding is the deliverable. `gaf check` exits 1 either way |
 | **WARN** | a rule is violated but the judgment is contestable | kept and flagged for the human gate |
 | **INFO** | an observation — a score, a band, a route | recorded for the audit trail |
 
@@ -54,7 +54,7 @@ what makes a threshold a meaningful number rather than a floating constant.
 
 | id | What it validates | Escalates when | Why it exists |
 |---|---|---|---|
-| **M1** | cross-coder agreement, by Hungarian assignment over the two coders' proposals | a score in the **grey band** only; a dispute below τ_low is kept and flagged | the epistemic-diversity mechanism. Two models from different providers agreeing is evidence the code is in the data. **Disagreement is also the router's escalation signal**, so diversity and cost control are one mechanism |
+| **M1** | cross-coder agreement, by Hungarian assignment over the two coders' proposals | a score in the **grey band** only; a dispute below τ_low is kept and flagged | the epistemic-diversity mechanism. Two models from different providers agreeing is evidence the code is in the data. **A grey-zone score is the router's escalation signal**, so diversity and cost control are one mechanism |
 | **M2** | integration routing against the codebook, in a two-threshold band | a score between τ_low and τ_high | contains the **dedup gate**: a new code is never created while a near neighbour sits above τ_high. Prevention, not cleanup |
 | **M3** | whether a code fits the evidence it was applied to | fit below τ_fit | the investigator's four categories of coding error, made checkable. `UNNECESSARY` removes the quote; `IMPRECISE` and `INCOMPLETE` flag for the human and **never cause a replacement code to be invented** |
 | **M4** | near-duplicate codes within a family | never | feeds the slow-loop refactor proposal. **Never auto-merges** — merging is a human-gated decision |
