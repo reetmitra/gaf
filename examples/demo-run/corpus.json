@@ -1,0 +1,102 @@
+{
+  "responses": [
+    {
+      "content": "Rural clinics get diagnostic support and the nearest specialist stops being four hours away. Clerical posts in the district office vanish quietly, and no retraining scheme arrives.",
+      "id": 203,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "My worry is the ladder disappearing. Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in. Maintaining the systems becomes the new entry point, but it demands qualifications most school leavers in my district never had the chance to earn.",
+      "id": 207,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Recommendation engines already shape my evenings. They pick the music and the news. By 2050 that reach will be wider still. Picture one municipal system balancing traffic lights, reservoir levels and the power grid, adjusting itself hourly from whatever the sensors report.",
+      "id": 212,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Municipal water boards will lean on forecasting engines by then. Rainfall models will set release schedules for the reservoirs, and the engineers will spend their days arguing with the forecast rather than reading gauges, which strikes me as a real improvement in how that work is done.",
+      "id": 217,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "the thing people forget is that these systems only know what we bothered to record so a district that never digitised its land registry gets worse answers than one that did and nobody notices because the output looks equally confident either way which is why I keep saying the record-keeping matters more than the algorithm",
+      "id": 218,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "By 2050 I expect an assistant that drafts my correspondence, books the appointments and tells me what was decided in a meeting I missed. Whether that leaves me freer or merely busier depends on who sets the targets, and nobody is asking that yet.",
+      "id": 221,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Teaching changes most, I think. A tutor that never tires, adjusting to one child's pace, would reach pupils our classrooms lose by year three. The risk is that we then stop funding the teachers who notice why a child stopped trying.",
+      "id": 226,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Elderly relatives living alone will have something watching for a fall and calling a doctor unprompted. MOCKFIT_UNNECESSARY It will track the medicine cabinet and nag them about the tablets they skip. My grandmother would have hated it and would have been safer for it.",
+      "id": 231,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Freight is where I notice it first. Containers routed by a system that knows the weather three ports ahead, drivers dispatched to the yard the moment a lorry is free. The port employs fewer people and moves twice the tonnage.",
+      "id": 234,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Packing and sorting went to machines in my mother's factory years ago. By 2050 the whole line runs without a shift supervisor. Those households had one wage between four people, and I have not heard a single proposal for what replaces it.",
+      "id": 239,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "I am hopeful — these tools will help us with problems too large to hold in one head, like drought planning and drug discovery. People say “the machines will decide for us” and I don’t accept that. A tool has an owner, and the question is who.",
+      "id": 244,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Everything arrives pre-sorted for you: the news, the shopping, the course you are advised to take, the treatment you are offered. It is convenient right up to the moment you want something the profile did not predict, and then you discover how narrow the door has become.",
+      "id": 245,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "We will forget how to do it ourselves. If the scheduling system is down for a week, nobody in the depot will remember how the rota used to be built. That dependence worries me more than any job losses.",
+      "id": 253,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    },
+    {
+      "content": "Whole categories of work nobody has named yet will exist by then, the way nobody could have described a data-centre technician in 1975. Quality of life improves on average. It is the twenty years of transition that will be ugly, and averages hide exactly that.",
+      "id": 258,
+      "meta": {},
+      "question": "From now to 2050, what impacts do you think AI will have in shaping your society? Please answer the question by describing one specific scenario that feels most vivid and realistic to you. Please write at least 100 words, focus on one scenario only, and provide as much detail as possible.",
+      "source": "synthetic"
+    }
+  ]
+}

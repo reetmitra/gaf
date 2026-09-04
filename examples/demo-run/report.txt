@@ -1,0 +1,190 @@
+==============================================================================
+GAF RUN REPORT — demo
+==============================================================================
+
+Grounded-theory coding run, offline (mock clients, lexical embedding fallback).
+Embedding space lexical-v1-512; 14 response(s) coded.
+
+CAVEATS — read these before the numbers
+---------------------------------------
+
+  ! Offline run: M3's code-to-evidence fit does not discriminate in the
+  lexical fallback space (median fit 0.000) and M2's grey zone is empty, so
+  the fit and routing statistics are artefacts of the stand-in embedder rather
+  than findings about the coding. See ADR-0019.
+
+  In practice: treat the M3 and M2 rows of the CHECKS table as diagnostics of
+  the stand-in embedder, not as findings about the codebook. The judge call
+  counts below are dominated by the same effect (ADR-0022).
+
+PROVENANCE
+----------
+
+  run id                demo
+  corpus                runs/demo/corpus.json
+  corpus source         synthetic
+  corpus hash           e17d13c927a59f0d
+  question variant      v2
+  blackboard            runs/demo/gaf.sqlite
+  output directory      runs/demo
+  gaf version           0.1.0
+  responses ingested    14
+  embedding space       lexical-v1-512
+
+  Snapshots frozen (3) — coders read these, only the slow loop writes them:
+    1. snap-8c8e1bb384bd3da4
+    2. snap-4041159865476169
+    3. snap-3281fbd1f36b27ec
+
+CONFIGURATION — the thresholds this run actually used
+-----------------------------------------------------
+
+  offline               True
+  seed                  1729
+  batch size            10
+  snapshot policy       per_batch
+  retrieval top-k       8
+  question variant      v2
+  human corrections     held out
+
+  Similarity bands   tau_high 0.8  tau_low 0.45  tau_fit 0.3
+  Quote provenance   fuzzy_threshold 0.85
+  Coding rules       codes/response 2-12; codes/segment max 2; quote max 2 sentence(s) / 40 words; hierarchy depth 2
+
+  Model bindings
+    coder_a    mock/mock-coder-a  temperature 0.0
+    coder_b    mock/mock-coder-b  temperature 0.0
+    judge      mock/mock-judge  temperature 0.0
+    refactorer mock/mock-refactorer  temperature 0.0
+
+  Analysis tail      min_code_frequency 2; fraction None; linkage ward/euclidean; n_clusters None
+
+CODING — what the two coders proposed and what survived
+-------------------------------------------------------
+
+  responses coded       14
+  duplicate responses   0
+  segments prepared     40
+  slow loop             DUE — health: new codes this batch 14 > 8
+                        run `gaf checkpoint --run <dir> --interactive` to review the proposal
+
+  candidates proposed   82  (coder_a 39, coder_b 43)
+  candidates survived   81  (coder_a 39, coder_b 42)
+  candidates dropped    dispute 0, fit 2, structural 1
+  candidates accepted   45
+  acceptance by origin  agreed 36, disputed 6, grey 0, unmatched_a 0, unmatched_b 3
+
+  agreement rate        0.8810
+  integration routes    CREATE 14, JUDGE 0, MERGE 29
+  integration actions   CREATE 14, MERGE 29
+  escalations           62
+  judge calls           judge_fit 62
+
+  The fast loop never restructures the codebook: MERGE attaches evidence to an
+  existing code and CREATE admits a new one. Splitting, re-parenting and
+  renaming happen only behind the human gate in the slow loop (ADR-0004).
+
+MODEL CALLS
+-----------
+
+  calls                 90
+  by task               code 28, judge_fit 62
+  cache hits            90
+  fail-safe replies     0
+  tokens                69435 in / 7612 out
+  cost (provider)       $0.0000
+  latency (provider)    0.0 ms
+
+  Cost and latency are reported by the provider and are the only figures in
+  this report that two identical runs may differ on. They are zero offline.
+
+  62 of 90 calls (69%) are M3 fit rulings. ADR-0022 measured the same effect
+  at 84% on the real sample: it is the stand-in embedder escalating, not the
+  coding being ambiguous.
+
+CODEBOOK
+--------
+
+  codes                 14
+  codes created here    14
+  families              5
+  assignments written   61
+
+  family            codes  quotes  responses
+  ----------------  -----  ------  ---------
+  adoption              1      17          8
+  applications          6      15         11
+  future                2      16         10
+  negative_impacts      2       7          5
+  positive_impacts      3       6          5
+
+  Codes, with the number of responses each is applied to:
+    adoption-social_change  (17)
+    applications-automation  (3)
+    applications-data_driven_systems  (3)
+    applications-education  (3)
+    applications-healthcare  (2)
+    applications-industry_and_transport  (3)
+    applications-personalisation  (1)
+    future-imagined_scenario  (15)
+    future-uncertainty  (1)
+    negative_impacts-dependence  (4)
+    negative_impacts-job_loss  (3)
+    positive_impacts-access  (1)
+    positive_impacts-problem_solving  (3)
+    positive_impacts-quality_of_life  (2)
+
+THEORETICAL SATURATION
+----------------------
+
+  Batch size 10; 14 distinct code(s) over the run.
+
+  batch  responses  cumulative  new codes  codes so far
+  -----  ---------  ----------  ---------  ------------
+      1         10          10         12            12
+      2          4          14          2            14
+
+  No batch was empty of new codes: the curve has not flattened, so theoretical
+  saturation is not yet evidenced.
+
+
+CHECKS
+------
+
+  Every check in the pipeline emits through one contract, so this table is the
+  whole of what the run observed. Counts are findings, not responses.
+
+  check  ERROR  WARN  INFO  total  what it checks
+  -----  -----  ----  ----  -----  ---------------------------------------------------------------------------------------------
+  S2         1     0     1      2  every quote really occurs in the response it cites (provenance)
+  M1         0     6    36     42  cross-coder agreement, by Hungarian matching in one embedding space
+  M2         0     0    43     43  integration routing: merge, create, or ask the judge  [offline artefact — see CAVEATS]
+  M3         2     3    61     66  fit between a code and the quote offered as evidence for it  [offline artefact — see CAVEATS]
+  TOTAL      3     9   141    153
+
+  RESULT: 3 ERROR finding(s).
+
+  In a run an ERROR is the check layer doing its job: a candidate whose quote
+  is not in the corpus, or one whose every quote was ruled unnecessary, was
+  dropped before it reached the codebook. That is the layer working, not the
+  run failing. `gaf run` exits 0 whenever the run completes; only `gaf check`
+  turns an ERROR into a non-zero exit, because only `gaf check` is asking
+  whether an artefact is valid.
+
+  ERROR findings
+    [ERROR] S2 candidate:future-superintelligence — No quote could be verified
+    against the response, so the candidate has no evidence left to stand on.
+    [ERROR] M3 candidate:applications-healthcare — Candidate 'applications-
+    healthcare' is dropped: every verified quote was ruled UNNECESSARY, so
+    nothing in the corpus supports it any longer.
+    [ERROR] M3 candidate:positive_impacts-quality_of_life — Candidate
+    'positive_impacts-quality_of_life' is dropped: every verified quote was
+    ruled UNNECESSARY, so nothing in the corpus supports it any longer.
+
+  WARN findings by check: M1 6, M3 3.
+    A WARN is kept and flagged, never dropped: the structural layer does not
+    make judgments about meaning. They are the slow loop's agenda.
+
+==============================================================================
+END OF REPORT — 3 ERROR finding(s); the run completed.
+==============================================================================

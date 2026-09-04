@@ -1,0 +1,251 @@
+{
+  "cluster_mean_highlight": 0.4,
+  "cut_distance": 3.5820385257559693,
+  "labels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "means": {
+    "1": [
+      {
+        "code": "future-imagined_scenario",
+        "count": 9,
+        "mean": 0.6428571428571429,
+        "prominent": true
+      },
+      {
+        "code": "adoption-social_change",
+        "count": 8,
+        "mean": 0.5714285714285714,
+        "prominent": true
+      },
+      {
+        "code": "applications-data_driven_systems",
+        "count": 3,
+        "mean": 0.21428571428571427,
+        "prominent": false
+      },
+      {
+        "code": "applications-industry_and_transport",
+        "count": 3,
+        "mean": 0.21428571428571427,
+        "prominent": false
+      },
+      {
+        "code": "negative_impacts-dependence",
+        "count": 3,
+        "mean": 0.21428571428571427,
+        "prominent": false
+      },
+      {
+        "code": "negative_impacts-job_loss",
+        "count": 3,
+        "mean": 0.21428571428571427,
+        "prominent": false
+      },
+      {
+        "code": "positive_impacts-problem_solving",
+        "count": 3,
+        "mean": 0.21428571428571427,
+        "prominent": false
+      },
+      {
+        "code": "applications-automation",
+        "count": 2,
+        "mean": 0.14285714285714285,
+        "prominent": false
+      },
+      {
+        "code": "applications-education",
+        "count": 2,
+        "mean": 0.14285714285714285,
+        "prominent": false
+      },
+      {
+        "code": "applications-healthcare",
+        "count": 2,
+        "mean": 0.14285714285714285,
+        "prominent": false
+      },
+      {
+        "code": "positive_impacts-quality_of_life",
+        "count": 2,
+        "mean": 0.14285714285714285,
+        "prominent": false
+      }
+    ]
+  },
+  "members": {
+    "1": [
+      203,
+      207,
+      212,
+      217,
+      218,
+      221,
+      226,
+      231,
+      234,
+      239,
+      244,
+      245,
+      253,
+      258
+    ]
+  },
+  "n_clusters": 1,
+  "n_clusters_source": "schedule",
+  "n_codes": 11,
+  "n_responses": 14,
+  "response_ids": [
+    203,
+    207,
+    212,
+    217,
+    218,
+    221,
+    226,
+    231,
+    234,
+    239,
+    244,
+    245,
+    253,
+    258
+  ],
+  "schedule": {
+    "break_delta": 0.7657139515601421,
+    "break_stage": 13,
+    "n_samples": 14,
+    "n_steps": 13,
+    "rule": "n_clusters = n_samples - break_stage (Essary 2022, via Chan 2025)",
+    "steps": [
+      {
+        "delta": 0.0,
+        "distance": 1.0,
+        "left": 4,
+        "right": 5,
+        "size": 2,
+        "stage": 1
+      },
+      {
+        "delta": 0.0,
+        "distance": 1.0,
+        "left": 2,
+        "right": 3,
+        "size": 2,
+        "stage": 2
+      },
+      {
+        "delta": 0.2909944487358056,
+        "distance": 1.2909944487358056,
+        "left": 8,
+        "right": 15,
+        "size": 3,
+        "stage": 3
+      },
+      {
+        "delta": 0.12321911363728955,
+        "distance": 1.4142135623730951,
+        "left": 0,
+        "right": 11,
+        "size": 2,
+        "stage": 4
+      },
+      {
+        "delta": 0.0,
+        "distance": 1.4142135623730951,
+        "left": 1,
+        "right": 6,
+        "size": 2,
+        "stage": 5
+      },
+      {
+        "delta": 0.0,
+        "distance": 1.4142135623730951,
+        "left": 7,
+        "right": 9,
+        "size": 2,
+        "stage": 6
+      },
+      {
+        "delta": 0.0,
+        "distance": 1.4142135623730951,
+        "left": 12,
+        "right": 19,
+        "size": 3,
+        "stage": 7
+      },
+      {
+        "delta": 0.5857864376269049,
+        "distance": 2.0,
+        "left": 10,
+        "right": 13,
+        "size": 2,
+        "stage": 8
+      },
+      {
+        "delta": 0.12132034355964239,
+        "distance": 2.1213203435596424,
+        "left": 14,
+        "right": 17,
+        "size": 4,
+        "stage": 9
+      },
+      {
+        "delta": 0.24511156968020398,
+        "distance": 2.3664319132398464,
+        "left": 20,
+        "right": 21,
+        "size": 5,
+        "stage": 10
+      },
+      {
+        "delta": 0.11684549105204356,
+        "distance": 2.48327740429189,
+        "left": 18,
+        "right": 22,
+        "size": 6,
+        "stage": 11
+      },
+      {
+        "delta": 0.16247390677270035,
+        "distance": 2.6457513110645903,
+        "left": 16,
+        "right": 24,
+        "size": 9,
+        "stage": 12
+      },
+      {
+        "delta": 0.7657139515601421,
+        "distance": 3.4114652626247324,
+        "left": 23,
+        "right": 25,
+        "size": 14,
+        "stage": 13
+      }
+    ],
+    "suggested_clusters": 1,
+    "warnings": [
+      "the largest break is at stage 13 of 13, so the Essary rule gives 1 cluster(s); the data does not support a cluster structure at this sample size — set AnalysisConfig.n_clusters explicitly if a partition is wanted anyway."
+    ]
+  },
+  "sizes": {
+    "1": 14
+  },
+  "warnings": [
+    "the largest break is at stage 13 of 13, so the Essary rule gives 1 cluster(s); the data does not support a cluster structure at this sample size — set AnalysisConfig.n_clusters explicitly if a partition is wanted anyway."
+  ]
+}

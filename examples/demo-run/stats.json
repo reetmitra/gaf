@@ -1,0 +1,96 @@
+{
+  "acceptance_by_origin": {
+    "agreed": 36,
+    "disputed": 6,
+    "grey": 0,
+    "unmatched_a": 0,
+    "unmatched_b": 3
+  },
+  "actions": {
+    "CREATE": 14,
+    "MERGE": 29
+  },
+  "agreement_rate": 0.880952,
+  "assignments": 61,
+  "candidates_accepted": 45,
+  "candidates_dropped": {
+    "dispute": 0,
+    "fit": 2,
+    "structural": 1
+  },
+  "candidates_proposed": {
+    "coder_a": 39,
+    "coder_b": 43
+  },
+  "candidates_survived": {
+    "coder_a": 39,
+    "coder_b": 42
+  },
+  "caveats": [
+    "Offline run: M3's code-to-evidence fit does not discriminate in the lexical fallback space (median fit 0.000) and M2's grey zone is empty, so the fit and routing statistics are artefacts of the stand-in embedder rather than findings about the coding. See ADR-0019."
+  ],
+  "checkpoint_due": {
+    "fires": true,
+    "reason": "new codes this batch 14 > 8",
+    "trigger": "health"
+  },
+  "codes_created": 14,
+  "codes_final": 14,
+  "escalations": 62,
+  "families_final": 5,
+  "findings": {
+    "M1": {
+      "INFO": 36,
+      "WARN": 6
+    },
+    "M2": {
+      "INFO": 43
+    },
+    "M3": {
+      "ERROR": 2,
+      "INFO": 61,
+      "WARN": 3
+    },
+    "S2": {
+      "ERROR": 1,
+      "INFO": 1
+    }
+  },
+  "judge_calls": {
+    "judge_fit": 62
+  },
+  "llm": {
+    "by_task": {
+      "code": 28,
+      "judge_fit": 62
+    },
+    "cache_hits": 90,
+    "calls": 90,
+    "cost_usd": 0.0,
+    "fail_safes": 0,
+    "input_tokens": 69435,
+    "latency_ms_total": 0.0,
+    "output_tokens": 7612
+  },
+  "n_duplicate_responses": 0,
+  "n_responses": 14,
+  "n_segments": 40,
+  "offline": true,
+  "routes": {
+    "CREATE": 14,
+    "JUDGE": 0,
+    "MERGE": 29
+  },
+  "run_id": "demo",
+  "severities": {
+    "ERROR": 3,
+    "INFO": 141,
+    "WARN": 9
+  },
+  "snapshot_ids": [
+    "snap-8c8e1bb384bd3da4",
+    "snap-4041159865476169",
+    "snap-3281fbd1f36b27ec"
+  ],
+  "space_id": "lexical-v1-512"
+}

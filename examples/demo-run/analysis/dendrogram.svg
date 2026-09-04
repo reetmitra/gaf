@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-label="Ward&#x27;s linkage — 14 responses, 1 clusters">
+<title>Ward&#x27;s linkage — 14 responses, 1 clusters</title>
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#1a202c}.axis{stroke:#a0aec0;stroke-width:1}.grid{stroke:#e2e8f0;stroke-width:1}.link{fill:none;stroke-width:1.4;stroke-linejoin:round}.cut{stroke:#c53030;stroke-width:1.2;stroke-dasharray:5 4;fill:none}.ttl{font-size:14px;font-weight:600}.lbl{font-size:9px;fill:#4a5568}.tick{font-size:10px;fill:#4a5568}.bar{fill:#90cdf4;stroke:#2b6cb0;stroke-width:0.8}.curve{fill:none;stroke:#2f855a;stroke-width:2}.dot{fill:#2f855a}</style>
+<rect x="0" y="0" width="960" height="520" fill="#ffffff"/>
+<text class="ttl" x="60" y="24">Ward&#x27;s linkage — 14 responses, 1 clusters</text>
+<line class="axis" x1="60" y1="472.00" x2="60" y2="44.00"/>
+<line class="grid" x1="60" y1="472.00" x2="936" y2="472.00"/>
+<text class="tick" x="54" y="475.00" text-anchor="end">0.00</text>
+<line class="grid" x1="60" y1="386.40" x2="936" y2="386.40"/>
+<text class="tick" x="54" y="389.40" text-anchor="end">0.68</text>
+<line class="grid" x1="60" y1="300.80" x2="936" y2="300.80"/>
+<text class="tick" x="54" y="303.80" text-anchor="end">1.36</text>
+<line class="grid" x1="60" y1="215.20" x2="936" y2="215.20"/>
+<text class="tick" x="54" y="218.20" text-anchor="end">2.05</text>
+<line class="grid" x1="60" y1="129.60" x2="936" y2="129.60"/>
+<text class="tick" x="54" y="132.60" text-anchor="end">2.73</text>
+<line class="grid" x1="60" y1="44.00" x2="936" y2="44.00"/>
+<text class="tick" x="54" y="47.00" text-anchor="end">3.41</text>
+<polyline class="link" stroke="#2b6cb0" points="153.86,472.00 153.86,294.57 216.43,294.57 216.43,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="91.29,472.00 91.29,294.57 185.14,294.57 185.14,294.57"/>
+<polyline class="link" stroke="#2b6cb0" points="279.00,472.00 279.00,221.08 341.57,221.08 341.57,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="138.21,294.57 138.21,175.11 310.29,175.11 310.29,221.08"/>
+<polyline class="link" stroke="#2b6cb0" points="466.71,472.00 466.71,346.54 529.29,346.54 529.29,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="404.14,472.00 404.14,310.03 498.00,310.03 498.00,346.54"/>
+<polyline class="link" stroke="#2b6cb0" points="591.86,472.00 591.86,294.57 654.43,294.57 654.43,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="717.00,472.00 717.00,346.54 779.57,346.54 779.57,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="842.14,472.00 842.14,294.57 904.71,294.57 904.71,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="748.29,346.54 748.29,205.86 873.43,205.86 873.43,294.57"/>
+<polyline class="link" stroke="#2b6cb0" points="623.14,294.57 623.14,160.45 810.86,160.45 810.86,205.86"/>
+<polyline class="link" stroke="#2b6cb0" points="451.07,310.03 451.07,140.07 717.00,140.07 717.00,160.45"/>
+<polyline class="link" stroke="#2b6cb0" points="224.25,175.11 224.25,44.00 584.04,44.00 584.04,140.07"/>
+<text class="lbl" x="91.29" y="480.00" text-anchor="end" transform="rotate(-90 91.29 480.00)">253</text>
+<text class="lbl" x="153.86" y="480.00" text-anchor="end" transform="rotate(-90 153.86 480.00)">231</text>
+<text class="lbl" x="216.43" y="480.00" text-anchor="end" transform="rotate(-90 216.43 480.00)">239</text>
+<text class="lbl" x="279.00" y="480.00" text-anchor="end" transform="rotate(-90 279.00 480.00)">244</text>
+<text class="lbl" x="341.57" y="480.00" text-anchor="end" transform="rotate(-90 341.57 480.00)">258</text>
+<text class="lbl" x="404.14" y="480.00" text-anchor="end" transform="rotate(-90 404.14 480.00)">234</text>
+<text class="lbl" x="466.71" y="480.00" text-anchor="end" transform="rotate(-90 466.71 480.00)">212</text>
+<text class="lbl" x="529.29" y="480.00" text-anchor="end" transform="rotate(-90 529.29 480.00)">217</text>
+<text class="lbl" x="591.86" y="480.00" text-anchor="end" transform="rotate(-90 591.86 480.00)">207</text>
+<text class="lbl" x="654.43" y="480.00" text-anchor="end" transform="rotate(-90 654.43 480.00)">226</text>
+<text class="lbl" x="717.00" y="480.00" text-anchor="end" transform="rotate(-90 717.00 480.00)">218</text>
+<text class="lbl" x="779.57" y="480.00" text-anchor="end" transform="rotate(-90 779.57 480.00)">221</text>
+<text class="lbl" x="842.14" y="480.00" text-anchor="end" transform="rotate(-90 842.14 480.00)">203</text>
+<text class="lbl" x="904.71" y="480.00" text-anchor="end" transform="rotate(-90 904.71 480.00)">245</text>
+</svg>

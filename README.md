@@ -1,15 +1,66 @@
 # gaf — Grounded AI Futures
 
-A reproducible hybrid human–LLM **grounded-theory coding pipeline** for the research
-project *AI Futures and Analysis*.
+`gaf` codes open-ended survey responses the way a qualitative researcher does, and records
+every step so a methods reviewer can check the work. Respondents were asked to describe one
+specific, vivid scenario for AI in their society by 2050; the pipeline generates codes from
+those responses rather than applying a prior scheme, develops a two-level codebook through
+constant comparison, and returns a binary occurrence matrix, a hierarchical cluster
+analysis over it, a saturation curve, and a dossier of what the checks could and could not
+see. It is **inductive grounded theory**, run as a hybrid human–LLM procedure: two
+mid-tier models from different providers code each response independently, deterministic
+Python checks their work, a frontier model is consulted only where the two disagree in a
+genuinely ambiguous way, and a human decides — once per checkpoint, not once per response —
+how the codebook should be restructured.
 
-> **RQ:** What are the constituent elements of global AI futures?
+> **Research question.** What are the constituent elements of global AI futures?
 
-Input is open-ended survey responses about AI in 2050. Output is a two-level grounded
-codebook, a per-response binary occurrence matrix, a hierarchical cluster analysis of
-that matrix, and a verification dossier a methods reviewer can audit line by line.
+## What the output looks like
 
-## Start here
+These excerpts are from the committed demo run in [`examples/demo-run/`](examples/demo-run/),
+produced by `make demo` over a wholly invented corpus of 14 responses. No real survey
+response appears anywhere in this repository (see [Data](#data)).
+
+Four codes from two families of the demo codebook
+([`codebook.json`](examples/demo-run/codebook.json)), with the number of responses each is
+applied to:
+
+| code | description | responses |
+|---|---|---:|
+| `future-imagined_scenario` | The respondent sketches a specific scenario for the years up to 2050. | 9 |
+| `future-uncertainty` | What AI will do next is treated as genuinely unknown. | 1 |
+| `negative_impacts-job_loss` | Existing categories of paid work disappear as AI replaces human labour. | 3 |
+| `negative_impacts-dependence` | People lose the ability, or the habit, of working without the system. | 3 |
+
+Each code carries its evidence: the verbatim quote, the response id, and the character
+span the quote occupies in the normalised response.
+
+The head of [`analysis/clusters.md`](examples/demo-run/analysis/clusters.md), including
+its warning block (long lines wrapped):
+
+```markdown
+## Ward's hierarchical cluster analysis
+
+14 responses x 11 codes; 1 clusters (derived from the agglomeration schedule).
+
+> **Read this before quoting the cluster count.**
+>
+> - the largest break is at stage 13 of 13, so the Essary rule gives 1 cluster(s); the
+>   data does not support a cluster structure at this sample size — set
+>   AnalysisConfig.n_clusters explicitly if a partition is wanted anyway.
+
+| cluster | n | share | prominent codes (mean >= 0.4) |
+|---:|---:|---:|---|
+| 1 | 14 | 100% | future-imagined_scenario (0.64), adoption-social_change (0.57) |
+```
+
+That warning is the point. The cluster count is the study's headline number, the rule that
+produces it — inherited from Chan (2025) — is not robust at this sample size, and rather
+than patch the rule the implementation applies it literally and says so in the artefact you
+would quote from (ADR-0020). The run report does the same for the check statistics: it
+opens with a CAVEATS section naming which of its own numbers are artefacts of the offline
+stand-in embedder.
+
+## Running it
 
 ```bash
 uv sync --all-groups
@@ -19,28 +70,56 @@ uv sync --all-groups
 make demo
 ```
 
-That codes a synthetic corpus end to end — two coders, every check, the router, the
-store — and writes a run report, a codebook and an HTML explorer to `runs/demo/`. It
-needs **no API key and no network**. Run it twice: the codebook JSON and the
-snapshot-id sequence are byte-identical.
+`make demo` materialises the synthetic corpus, codes it end to end — two coders, every
+check, the router, the store — prints a run report and writes everything to `runs/demo/`.
+**It needs no API key and no network**: the model clients are deterministic mocks and the
+embedder is a lexical fallback. Run it twice and the codebook JSON and the snapshot-id
+sequence are byte-identical, asserted in
+`tests/test_cli.py::test_two_runs_produce_byte_identical_codebook_and_snapshots` rather
+than merely claimed here.
+
+The analysis tail is a separate target, because it is a separate deterministic pass:
 
 ```bash
-make check-all      # ruff, mypy, and the full offline suite
+make analyse       # occurrence matrix, Ward's HCA, saturation -> runs/demo/analysis/
+make check         # every check over the demo codebook; exits 1 iff an ERROR
+make check-all     # ruff, mypy, and the full offline suite
 ```
 
-## Three properties, non-negotiable
+Requires Python 3.12 (pinned in `.python-version`) and [uv](https://docs.astral.sh/uv/).
 
-1. **Offline-first.** The whole pipeline runs with mock model clients and a lexical
-   embedding fallback, producing byte-identical output across runs. Live models are an
-   opt-in flag, never a prerequisite for tests or CI.
-2. **Auditable.** Every artefact is content-addressed and replayable. A finding, a code,
-   a merge, a judge ruling, a dropped quote — each is a row with an id, a timestamp, a
-   snapshot reference and the inputs that produced it. The audit log is append-only and
-   snapshots are immutable, enforced by database triggers rather than by convention.
-3. **Simple in the flow, complex in the substrate.** Complexity may live in
-   infrastructure. It may not live in the control flow.
+## What a run produces
 
-## The whole architecture
+`gaf run` writes the run directory; `gaf report` adds the two rendered artefacts;
+`gaf analyse` adds `analysis/`.
+
+| File | What it holds |
+|---|---|
+| [`codebook.html`](examples/demo-run/codebook.html) | **open this first** — one self-contained page: every code, its family, its description, every quote with response id and span, and the findings attached to it. No script, no network request, no external asset |
+| [`report.txt`](examples/demo-run/report.txt) | the run report: caveats, provenance, the thresholds actually used, coding statistics, the codebook by family, saturation, and a **CHECKS** table of every finding by check and severity |
+| [`codebook.json`](examples/demo-run/codebook.json) | the codebook itself — codes, descriptions, parents, evidence, and the snapshot that admitted each code |
+| [`assignments.json`](examples/demo-run/assignments.json) | one row per (response, code) application, with its span |
+| [`findings.json`](examples/demo-run/findings.json) | every check finding: id, severity, scope, subject, one sentence, and a machine-readable payload |
+| [`stats.json`](examples/demo-run/stats.json) | the run report's numbers, as data |
+| [`corpus.json`](examples/demo-run/corpus.json) | the coded corpus, with the survey question attached to every record |
+| `audit.jsonl` | the append-only audit log for the run |
+| `run.json`, `gaf.sqlite` | the full run artefact, and the blackboard it was built in |
+
+Under [`analysis/`](examples/demo-run/analysis/): `clusters.md` / `clusters.json`
+(cluster means and the agglomeration schedule), `saturation.md` / `saturation.json` (new
+codes per batch), `occurrence_matrix.json`, and `dendrogram.svg` / `saturation.svg`.
+
+### The commands
+
+One CLI, seven commands: `gaf ingest | run | check | analyse | validate | report |
+checkpoint`. `ingest` reads a response workbook into the canonical corpus JSON, `run` is
+the fast loop, `check` audits an artefact and is the only command that turns an ERROR into
+a non-zero exit, `analyse` is the deterministic tail, `validate` is agreement against a
+human golden set plus the lexical vocabulary check, `report` renders the report and the
+explorer, and `checkpoint` opens the human gate. Usage, flags and exit codes:
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+
+## Architecture
 
 ```
 FAST LOOP — per response (cheap, parallel, stateless)
@@ -72,6 +151,45 @@ VALIDATION (deterministic, no models)
 Two loops. Three LLM roles — Coder, Judge, Refactorer. One store. One deterministic
 tail. **Anything in that diagram without a model name is plain Python.**
 
+**Why the human sits at the codebook-refactor level.** Vaccaro, Almaatouq and Malone
+(2024) meta-analyse 106 effect sizes and find that human–AI combinations average *worse*
+than the better of the two alone (Hedges' g = −0.23, 95% CI −0.39 to −0.07), with the
+losses concentrated in decision tasks and the gains in creation tasks. Item-by-item human
+verification of each machine coding is exactly the decision-task overlay that finding
+warns against, so this pipeline does not do it. The gate sits instead where the work is
+generative and the division of labour is fixed in advance — the machine proposes an edit
+script over the whole codebook, the human accepts, rejects or edits each operation — which
+is less labour per checkpoint and more leverage per decision
+([`docs/METHODS.md`](docs/METHODS.md) §2, ADR-0004).
+
+## Project layout
+
+```
+Makefile              demo, check, analyse, provenance, scrub, and the lint/type/test gate
+pyproject.toml        core deps only; provider SDKs are optional extras
+.env.example          the three keys a live run would use; never needed offline
+CONTRIBUTING.md       how to work on this repository
+docs/                 methods, validation dossier, runbook, coding rules, ADR log
+examples/demo-run/    a committed offline run — read it without installing anything
+data/                 gitignored except data/synthetic/; real corpora live outside
+tests/                the offline suite, its fixtures, and the golden-set regression
+gaf/
+  models.py           the shared vocabulary — frozen dataclasses
+  config.py           every threshold, the coding rules, the model registry
+  textnorm.py         the single normalisation function every span is defined against
+  ids.py              content hashing and deterministic id minting
+  store/              the blackboard: SQLite schema, snapshots, append-only audit log
+  ingest/             workbook readers, corpus assembly, question attachment
+  llm/                client protocol, three providers, deterministic mocks, disk cache
+  embed/              the embedding service and the matcher (cosine, Hungarian, routing)
+  agents/             the three LLM roles and their versioned prompt templates
+  checks/             S1-S6, M1-M4, codebook health, threshold calibration
+  pipeline/           prep, the fast loop, the router, the slow loop
+  analysis/           occurrence matrix, Ward's HCA, agreement, lexical validation
+  report/             the run report and the HTML codebook explorer
+  cli/                one module per command
+```
+
 ## Documentation
 
 | Document | What it is for |
@@ -82,37 +200,56 @@ tail. **Anything in that diagram without a model name is plain Python.**
 | [`docs/CODING_RULES.md`](docs/CODING_RULES.md) | the PI's rules, each with the verbatim quotation behind it |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the design law, and where the complexity actually lives |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | the ADR log — every non-obvious choice, including the ones that turned out badly |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | how to set up, test and change this repository |
+
+## Status and limitations
+
+The pipeline is complete and its offline path is exercised by the test suite and by CI on
+every push. What it has not yet done is meet real inputs.
+
+- **The thresholds are uncalibrated.** τ_high = 0.80, τ_low = 0.45 and τ_fit = 0.30 were
+  set against a stand-in embedder and have never been checked against human judgment. The
+  investigator's hand-codings have not arrived; the calibration module is built, produces
+  a precision/recall curve and a recommendation the day they do, and reports rather than
+  silently changing a constant. Until then the agreement figures are the harness's
+  self-test, not findings about the study ([`docs/VALIDATION.md`](docs/VALIDATION.md)).
+- **Offline similarity statistics describe the fallback embedder, not the codebook.** The
+  code–evidence fit check (M3) does not discriminate offline — the median fit is 0.000 —
+  so its warnings in a `make demo` run are artefacts. The run report says so where the
+  counts appear. See ADR-0019 and ADR-0022.
+- **Read the agglomeration schedule before quoting a cluster count.** The inherited rule
+  assumes the largest break falls near the root of the tree; on a small sample it may not,
+  and the rule then returns a degenerate answer. It was deliberately left unpatched, and
+  the artefact carries the warning. See ADR-0020.
+- **The live model path has never been run.** Provider SDKs are optional extras that no
+  test and no CI job installs, `--live` is opt-in, and every number here comes from an
+  offline run. Read the cost note in [`docs/RUNBOOK.md`](docs/RUNBOOK.md) first: offline,
+  M3 accounts for the large majority of frontier calls, and whether a real embedding model
+  changes that is an open empirical question (ADR-0022).
 
 ## Data
 
-Real corpora live **outside** the repository. `data/` is gitignored except
+Real corpora live **outside** this repository and stay there: `data/` is gitignored except
 `data/synthetic/`, every spreadsheet and document extension is excluded repository-wide,
-and the test suite builds its own workbooks in-process and codes a wholly invented
-corpus on response ids in the 200s, which cannot collide with a real sample.
+and the only corpus committed here is the invented one in `tests/fixtures/corpus.py` that
+`make demo` codes. The one deliberate exception is
+[`docs/CODING_RULES.md`](docs/CODING_RULES.md), which reproduces the principal
+investigator's own negative examples — his working document, kept at his explicit request,
+because the coding rules are only defensible with the quotation attached. Two controls sit
+on top of the `.gitignore`: `make provenance` scans every tracked file for respondent text
+and fails if any file but that one shares a 30-character run with a real response, and
+`make scrub` deletes `runs/` and `.gaf_cache/` — which hold the coded corpus verbatim, and
+which no `.gitignore` rule protects from a zip or a directory copy — before this directory
+is shared (ADR-0028).
 
-**One deliberate exception.** `docs/CODING_RULES.md` reproduces the principal
-investigator's own negative examples from his `GPTPrompts.docx`, and those quote
-respondents by id. They are kept at his explicit request: they are his working
-document, and the coding rules are only defensible with the quotation attached. They
-appear nowhere else — in particular the coder prompt, which is sent to model providers,
-carries paraphrases instead.
+An earlier version of this repository claimed more than that and was wrong: fixture text
+drawn from real responses had been committed, and a check matching file extensions could
+not see it — see ADR-0024 for what happened and what now tests the actual property.
 
-That distinction exists because an earlier version of this repository made an
-unconditional claim here that was false: fixture text drawn from real responses had been
-committed, and a check that matched *file extensions* could not see it. See ADR-0024 for
-what happened and what now tests the actual property.
+## For the paper
 
-## Three things a newcomer should know before trusting a number
-
-- **The thresholds are uncalibrated.** τ_high = 0.80, τ_low = 0.45 and τ_fit = 0.30 were
-  set against a stand-in embedder and have never been checked against human judgment.
-  The calibration module is built and produces a full curve the day the PI's
-  hand-codings arrive.
-- **Offline similarity statistics describe the fallback embedder, not the codebook.**
-  In particular the code–evidence fit check does not discriminate offline, so its
-  warnings in a `make demo` run are artefacts. The run report says so where the counts
-  appear. See ADR-0019 and ADR-0022.
-- **Read the agglomeration schedule before quoting a cluster count.** The inherited rule
-  assumes the largest break falls near the root of the tree; on a small sample it may
-  not, and the rule then returns a degenerate answer. It was deliberately left
-  unpatched. See ADR-0020.
+[`docs/METHODS.md`](docs/METHODS.md) is written to be quoted: methods-appendix prose on the
+analytic approach, the pipeline, reproducibility, the thresholds and the limitations, with
+the numbers to be replaced by those of the run being reported.
+[`docs/VALIDATION.md`](docs/VALIDATION.md) is the dossier a methods reviewer audits
+against, including an explicit section on what the checks cannot see.

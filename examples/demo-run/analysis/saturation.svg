@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380" role="img" aria-label="Theoretical saturation">
+<title>Theoretical saturation</title>
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#1a202c}.axis{stroke:#a0aec0;stroke-width:1}.grid{stroke:#e2e8f0;stroke-width:1}.link{fill:none;stroke-width:1.4;stroke-linejoin:round}.cut{stroke:#c53030;stroke-width:1.2;stroke-dasharray:5 4;fill:none}.ttl{font-size:14px;font-weight:600}.lbl{font-size:9px;fill:#4a5568}.tick{font-size:10px;fill:#4a5568}.bar{fill:#90cdf4;stroke:#2b6cb0;stroke-width:0.8}.curve{fill:none;stroke:#2f855a;stroke-width:2}.dot{fill:#2f855a}</style>
+<rect x="0" y="0" width="760" height="380" fill="#ffffff"/>
+<text class="ttl" x="56" y="24">Theoretical saturation</text>
+<line class="grid" x1="56" y1="324.00" x2="736" y2="324.00"/>
+<text class="tick" x="50" y="327.00" text-anchor="end">0</text>
+<line class="grid" x1="56" y1="254.00" x2="736" y2="254.00"/>
+<text class="tick" x="50" y="257.00" text-anchor="end">4</text>
+<line class="grid" x1="56" y1="184.00" x2="736" y2="184.00"/>
+<text class="tick" x="50" y="187.00" text-anchor="end">7</text>
+<line class="grid" x1="56" y1="114.00" x2="736" y2="114.00"/>
+<text class="tick" x="50" y="117.00" text-anchor="end">10</text>
+<line class="grid" x1="56" y1="44.00" x2="736" y2="44.00"/>
+<text class="tick" x="50" y="47.00" text-anchor="end">14</text>
+<line class="axis" x1="56" y1="324.00" x2="736" y2="324.00"/>
+<rect class="bar" x="132.50" y="84.00" width="187.00" height="240.00"/>
+<text class="lbl" x="226.00" y="338.00" text-anchor="middle">10</text>
+<rect class="bar" x="472.50" y="284.00" width="187.00" height="40.00"/>
+<text class="lbl" x="566.00" y="338.00" text-anchor="middle">14</text>
+<polyline class="curve" points="226.00,84.00 566.00,44.00"/>
+<circle class="dot" cx="226.00" cy="84.00" r="3"/>
+<circle class="dot" cx="566.00" cy="44.00" r="3"/>
+<text class="tick" x="56" y="366">responses coded (batch size 10) — bars: new codes; line: cumulative unique codes</text>
+</svg>

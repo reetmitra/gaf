@@ -1,0 +1,307 @@
+[
+  {
+    "code": "adoption-social_change",
+    "response_id": 203,
+    "segment": "Clerical posts in the district office vanish quietly"
+  },
+  {
+    "code": "applications-data_driven_systems",
+    "response_id": 203,
+    "segment": "no retraining scheme arrives."
+  },
+  {
+    "code": "applications-healthcare",
+    "response_id": 203,
+    "segment": "Rural clinics get diagnostic support"
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 203,
+    "segment": "the nearest specialist stops being four hours away."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 203,
+    "segment": "Clerical posts in the district office vanish quietly"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 207,
+    "segment": "Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in."
+  },
+  {
+    "code": "applications-education",
+    "response_id": 207,
+    "segment": "Maintaining the systems becomes the new entry point, but it demands qualifications most school leavers in my district never had the chance to earn."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 207,
+    "segment": "Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in."
+  },
+  {
+    "code": "negative_impacts-job_loss",
+    "response_id": 207,
+    "segment": "My worry is the ladder disappearing."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 212,
+    "segment": "They pick the music and the news."
+  },
+  {
+    "code": "applications-industry_and_transport",
+    "response_id": 212,
+    "segment": "Picture one municipal system balancing traffic lights, reservoir levels and the power grid, adjusting itself hourly from whatever the sensors report."
+  },
+  {
+    "code": "applications-personalisation",
+    "response_id": 212,
+    "segment": "Recommendation engines already shape my evenings."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 212,
+    "segment": "They pick the music and the news."
+  },
+  {
+    "code": "positive_impacts-access",
+    "response_id": 212,
+    "segment": "By 2050 that reach will be wider still."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 217,
+    "segment": "Rainfall models will set release schedules for the reservoirs"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 217,
+    "segment": "the engineers will spend their days arguing with the forecast rather than reading gauges"
+  },
+  {
+    "code": "applications-industry_and_transport",
+    "response_id": 217,
+    "segment": "Municipal water boards will lean on forecasting engines by then."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 217,
+    "segment": "Rainfall models will set release schedules for the reservoirs"
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 217,
+    "segment": "the engineers will spend their days arguing with the forecast rather than reading gauges"
+  },
+  {
+    "code": "positive_impacts-problem_solving",
+    "response_id": 217,
+    "segment": "strikes me as a real improvement in how that work is done."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 218,
+    "segment": "a district that never digitised its land registry gets worse answers than one that did"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 218,
+    "segment": "the output looks equally confident either way"
+  },
+  {
+    "code": "applications-data_driven_systems",
+    "response_id": 218,
+    "segment": "is why I keep saying the record-keeping matters more than the algorithm"
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 218,
+    "segment": "a district that never digitised its land registry gets worse answers than one that did"
+  },
+  {
+    "code": "negative_impacts-dependence",
+    "response_id": 218,
+    "segment": "the thing people forget is that these systems only know what we bothered to record"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 221,
+    "segment": "By 2050 I expect an assistant that drafts my correspondence"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 221,
+    "segment": "books the appointments"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 221,
+    "segment": "tells me what was decided in a meeting I missed."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 221,
+    "segment": "Whether that leaves me freer"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 221,
+    "segment": "nobody is asking that yet."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 221,
+    "segment": "By 2050 I expect an assistant that drafts my correspondence"
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 221,
+    "segment": "books the appointments"
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 221,
+    "segment": "tells me what was decided in a meeting I missed."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 221,
+    "segment": "Whether that leaves me freer"
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 221,
+    "segment": "nobody is asking that yet."
+  },
+  {
+    "code": "negative_impacts-dependence",
+    "response_id": 221,
+    "segment": "merely busier depends on who sets the targets"
+  },
+  {
+    "code": "applications-education",
+    "response_id": 226,
+    "segment": "Teaching changes most, I think."
+  },
+  {
+    "code": "applications-education",
+    "response_id": 226,
+    "segment": "A tutor that never tires, adjusting to one child's pace, would reach pupils our classrooms lose by year three."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 226,
+    "segment": "The risk is that we then stop funding the teachers who notice why a child stopped trying."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 234,
+    "segment": "Freight is where I notice it first."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 234,
+    "segment": "The port employs fewer people and moves twice the tonnage."
+  },
+  {
+    "code": "applications-industry_and_transport",
+    "response_id": 234,
+    "segment": "Containers routed by a system that knows the weather three ports ahead, drivers dispatched to the yard the moment a lorry is free."
+  },
+  {
+    "code": "applications-automation",
+    "response_id": 239,
+    "segment": "Packing and sorting went to machines in my mother's factory years ago."
+  },
+  {
+    "code": "applications-automation",
+    "response_id": 239,
+    "segment": "By 2050 the whole line runs without a shift supervisor."
+  },
+  {
+    "code": "negative_impacts-job_loss",
+    "response_id": 239,
+    "segment": "Those households had one wage between four people, and I have not heard a single proposal for what replaces it."
+  },
+  {
+    "code": "applications-automation",
+    "response_id": 244,
+    "segment": "People say \"the machines will decide for us\" and I don't accept that."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 244,
+    "segment": "A tool has an owner, and the question is who."
+  },
+  {
+    "code": "positive_impacts-problem_solving",
+    "response_id": 244,
+    "segment": "I am hopeful - these tools will help us with problems too large to hold in one head, like drought planning and drug discovery."
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 245,
+    "segment": "Everything arrives pre-sorted for you"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 245,
+    "segment": "the course you are advised to take"
+  },
+  {
+    "code": "adoption-social_change",
+    "response_id": 245,
+    "segment": "then you discover how narrow the door has become."
+  },
+  {
+    "code": "applications-healthcare",
+    "response_id": 245,
+    "segment": "the treatment you are offered."
+  },
+  {
+    "code": "future-imagined_scenario",
+    "response_id": 245,
+    "segment": "Everything arrives pre-sorted for you"
+  },
+  {
+    "code": "positive_impacts-quality_of_life",
+    "response_id": 245,
+    "segment": "It is convenient right up to the moment you want something the profile did not predict"
+  },
+  {
+    "code": "negative_impacts-dependence",
+    "response_id": 253,
+    "segment": "We will forget how to do it ourselves."
+  },
+  {
+    "code": "negative_impacts-dependence",
+    "response_id": 253,
+    "segment": "If the scheduling system is down for a week, nobody in the depot will remember how the rota used to be built."
+  },
+  {
+    "code": "negative_impacts-job_loss",
+    "response_id": 253,
+    "segment": "That dependence worries me more than any job losses."
+  },
+  {
+    "code": "applications-data_driven_systems",
+    "response_id": 258,
+    "segment": "Whole categories of work nobody has named yet will exist by then, the way nobody could have described a data-centre technician in 1975."
+  },
+  {
+    "code": "future-uncertainty",
+    "response_id": 258,
+    "segment": "It is the twenty years of transition that will be ugly, and averages hide exactly that."
+  },
+  {
+    "code": "positive_impacts-problem_solving",
+    "response_id": 258,
+    "segment": "Quality of life improves on average."
+  },
+  {
+    "code": "positive_impacts-quality_of_life",
+    "response_id": 258,
+    "segment": "Quality of life improves on average."
+  }
+]

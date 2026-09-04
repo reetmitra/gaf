@@ -1,0 +1,4226 @@
+[
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "future-imagined_scenario",
+      "name_b": "future-imagined_scenario",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'future-imagined_scenario' and 'future-imagined_scenario' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-data_driven_systems",
+      "name_b": "applications-data_driven_systems",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-data_driven_systems' and 'applications-data_driven_systems' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems<->applications-data_driven_systems"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-healthcare",
+      "name_b": "applications-healthcare",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-healthcare' and 'applications-healthcare' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-healthcare<->applications-healthcare"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "disputed",
+      "coder": "coder_b",
+      "marker": "coder_unmatched",
+      "name": "adoption-social_change",
+      "side": "b",
+      "space_id": "lexical-v1-512"
+    },
+    "message": "Coder B proposed 'adoption-social_change' and the other coder proposed nothing that could be assigned to it.",
+    "scope": "pair",
+    "severity": "WARN",
+    "subject": "(unmatched)<->adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "the nearest specialist stops being four hours away.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 203,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Clerical posts in the district office vanish quietly",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 203,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "no retraining scheme arrives.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 203,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-data_driven_systems' to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Rural clinics get diagnostic support",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 203,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-healthcare' to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Clerical posts in the district office vanish quietly",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 203,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "",
+      "best_name": "",
+      "best_score": 0.0,
+      "marker": "route_create",
+      "neighbours": [],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: empty codebook, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "",
+      "best_name": "",
+      "best_score": 0.0,
+      "marker": "route_create",
+      "neighbours": [],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: empty codebook, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "",
+      "best_name": "",
+      "best_score": 0.0,
+      "marker": "route_create",
+      "neighbours": [],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: empty codebook, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "",
+      "best_name": "",
+      "best_score": 0.0,
+      "marker": "route_create",
+      "neighbours": [],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: empty codebook, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "S2",
+    "data": {
+      "marker": "quote_unverified",
+      "quote": "in 2050 every household will be issued a personal weather licence",
+      "response_id": 207,
+      "score": 0.367,
+      "threshold": 0.85
+    },
+    "message": "Quote could not be located in the response and has been dropped from the candidate's evidence.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-superintelligence"
+  },
+  {
+    "check_id": "S2",
+    "data": {
+      "marker": "no_verified_evidence",
+      "quotes": [
+        "in 2050 every household will be issued a personal weather licence"
+      ],
+      "response_id": 207
+    },
+    "message": "No quote could be verified against the response, so the candidate has no evidence left to stand on.",
+    "scope": "candidate",
+    "severity": "ERROR",
+    "subject": "future-superintelligence"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-education",
+      "name_b": "applications-education",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-education' and 'applications-education' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-education<->applications-education"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "disputed",
+      "marker": "coders_dispute",
+      "name_a": "future-imagined_scenario",
+      "name_b": "adoption-social_change",
+      "score": 0.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders dispute: 'future-imagined_scenario' and 'adoption-social_change' match at only cosine 0.000 (< tau_low 0.45).",
+    "scope": "pair",
+    "severity": "WARN",
+    "subject": "future-imagined_scenario<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "negative_impacts-job_loss",
+      "name_b": "negative_impacts-job_loss",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'negative_impacts-job_loss' and 'negative_impacts-job_loss' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss<->negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Maintaining the systems becomes the new entry point, but it demands qualifications most school leavers in my district never had the chance to earn.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 207,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-education' to its quote in response 207 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-education"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 207,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 207 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 207,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 207 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.160128,
+      "marker": "fit_ok",
+      "quote": "My worry is the ladder disappearing.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 207,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-job_loss' to its quote in response 207 is 0.160 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 0.33541,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.235702
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.198158
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'adoption-social_change' at 0.335, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-education"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-250a1e9e823839be",
+      "best_name": "applications-healthcare",
+      "best_score": 0.09245,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.09245
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.077724
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'applications-healthcare' at 0.092, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-industry_and_transport",
+      "name_b": "applications-industry_and_transport",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-industry_and_transport' and 'applications-industry_and_transport' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport<->applications-industry_and_transport"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-personalisation",
+      "name_b": "applications-personalisation",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-personalisation' and 'applications-personalisation' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-personalisation<->applications-personalisation"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "disputed",
+      "marker": "coders_dispute",
+      "name_a": "future-imagined_scenario",
+      "name_b": "adoption-social_change",
+      "score": 0.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders dispute: 'future-imagined_scenario' and 'adoption-social_change' match at only cosine 0.000 (< tau_low 0.45).",
+    "scope": "pair",
+    "severity": "WARN",
+    "subject": "future-imagined_scenario<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "positive_impacts-access",
+      "name_b": "positive_impacts-access",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'positive_impacts-access' and 'positive_impacts-access' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "positive_impacts-access<->positive_impacts-access"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Picture one municipal system balancing traffic lights, reservoir levels and the power grid, adjusting itself hourly from whatever the sensors report.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 212,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-industry_and_transport' to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Recommendation engines already shape my evenings.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 212,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-personalisation' to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-personalisation"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "They pick the music and the news.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 212,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "They pick the music and the news.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 212,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.150756,
+      "marker": "fit_ok",
+      "quote": "By 2050 that reach will be wider still.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 212,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'positive_impacts-access' to its quote in response 212 is 0.151 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-access"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-2b8757c069db2d06",
+      "best_name": "applications-education",
+      "best_score": 0.206429,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.206429
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.194623
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.161936
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.081811
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'applications-education' at 0.206, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-fd80110313bb11f2",
+      "best_name": "applications-data_driven_systems",
+      "best_score": 0.370619,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.370619
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.1066
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.100504
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'applications-data_driven_systems' at 0.371, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-personalisation"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-250a1e9e823839be",
+      "best_name": "applications-healthcare",
+      "best_score": 0.201008,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.201008
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.167248
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.1066
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'applications-healthcare' at 0.201, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-access"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "adoption-social_change",
+      "name_b": "adoption-social_change",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'adoption-social_change' and 'adoption-social_change' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "adoption-social_change<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-industry_and_transport",
+      "name_b": "applications-industry_and_transport",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-industry_and_transport' and 'applications-industry_and_transport' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport<->applications-industry_and_transport"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "future-imagined_scenario",
+      "name_b": "future-imagined_scenario",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'future-imagined_scenario' and 'future-imagined_scenario' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "positive_impacts-problem_solving",
+      "name_b": "positive_impacts-problem_solving",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'positive_impacts-problem_solving' and 'positive_impacts-problem_solving' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving<->positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Rainfall models will set release schedules for the reservoirs",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 217,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "the engineers will spend their days arguing with the forecast rather than reading gauges",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 217,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Municipal water boards will lean on forecasting engines by then.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 217,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-industry_and_transport' to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Rainfall models will set release schedules for the reservoirs",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 217,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "the engineers will spend their days arguing with the forecast rather than reading gauges",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 217,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "strikes me as a real improvement in how that work is done.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 217,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'positive_impacts-problem_solving' to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-8688cf35c2ec128a",
+      "best_name": "applications-industry_and_transport",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.206429
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.194623
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.161936
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.088022
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.088022
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.081811
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-industry_and_transport' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-46697fdf41a8a235",
+      "best_name": "positive_impacts-access",
+      "best_score": 0.442244,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.442244
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.203402
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.086429
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.081486
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.077305
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.074158
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.071366
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'positive_impacts-access' at 0.442, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "adoption-social_change",
+      "name_b": "adoption-social_change",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'adoption-social_change' and 'adoption-social_change' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "adoption-social_change<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-data_driven_systems",
+      "name_b": "applications-data_driven_systems",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-data_driven_systems' and 'applications-data_driven_systems' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems<->applications-data_driven_systems"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "negative_impacts-dependence",
+      "name_b": "negative_impacts-dependence",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'negative_impacts-dependence' and 'negative_impacts-dependence' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence<->negative_impacts-dependence"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "disputed",
+      "coder": "coder_b",
+      "marker": "coder_unmatched",
+      "name": "future-imagined_scenario",
+      "side": "b",
+      "space_id": "lexical-v1-512"
+    },
+    "message": "Coder B proposed 'future-imagined_scenario' and the other coder proposed nothing that could be assigned to it.",
+    "scope": "pair",
+    "severity": "WARN",
+    "subject": "(unmatched)<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "a district that never digitised its land registry gets worse answers than one that did",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 218,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 218 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.129099,
+      "marker": "fit_ok",
+      "quote": "the output looks equally confident either way",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 218,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 218 is 0.129 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "is why I keep saying the record-keeping matters more than the algorithm",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 218,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-data_driven_systems' to its quote in response 218 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.235702,
+      "marker": "fit_ok",
+      "quote": "the thing people forget is that these systems only know what we bothered to record",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 218,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-dependence' to its quote in response 218 is 0.236 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "a district that never digitised its land registry gets worse answers than one that did",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 218,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 218 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.077305
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-fd80110313bb11f2",
+      "best_name": "applications-data_driven_systems",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.370619
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.198158
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.093412
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.081811
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.077724
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-data_driven_systems' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-36970a56237694b9",
+      "best_name": "negative_impacts-job_loss",
+      "best_score": 0.27735,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.27735
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.244459
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.201008
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.158161
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.111111
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'negative_impacts-job_loss' at 0.277, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.074158
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "future-imagined_scenario",
+      "name_b": "future-imagined_scenario",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'future-imagined_scenario' and 'future-imagined_scenario' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "adoption-social_change",
+      "name_b": "adoption-social_change",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'adoption-social_change' and 'adoption-social_change' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "adoption-social_change<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "negative_impacts-dependence",
+      "name_b": "negative_impacts-dependence",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'negative_impacts-dependence' and 'negative_impacts-dependence' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence<->negative_impacts-dependence"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.135664,
+      "marker": "fit_ok",
+      "quote": "By 2050 I expect an assistant that drafts my correspondence",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 221 is 0.136 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "books the appointments",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "tells me what was decided in a meeting I missed.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Whether that leaves me freer",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "nobody is asking that yet.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.141421,
+      "marker": "fit_ok",
+      "quote": "By 2050 I expect an assistant that drafts my correspondence",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 221 is 0.141 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "books the appointments",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "tells me what was decided in a meeting I missed.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Whether that leaves me freer",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "nobody is asking that yet.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.136083,
+      "marker": "fit_ok",
+      "quote": "merely busier depends on who sets the targets",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 221,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-dependence' to its quote in response 221 is 0.136 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.074158
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.077305
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-cae8afe7b151eece",
+      "best_name": "negative_impacts-dependence",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.27735
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.244459
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.201008
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.158161
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.111111
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'negative_impacts-dependence' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-education",
+      "name_b": "applications-education",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-education' and 'applications-education' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-education<->applications-education"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "future-imagined_scenario",
+      "name_b": "future-imagined_scenario",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'future-imagined_scenario' and 'future-imagined_scenario' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": false,
+      "fail_safe": false,
+      "fit": 0.408248,
+      "marker": "fit_ok",
+      "quote": "Teaching changes most, I think.",
+      "reasoning": "",
+      "response_id": 226,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-education' to its quote in response 226 is 0.408 (>= tau_fit 0.30).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-education"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.098058,
+      "marker": "fit_ok",
+      "quote": "A tutor that never tires, adjusting to one child's pace, would reach pupils our classrooms lose by year three.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 226,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-education' to its quote in response 226 is 0.098 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-education"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "The risk is that we then stop funding the teachers who notice why a child stopped trying.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 226,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 226 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-2b8757c069db2d06",
+      "best_name": "applications-education",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.235702
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.206429
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.198158
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.1066
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.1066
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.098058
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-education' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-education"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.074158
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-healthcare",
+      "name_b": "applications-healthcare",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-healthcare' and 'applications-healthcare' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-healthcare<->applications-healthcare"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "positive_impacts-quality_of_life",
+      "name_b": "positive_impacts-quality_of_life",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'positive_impacts-quality_of_life' and 'positive_impacts-quality_of_life' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "positive_impacts-quality_of_life<->positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "quote_removed_unnecessary",
+      "quote": "Elderly relatives living alone will have something watching for a fall and calling a doctor unprompted.",
+      "reasoning": "the sentinel marks this segment as one the code did not have to be applied to",
+      "response_id": 231,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "UNNECESSARY"
+    },
+    "message": "Judge ruled UNNECESSARY on 'applications-healthcare' in response 231 (fit 0.000 < tau_fit 0.30): the code did not have to be applied here, so the quote is removed from this candidate's evidence.",
+    "scope": "candidate",
+    "severity": "WARN",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "quote_removed_unnecessary",
+      "quote": "MOCKFIT_UNNECESSARY It will track the medicine cabinet and nag them about the tablets they skip.",
+      "reasoning": "the sentinel marks this segment as one the code did not have to be applied to",
+      "response_id": 231,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "UNNECESSARY"
+    },
+    "message": "Judge ruled UNNECESSARY on 'applications-healthcare' in response 231 (fit 0.000 < tau_fit 0.30): the code did not have to be applied here, so the quote is removed from this candidate's evidence.",
+    "scope": "candidate",
+    "severity": "WARN",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "marker": "candidate_dropped_no_evidence",
+      "removed_quotes": [
+        "Elderly relatives living alone will have something watching for a fall and calling a doctor unprompted.",
+        "MOCKFIT_UNNECESSARY It will track the medicine cabinet and nag them about the tablets they skip."
+      ],
+      "space_id": "lexical-v1-512"
+    },
+    "message": "Candidate 'applications-healthcare' is dropped: every verified quote was ruled UNNECESSARY, so nothing in the corpus supports it any longer.",
+    "scope": "candidate",
+    "severity": "ERROR",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.175142,
+      "marker": "quote_removed_unnecessary",
+      "quote": "My grandmother would have hated it and would have been safer for it.",
+      "reasoning": "the sentinel marks this segment as one the code did not have to be applied to",
+      "response_id": 231,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "UNNECESSARY"
+    },
+    "message": "Judge ruled UNNECESSARY on 'positive_impacts-quality_of_life' in response 231 (fit 0.175 < tau_fit 0.30): the code did not have to be applied here, so the quote is removed from this candidate's evidence.",
+    "scope": "candidate",
+    "severity": "WARN",
+    "subject": "positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "marker": "candidate_dropped_no_evidence",
+      "removed_quotes": [
+        "My grandmother would have hated it and would have been safer for it."
+      ],
+      "space_id": "lexical-v1-512"
+    },
+    "message": "Candidate 'positive_impacts-quality_of_life' is dropped: every verified quote was ruled UNNECESSARY, so nothing in the corpus supports it any longer.",
+    "scope": "candidate",
+    "severity": "ERROR",
+    "subject": "positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "adoption-social_change",
+      "name_b": "adoption-social_change",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'adoption-social_change' and 'adoption-social_change' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "adoption-social_change<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-industry_and_transport",
+      "name_b": "applications-industry_and_transport",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-industry_and_transport' and 'applications-industry_and_transport' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport<->applications-industry_and_transport"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Freight is where I notice it first.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 234,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 234 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "The port employs fewer people and moves twice the tonnage.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 234,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 234 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Containers routed by a system that knows the weather three ports ahead, drivers dispatched to the yard the moment a lorry is free.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 234,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-industry_and_transport' to its quote in response 234 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.077305
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-8688cf35c2ec128a",
+      "best_name": "applications-industry_and_transport",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.206429
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.194623
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.161936
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.088022
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.088022
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.081811
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-industry_and_transport' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-industry_and_transport"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-automation",
+      "name_b": "applications-automation",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-automation' and 'applications-automation' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-automation<->applications-automation"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "negative_impacts-job_loss",
+      "name_b": "negative_impacts-job_loss",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'negative_impacts-job_loss' and 'negative_impacts-job_loss' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss<->negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.105409,
+      "marker": "fit_ok",
+      "quote": "Packing and sorting went to machines in my mother's factory years ago.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 239,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-automation' to its quote in response 239 is 0.105 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-automation"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "By 2050 the whole line runs without a shift supervisor.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 239,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-automation' to its quote in response 239 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-automation"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.087706,
+      "marker": "fit_ok",
+      "quote": "Those households had one wage between four people, and I have not heard a single proposal for what replaces it.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 239,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-job_loss' to its quote in response 239 is 0.088 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-cae8afe7b151eece",
+      "best_name": "negative_impacts-dependence",
+      "best_score": 0.210819,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.210819
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.177238
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.111803
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'negative_impacts-dependence' at 0.211, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-automation"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-36970a56237694b9",
+      "best_name": "negative_impacts-job_loss",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.27735
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.203402
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.167248
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.161936
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.098058
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.09245
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.087706
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'negative_impacts-job_loss' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-automation",
+      "name_b": "applications-automation",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-automation' and 'applications-automation' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-automation<->applications-automation"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "future-imagined_scenario",
+      "name_b": "future-imagined_scenario",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'future-imagined_scenario' and 'future-imagined_scenario' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "positive_impacts-problem_solving",
+      "name_b": "positive_impacts-problem_solving",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'positive_impacts-problem_solving' and 'positive_impacts-problem_solving' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving<->positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.239046,
+      "marker": "fit_ok",
+      "quote": "People say \"the machines will decide for us\" and I don't accept that.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 244,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-automation' to its quote in response 244 is 0.239 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-automation"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "A tool has an owner, and the question is who.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 244,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 244 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.114797,
+      "marker": "fit_ok",
+      "quote": "I am hopeful - these tools will help us with problems too large to hold in one head, like drought planning and drug discovery.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 244,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'positive_impacts-problem_solving' to its quote in response 244 is 0.115 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-38b20c3776316706",
+      "best_name": "applications-automation",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.210819
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.177238
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.111803
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-automation' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-automation"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.074158
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-501aa6af5eefaa00",
+      "best_name": "positive_impacts-problem_solving",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.442244
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.244459
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.203402
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.086429
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.081486
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.077305
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.077305
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'positive_impacts-problem_solving' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "adoption-social_change",
+      "name_b": "adoption-social_change",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'adoption-social_change' and 'adoption-social_change' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "adoption-social_change<->adoption-social_change"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-healthcare",
+      "name_b": "applications-healthcare",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-healthcare' and 'applications-healthcare' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-healthcare<->applications-healthcare"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "positive_impacts-quality_of_life",
+      "name_b": "positive_impacts-quality_of_life",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'positive_impacts-quality_of_life' and 'positive_impacts-quality_of_life' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "positive_impacts-quality_of_life<->positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "disputed",
+      "coder": "coder_b",
+      "marker": "coder_unmatched",
+      "name": "future-imagined_scenario",
+      "side": "b",
+      "space_id": "lexical-v1-512"
+    },
+    "message": "Coder B proposed 'future-imagined_scenario' and the other coder proposed nothing that could be assigned to it.",
+    "scope": "pair",
+    "severity": "WARN",
+    "subject": "(unmatched)<->future-imagined_scenario"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Everything arrives pre-sorted for you",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 245,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "the course you are advised to take",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 245,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.141421,
+      "marker": "fit_ok",
+      "quote": "then you discover how narrow the door has become.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 245,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'adoption-social_change' to its quote in response 245 is 0.141 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.235702,
+      "marker": "fit_ok",
+      "quote": "the treatment you are offered.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 245,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-healthcare' to its quote in response 245 is 0.236 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "It is convenient right up to the moment you want something the profile did not predict",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 245,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'positive_impacts-quality_of_life' to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Everything arrives pre-sorted for you",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 245,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-imagined_scenario' to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-4ba5131c9424da17",
+      "best_name": "adoption-social_change",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.33541
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.095346
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.092318
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.087706
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.077305
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'adoption-social_change' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "adoption-social_change"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-250a1e9e823839be",
+      "best_name": "applications-healthcare",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.235702
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.201008
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.194623
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.111111
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.105409
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.100504
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-healthcare' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-healthcare"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-501aa6af5eefaa00",
+      "best_name": "positive_impacts-problem_solving",
+      "best_score": 0.348034,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.348034
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.18293
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.101118
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.085011
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.084135
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'positive_impacts-problem_solving' at 0.348, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-d6c7550fb62740dd",
+      "best_name": "future-imagined_scenario",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.074158
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'future-imagined_scenario' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-imagined_scenario"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "negative_impacts-dependence",
+      "name_b": "negative_impacts-dependence",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'negative_impacts-dependence' and 'negative_impacts-dependence' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence<->negative_impacts-dependence"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "negative_impacts-job_loss",
+      "name_b": "negative_impacts-job_loss",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'negative_impacts-job_loss' and 'negative_impacts-job_loss' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss<->negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.19245,
+      "marker": "fit_ok",
+      "quote": "We will forget how to do it ourselves.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 253,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-dependence' to its quote in response 253 is 0.192 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.100504,
+      "marker": "fit_ok",
+      "quote": "If the scheduling system is down for a week, nobody in the depot will remember how the rota used to be built.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 253,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-dependence' to its quote in response 253 is 0.101 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.27735,
+      "marker": "fit_ok",
+      "quote": "That dependence worries me more than any job losses.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 253,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'negative_impacts-job_loss' to its quote in response 253 is 0.277 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-cae8afe7b151eece",
+      "best_name": "negative_impacts-dependence",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.27735
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.244459
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.210819
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.201008
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.158161
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.111111
+        },
+        {
+          "code_id": "code-0154457d5dcd5ab4",
+          "name": "positive_impacts-quality_of_life",
+          "score": 0.101118
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'negative_impacts-dependence' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-dependence"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-36970a56237694b9",
+      "best_name": "negative_impacts-job_loss",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.27735
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.203402
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.167248
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.161936
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.098058
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.09245
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.087706
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'negative_impacts-job_loss' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "negative_impacts-job_loss"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "applications-data_driven_systems",
+      "name_b": "applications-data_driven_systems",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'applications-data_driven_systems' and 'applications-data_driven_systems' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems<->applications-data_driven_systems"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "agreed",
+      "marker": "coders_agree",
+      "name_a": "future-uncertainty",
+      "name_b": "future-uncertainty",
+      "score": 1.0,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders agree: 'future-uncertainty' and 'future-uncertainty' match at cosine 1.000 (>= tau_high 0.80).",
+    "scope": "pair",
+    "severity": "INFO",
+    "subject": "future-uncertainty<->future-uncertainty"
+  },
+  {
+    "check_id": "M1",
+    "data": {
+      "band": "disputed",
+      "marker": "coders_dispute",
+      "name_a": "positive_impacts-problem_solving",
+      "name_b": "positive_impacts-quality_of_life",
+      "score": 0.348034,
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Coders dispute: 'positive_impacts-problem_solving' and 'positive_impacts-quality_of_life' match at only cosine 0.348 (< tau_low 0.45).",
+    "scope": "pair",
+    "severity": "WARN",
+    "subject": "positive_impacts-problem_solving<->positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.231066,
+      "marker": "fit_ok",
+      "quote": "Whole categories of work nobody has named yet will exist by then, the way nobody could have described a data-centre technician in 1975.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 258,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'applications-data_driven_systems' to its quote in response 258 is 0.231 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "It is the twenty years of transition that will be ugly, and averages hide exactly that.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 258,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'future-uncertainty' to its quote in response 258 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-uncertainty"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": true,
+      "fail_safe": false,
+      "fit": 0.0,
+      "marker": "fit_ok",
+      "quote": "Quality of life improves on average.",
+      "reasoning": "the quoted segment carries the meaning the code names",
+      "response_id": 258,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'positive_impacts-problem_solving' to its quote in response 258 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M3",
+    "data": {
+      "escalated": false,
+      "fail_safe": false,
+      "fit": 0.408489,
+      "marker": "fit_ok",
+      "quote": "Quality of life improves on average.",
+      "reasoning": "",
+      "response_id": 258,
+      "space_id": "lexical-v1-512",
+      "tau_fit": 0.3,
+      "verdict": "APPLIES"
+    },
+    "message": "Fit of 'positive_impacts-quality_of_life' to its quote in response 258 is 0.408 (>= tau_fit 0.30).",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-quality_of_life"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-fd80110313bb11f2",
+      "best_name": "applications-data_driven_systems",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-04e71252b9d51c65",
+          "name": "applications-personalisation",
+          "score": 0.370619
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.198158
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.177238
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.158161
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.093412
+        },
+        {
+          "code_id": "code-0154457d5dcd5ab4",
+          "name": "positive_impacts-quality_of_life",
+          "score": 0.085011
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.081811
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'applications-data_driven_systems' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "applications-data_driven_systems"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-2b8757c069db2d06",
+      "best_name": "applications-education",
+      "best_score": 0.25,
+      "marker": "route_create",
+      "neighbours": [
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.25
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.117851
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.111803
+        },
+        {
+          "code_id": "code-d6c7550fb62740dd",
+          "name": "future-imagined_scenario",
+          "score": 0.107252
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.1066
+        },
+        {
+          "code_id": "code-8688cf35c2ec128a",
+          "name": "applications-industry_and_transport",
+          "score": 0.103215
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.099079
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.098058
+        }
+      ],
+      "route": "CREATE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes CREATE: nearest 'applications-education' at 0.250, below tau_low 0.45.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "future-uncertainty"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-501aa6af5eefaa00",
+      "best_name": "positive_impacts-problem_solving",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.442244
+        },
+        {
+          "code_id": "code-0154457d5dcd5ab4",
+          "name": "positive_impacts-quality_of_life",
+          "score": 0.348034
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.244459
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.203402
+        },
+        {
+          "code_id": "code-2b8757c069db2d06",
+          "name": "applications-education",
+          "score": 0.086429
+        },
+        {
+          "code_id": "code-250a1e9e823839be",
+          "name": "applications-healthcare",
+          "score": 0.081486
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.077305
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'positive_impacts-problem_solving' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-problem_solving"
+  },
+  {
+    "check_id": "M2",
+    "data": {
+      "best_code_id": "code-0154457d5dcd5ab4",
+      "best_name": "positive_impacts-quality_of_life",
+      "best_score": 1.0,
+      "marker": "route_merge",
+      "neighbours": [
+        {
+          "code_id": "code-0154457d5dcd5ab4",
+          "name": "positive_impacts-quality_of_life",
+          "score": 1.0
+        },
+        {
+          "code_id": "code-501aa6af5eefaa00",
+          "name": "positive_impacts-problem_solving",
+          "score": 0.348034
+        },
+        {
+          "code_id": "code-46697fdf41a8a235",
+          "name": "positive_impacts-access",
+          "score": 0.18293
+        },
+        {
+          "code_id": "code-cae8afe7b151eece",
+          "name": "negative_impacts-dependence",
+          "score": 0.101118
+        },
+        {
+          "code_id": "code-fd80110313bb11f2",
+          "name": "applications-data_driven_systems",
+          "score": 0.085011
+        },
+        {
+          "code_id": "code-36970a56237694b9",
+          "name": "negative_impacts-job_loss",
+          "score": 0.084135
+        },
+        {
+          "code_id": "code-4ba5131c9424da17",
+          "name": "adoption-social_change",
+          "score": 0.0
+        },
+        {
+          "code_id": "code-38b20c3776316706",
+          "name": "applications-automation",
+          "score": 0.0
+        }
+      ],
+      "route": "MERGE",
+      "space_id": "lexical-v1-512",
+      "tau_high": 0.8,
+      "tau_low": 0.45
+    },
+    "message": "Routes MERGE into 'positive_impacts-quality_of_life' at cosine 1.000 (>= tau_high 0.80); the dedup gate blocks a new code here.",
+    "scope": "candidate",
+    "severity": "INFO",
+    "subject": "positive_impacts-quality_of_life"
+  }
+]

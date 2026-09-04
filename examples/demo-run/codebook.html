@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codebook explorer — demo</title>
+<style>:root {
+  --ink: #1b1b1b;
+  --muted: #5b5b5b;
+  --rule: #d8d5cf;
+  --paper: #fbfaf7;
+  --panel: #ffffff;
+  --accent: #29506d;
+  --error: #8c1d18;
+  --warn: #8a5a00;
+  --info: #40566b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 0 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.55 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+main { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem; }
+header.page {
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 1.5rem;
+  padding: 2rem 0 1rem;
+}
+h1 { font-size: 1.7rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
+h2 { font-size: 1.25rem; margin: 2.25rem 0 .6rem; border-bottom: 1px solid var(--rule); padding-bottom: .3rem; }
+h3 { font-size: 1.05rem; margin: 1.4rem 0 .3rem; }
+p { margin: .5rem 0; }
+a { color: var(--accent); }
+.sub { color: var(--muted); font-size: .9rem; margin: 0; }
+.mono, code, .id {
+  font-family: "SF Mono", ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: .85em;
+}
+.caveat {
+  background: #fdf6e3;
+  border: 1px solid #e0cfa0;
+  border-left: 5px solid #b8860b;
+  padding: .8rem 1rem;
+  margin: 1rem 0;
+}
+.caveat h2 { border: 0; margin: 0 0 .4rem; font-size: 1rem; }
+table { border-collapse: collapse; width: 100%; margin: .8rem 0; font-size: .92rem; }
+th, td { border-bottom: 1px solid var(--rule); padding: .38rem .5rem; text-align: left; vertical-align: top; }
+th { border-bottom: 2px solid var(--ink); font-weight: 600; }
+td.num, th.num { text-align: right; }
+.wrap { overflow-x: auto; }
+section.code {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .9rem 1.1rem;
+  margin: 1rem 0;
+}
+section.code > h3 { margin-top: 0; }
+.meta { color: var(--muted); font-size: .82rem; margin: .1rem 0 .6rem; }
+blockquote {
+  margin: .45rem 0;
+  padding: .3rem 0 .3rem .9rem;
+  border-left: 3px solid var(--rule);
+}
+blockquote .prov { display: block; color: var(--muted); font-size: .78rem; margin-top: .2rem; }
+.sev { font-weight: 600; font-size: .78rem; letter-spacing: .04em; }
+.sev-ERROR { color: var(--error); }
+.sev-WARN { color: var(--warn); }
+.sev-INFO { color: var(--info); }
+ul.findings { list-style: none; margin: .4rem 0 0; padding: 0; }
+ul.findings li { border-top: 1px dotted var(--rule); padding: .3rem 0; font-size: .88rem; }
+.empty { color: var(--muted); font-style: italic; }
+footer { border-top: 1px solid var(--rule); margin-top: 2.5rem; padding-top: .8rem; color: var(--muted); font-size: .85rem; }
+@media print { body { background: #fff; } section.code { break-inside: avoid; } }</style>
+</head>
+<body>
+<main>
+<header class="page">
+<h1>Codebook explorer — demo</h1>
+<p class="sub">14 code(s) in 5 grounded-theory families · 14 response(s) coded · embedding space <span class="mono">lexical-v1-512</span> · snapshot <span class="mono">snap-3281fbd1f36b27ec</span></p>
+<p class="sub">This page is for reading. Codebook edits happen at the human gate in the slow loop, never here.</p>
+</header>
+<div class="caveat">
+<h2>Caveats — read these before the numbers</h2>
+<p>Offline run: M3&#x27;s code-to-evidence fit does not discriminate in the lexical fallback space (median fit 0.000) and M2&#x27;s grey zone is empty, so the fit and routing statistics are artefacts of the stand-in embedder rather than findings about the coding. See ADR-0019.</p>
+<p>Treat the M3 and M2 rows of the CHECKS table below as diagnostics of the stand-in embedder, not as findings about this codebook.</p>
+</div>
+<h2 id="summary">Families</h2>
+<div class="wrap"><table>
+<thead><tr><th>family</th><th class="num">codes</th><th class="num">quotes</th><th class="num">responses</th><th>codes in this family</th></tr></thead>
+<tbody>
+<tr><td><a href="#family-adoption">adoption</a></td><td class="num">1</td><td class="num">17</td><td class="num">8</td><td><a href="#code-adoption-social-change">adoption-social_change</a> <span class="sub">(17)</span></td></tr>
+<tr><td><a href="#family-applications">applications</a></td><td class="num">6</td><td class="num">15</td><td class="num">11</td><td><a href="#code-applications-automation">applications-automation</a> <span class="sub">(3)</span> · <a href="#code-applications-data-driven-systems">applications-data_driven_systems</a> <span class="sub">(3)</span> · <a href="#code-applications-education">applications-education</a> <span class="sub">(3)</span> · <a href="#code-applications-healthcare">applications-healthcare</a> <span class="sub">(2)</span> · <a href="#code-applications-industry-and-transport">applications-industry_and_transport</a> <span class="sub">(3)</span> · <a href="#code-applications-personalisation">applications-personalisation</a> <span class="sub">(1)</span></td></tr>
+<tr><td><a href="#family-future">future</a></td><td class="num">2</td><td class="num">16</td><td class="num">10</td><td><a href="#code-future-imagined-scenario">future-imagined_scenario</a> <span class="sub">(15)</span> · <a href="#code-future-uncertainty">future-uncertainty</a> <span class="sub">(1)</span></td></tr>
+<tr><td><a href="#family-negative-impacts">negative_impacts</a></td><td class="num">2</td><td class="num">7</td><td class="num">5</td><td><a href="#code-negative-impacts-dependence">negative_impacts-dependence</a> <span class="sub">(4)</span> · <a href="#code-negative-impacts-job-loss">negative_impacts-job_loss</a> <span class="sub">(3)</span></td></tr>
+<tr><td><a href="#family-positive-impacts">positive_impacts</a></td><td class="num">3</td><td class="num">6</td><td class="num">5</td><td><a href="#code-positive-impacts-access">positive_impacts-access</a> <span class="sub">(1)</span> · <a href="#code-positive-impacts-problem-solving">positive_impacts-problem_solving</a> <span class="sub">(3)</span> · <a href="#code-positive-impacts-quality-of-life">positive_impacts-quality_of_life</a> <span class="sub">(2)</span></td></tr>
+</tbody></table></div>
+<h2 id="checks">Checks</h2>
+<p>Every check emits through one contract, so this table is the whole of what the run observed. Counts are findings, not responses.</p>
+<div class="wrap"><table>
+<thead><tr><th>check</th><th class="num">ERROR</th><th class="num">WARN</th><th class="num">INFO</th><th class="num">total</th><th>what it checks</th></tr></thead>
+<tbody>
+<tr><td class="mono">S2</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td>every quote really occurs in the response it cites (provenance)</td></tr>
+<tr><td class="mono">M1</td><td class="num">0</td><td class="num">6</td><td class="num">36</td><td class="num">42</td><td>cross-coder agreement, by Hungarian matching in one embedding space</td></tr>
+<tr><td class="mono">M2</td><td class="num">0</td><td class="num">0</td><td class="num">43</td><td class="num">43</td><td>integration routing: merge, create, or ask the judge</td></tr>
+<tr><td class="mono">M3</td><td class="num">2</td><td class="num">3</td><td class="num">61</td><td class="num">66</td><td>fit between a code and the quote offered as evidence for it</td></tr>
+<tr><th>TOTAL</th><th class="num">3</th><th class="num">9</th><th class="num">141</th><th class="num">153</th><th></th></tr>
+</tbody></table></div>
+<p><strong>3 ERROR finding(s): the codebook is invalid where they point.</strong></p>
+<h2 id="codes">Codes</h2>
+<h3 id="family-adoption">adoption</h3>
+<p class="sub">1 code(s) · <a href="#summary">back to the family table</a></p>
+<section class="code" id="code-adoption-social-change">
+<h3>adoption-social_change</h3>
+<p class="meta">id <span class="id">code-4ba5131c9424da17</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 17 response(s) · 17 quote(s)</p>
+<p>AI is expected to reshape how society at large operates.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>Clerical posts in the district office vanish quietly<span class="prov">response 203 · characters 93 to 145 · verified · locator score 1.000</span></blockquote>
+<blockquote>Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in.<span class="prov">response 207 · characters 37 to 159 · verified · locator score 1.000</span></blockquote>
+<blockquote>They pick the music and the news.<span class="prov">response 212 · characters 50 to 83 · verified · locator score 1.000</span></blockquote>
+<blockquote>Rainfall models will set release schedules for the reservoirs<span class="prov">response 217 · characters 65 to 126 · verified · locator score 1.000</span></blockquote>
+<blockquote>the engineers will spend their days arguing with the forecast rather than reading gauges<span class="prov">response 217 · characters 132 to 220 · verified · locator score 1.000</span></blockquote>
+<blockquote>a district that never digitised its land registry gets worse answers than one that did<span class="prov">response 218 · characters 86 to 172 · verified · locator score 1.000</span></blockquote>
+<blockquote>the output looks equally confident either way<span class="prov">response 218 · characters 200 to 245 · verified · locator score 1.000</span></blockquote>
+<blockquote>By 2050 I expect an assistant that drafts my correspondence<span class="prov">response 221 · characters 0 to 59 · verified · locator score 1.000</span></blockquote>
+<blockquote>books the appointments<span class="prov">response 221 · characters 61 to 83 · verified · locator score 1.000</span></blockquote>
+<blockquote>tells me what was decided in a meeting I missed.<span class="prov">response 221 · characters 88 to 136 · verified · locator score 1.000</span></blockquote>
+<blockquote>Whether that leaves me freer<span class="prov">response 221 · characters 137 to 165 · verified · locator score 1.000</span></blockquote>
+<blockquote>nobody is asking that yet.<span class="prov">response 221 · characters 220 to 246 · verified · locator score 1.000</span></blockquote>
+<blockquote>Freight is where I notice it first.<span class="prov">response 234 · characters 0 to 35 · verified · locator score 1.000</span></blockquote>
+<blockquote>The port employs fewer people and moves twice the tonnage.<span class="prov">response 234 · characters 167 to 225 · verified · locator score 1.000</span></blockquote>
+<blockquote>Everything arrives pre-sorted for you<span class="prov">response 245 · characters 0 to 37 · verified · locator score 1.000</span></blockquote>
+<blockquote>the course you are advised to take<span class="prov">response 245 · characters 63 to 97 · verified · locator score 1.000</span></blockquote>
+<blockquote>then you discover how narrow the door has become.<span class="prov">response 245 · characters 222 to 271 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M1</span> <span class="mono">pair:(unmatched)&lt;-&gt;adoption-social_change</span> — Coder B proposed &#x27;adoption-social_change&#x27; and the other coder proposed nothing that could be assigned to it.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes CREATE: empty codebook, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 207 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 218 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 218 is 0.129 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 221 is 0.141 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 234 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 234 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:adoption-social_change</span> — Fit of &#x27;adoption-social_change&#x27; to its quote in response 245 is 0.141 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:adoption-social_change</span> — Routes MERGE into &#x27;adoption-social_change&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<h3 id="family-applications">applications</h3>
+<p class="sub">6 code(s) · <a href="#summary">back to the family table</a></p>
+<section class="code" id="code-applications-automation">
+<h3>applications-automation</h3>
+<p class="meta">id <span class="id">code-38b20c3776316706</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 3 response(s) · 3 quote(s)</p>
+<p>Physical or clerical work is carried out by machines instead of by people.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>Packing and sorting went to machines in my mother&#x27;s factory years ago.<span class="prov">response 239 · characters 0 to 70 · verified · locator score 1.000</span></blockquote>
+<blockquote>By 2050 the whole line runs without a shift supervisor.<span class="prov">response 239 · characters 71 to 126 · verified · locator score 1.000</span></blockquote>
+<blockquote>People say &quot;the machines will decide for us&quot; and I don&#x27;t accept that.<span class="prov">response 244 · characters 127 to 196 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-automation</span> — Fit of &#x27;applications-automation&#x27; to its quote in response 239 is 0.105 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-automation</span> — Fit of &#x27;applications-automation&#x27; to its quote in response 239 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-automation</span> — Routes CREATE: nearest &#x27;negative_impacts-dependence&#x27; at 0.211, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-automation</span> — Fit of &#x27;applications-automation&#x27; to its quote in response 244 is 0.239 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-automation</span> — Routes MERGE into &#x27;applications-automation&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-applications-data-driven-systems">
+<h3>applications-data_driven_systems</h3>
+<p class="meta">id <span class="id">code-fd80110313bb11f2</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 3 response(s) · 3 quote(s)</p>
+<p>Systems that learn from accumulated data direct everyday decisions.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>no retraining scheme arrives.<span class="prov">response 203 · characters 151 to 180 · verified · locator score 1.000</span></blockquote>
+<blockquote>is why I keep saying the record-keeping matters more than the algorithm<span class="prov">response 218 · characters 252 to 323 · verified · locator score 1.000</span></blockquote>
+<blockquote>Whole categories of work nobody has named yet will exist by then, the way nobody could have described a data-centre technician in 1975.<span class="prov">response 258 · characters 0 to 135 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-data_driven_systems</span> — Fit of &#x27;applications-data_driven_systems&#x27; to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-data_driven_systems</span> — Routes CREATE: empty codebook, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-data_driven_systems</span> — Fit of &#x27;applications-data_driven_systems&#x27; to its quote in response 218 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-data_driven_systems</span> — Routes MERGE into &#x27;applications-data_driven_systems&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-data_driven_systems</span> — Fit of &#x27;applications-data_driven_systems&#x27; to its quote in response 258 is 0.231 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-data_driven_systems</span> — Routes MERGE into &#x27;applications-data_driven_systems&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-applications-education">
+<h3>applications-education</h3>
+<p class="meta">id <span class="id">code-2b8757c069db2d06</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 3 response(s) · 3 quote(s)</p>
+<p>AI changes how teaching and learning are delivered.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>Maintaining the systems becomes the new entry point, but it demands qualifications most school leavers in my district never had the chance to earn.<span class="prov">response 207 · characters 160 to 307 · verified · locator score 1.000</span></blockquote>
+<blockquote>Teaching changes most, I think.<span class="prov">response 226 · characters 0 to 31 · verified · locator score 1.000</span></blockquote>
+<blockquote>A tutor that never tires, adjusting to one child&#x27;s pace, would reach pupils our classrooms lose by year three.<span class="prov">response 226 · characters 32 to 142 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-education</span> — Fit of &#x27;applications-education&#x27; to its quote in response 207 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-education</span> — Routes CREATE: nearest &#x27;adoption-social_change&#x27; at 0.335, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-education</span> — Fit of &#x27;applications-education&#x27; to its quote in response 226 is 0.408 (&gt;= tau_fit 0.30).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-education</span> — Fit of &#x27;applications-education&#x27; to its quote in response 226 is 0.098 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-education</span> — Routes MERGE into &#x27;applications-education&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-applications-healthcare">
+<h3>applications-healthcare</h3>
+<p class="meta">id <span class="id">code-250a1e9e823839be</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 2 response(s) · 2 quote(s)</p>
+<p>AI is applied to diagnosis, treatment or access to medical care.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>Rural clinics get diagnostic support<span class="prov">response 203 · characters 0 to 36 · verified · locator score 1.000</span></blockquote>
+<blockquote>the treatment you are offered.<span class="prov">response 245 · characters 99 to 129 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-healthcare</span> — Fit of &#x27;applications-healthcare&#x27; to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-healthcare</span> — Routes CREATE: empty codebook, below tau_low 0.45.</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M3</span> <span class="mono">candidate:applications-healthcare</span> — Judge ruled UNNECESSARY on &#x27;applications-healthcare&#x27; in response 231 (fit 0.000 &lt; tau_fit 0.30): the code did not have to be applied here, so the quote is removed from this candidate&#x27;s evidence.</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M3</span> <span class="mono">candidate:applications-healthcare</span> — Judge ruled UNNECESSARY on &#x27;applications-healthcare&#x27; in response 231 (fit 0.000 &lt; tau_fit 0.30): the code did not have to be applied here, so the quote is removed from this candidate&#x27;s evidence.</li>
+<li><span class="sev sev-ERROR">ERROR</span> <span class="mono">M3</span> <span class="mono">candidate:applications-healthcare</span> — Candidate &#x27;applications-healthcare&#x27; is dropped: every verified quote was ruled UNNECESSARY, so nothing in the corpus supports it any longer.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-healthcare</span> — Fit of &#x27;applications-healthcare&#x27; to its quote in response 245 is 0.236 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-healthcare</span> — Routes MERGE into &#x27;applications-healthcare&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-applications-industry-and-transport">
+<h3>applications-industry_and_transport</h3>
+<p class="meta">id <span class="id">code-8688cf35c2ec128a</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 3 response(s) · 3 quote(s)</p>
+<p>AI is deployed across industry, agriculture, transport and infrastructure.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>Picture one municipal system balancing traffic lights, reservoir levels and the power grid, adjusting itself hourly from whatever the sensors report.<span class="prov">response 212 · characters 124 to 273 · verified · locator score 1.000</span></blockquote>
+<blockquote>Municipal water boards will lean on forecasting engines by then.<span class="prov">response 217 · characters 0 to 64 · verified · locator score 1.000</span></blockquote>
+<blockquote>Containers routed by a system that knows the weather three ports ahead, drivers dispatched to the yard the moment a lorry is free.<span class="prov">response 234 · characters 36 to 166 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-industry_and_transport</span> — Fit of &#x27;applications-industry_and_transport&#x27; to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-industry_and_transport</span> — Routes CREATE: nearest &#x27;applications-education&#x27; at 0.206, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-industry_and_transport</span> — Fit of &#x27;applications-industry_and_transport&#x27; to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-industry_and_transport</span> — Routes MERGE into &#x27;applications-industry_and_transport&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-industry_and_transport</span> — Fit of &#x27;applications-industry_and_transport&#x27; to its quote in response 234 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-industry_and_transport</span> — Routes MERGE into &#x27;applications-industry_and_transport&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-applications-personalisation">
+<h3>applications-personalisation</h3>
+<p class="meta">id <span class="id">code-04e71252b9d51c65</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 1 response(s) · 1 quote(s)</p>
+<p>Services are tailored to each individual from that person&#x27;s own data.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>Recommendation engines already shape my evenings.<span class="prov">response 212 · characters 0 to 49 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:applications-personalisation</span> — Fit of &#x27;applications-personalisation&#x27; to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:applications-personalisation</span> — Routes CREATE: nearest &#x27;applications-data_driven_systems&#x27; at 0.371, below tau_low 0.45.</li>
+</ul>
+</section>
+<h3 id="family-future">future</h3>
+<p class="sub">2 code(s) · <a href="#summary">back to the family table</a></p>
+<section class="code" id="code-future-imagined-scenario">
+<h3>future-imagined_scenario</h3>
+<p class="meta">id <span class="id">code-d6c7550fb62740dd</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 15 response(s) · 15 quote(s)</p>
+<p>The respondent sketches a specific scenario for the years up to 2050.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>the nearest specialist stops being four hours away.<span class="prov">response 203 · characters 41 to 92 · verified · locator score 1.000</span></blockquote>
+<blockquote>Clerical posts in the district office vanish quietly<span class="prov">response 203 · characters 93 to 145 · verified · locator score 1.000</span></blockquote>
+<blockquote>Firms will hand ticket triage and first-draft paperwork to software, and those were the posts a graduate used to start in.<span class="prov">response 207 · characters 37 to 159 · verified · locator score 1.000</span></blockquote>
+<blockquote>They pick the music and the news.<span class="prov">response 212 · characters 50 to 83 · verified · locator score 1.000</span></blockquote>
+<blockquote>Rainfall models will set release schedules for the reservoirs<span class="prov">response 217 · characters 65 to 126 · verified · locator score 1.000</span></blockquote>
+<blockquote>the engineers will spend their days arguing with the forecast rather than reading gauges<span class="prov">response 217 · characters 132 to 220 · verified · locator score 1.000</span></blockquote>
+<blockquote>a district that never digitised its land registry gets worse answers than one that did<span class="prov">response 218 · characters 86 to 172 · verified · locator score 1.000</span></blockquote>
+<blockquote>By 2050 I expect an assistant that drafts my correspondence<span class="prov">response 221 · characters 0 to 59 · verified · locator score 1.000</span></blockquote>
+<blockquote>books the appointments<span class="prov">response 221 · characters 61 to 83 · verified · locator score 1.000</span></blockquote>
+<blockquote>tells me what was decided in a meeting I missed.<span class="prov">response 221 · characters 88 to 136 · verified · locator score 1.000</span></blockquote>
+<blockquote>Whether that leaves me freer<span class="prov">response 221 · characters 137 to 165 · verified · locator score 1.000</span></blockquote>
+<blockquote>nobody is asking that yet.<span class="prov">response 221 · characters 220 to 246 · verified · locator score 1.000</span></blockquote>
+<blockquote>The risk is that we then stop funding the teachers who notice why a child stopped trying.<span class="prov">response 226 · characters 143 to 232 · verified · locator score 1.000</span></blockquote>
+<blockquote>A tool has an owner, and the question is who.<span class="prov">response 244 · characters 197 to 242 · verified · locator score 1.000</span></blockquote>
+<blockquote>Everything arrives pre-sorted for you<span class="prov">response 245 · characters 0 to 37 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 203 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes CREATE: empty codebook, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 207 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 212 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M1</span> <span class="mono">pair:(unmatched)&lt;-&gt;future-imagined_scenario</span> — Coder B proposed &#x27;future-imagined_scenario&#x27; and the other coder proposed nothing that could be assigned to it.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 218 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 221 is 0.136 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 221 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 226 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 244 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M1</span> <span class="mono">pair:(unmatched)&lt;-&gt;future-imagined_scenario</span> — Coder B proposed &#x27;future-imagined_scenario&#x27; and the other coder proposed nothing that could be assigned to it.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-imagined_scenario</span> — Fit of &#x27;future-imagined_scenario&#x27; to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-imagined_scenario</span> — Routes MERGE into &#x27;future-imagined_scenario&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-future-uncertainty">
+<h3>future-uncertainty</h3>
+<p class="meta">id <span class="id">code-959b63a61fcb9a1d</span> · parent <span class="id">none</span> · created in <span class="id">snap-4041159865476169</span> · 1 response(s) · 1 quote(s)</p>
+<p>What AI will do next is treated as genuinely unknown.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>It is the twenty years of transition that will be ugly, and averages hide exactly that.<span class="prov">response 258 · characters 173 to 260 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:future-uncertainty</span> — Fit of &#x27;future-uncertainty&#x27; to its quote in response 258 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:future-uncertainty</span> — Routes CREATE: nearest &#x27;applications-education&#x27; at 0.250, below tau_low 0.45.</li>
+</ul>
+</section>
+<h3 id="family-negative-impacts">negative_impacts</h3>
+<p class="sub">2 code(s) · <a href="#summary">back to the family table</a></p>
+<section class="code" id="code-negative-impacts-dependence">
+<h3>negative_impacts-dependence</h3>
+<p class="meta">id <span class="id">code-cae8afe7b151eece</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 4 response(s) · 4 quote(s)</p>
+<p>People lose the ability, or the habit, of working without the system.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>the thing people forget is that these systems only know what we bothered to record<span class="prov">response 218 · characters 0 to 82 · verified · locator score 1.000</span></blockquote>
+<blockquote>merely busier depends on who sets the targets<span class="prov">response 221 · characters 169 to 214 · verified · locator score 1.000</span></blockquote>
+<blockquote>We will forget how to do it ourselves.<span class="prov">response 253 · characters 0 to 38 · verified · locator score 1.000</span></blockquote>
+<blockquote>If the scheduling system is down for a week, nobody in the depot will remember how the rota used to be built.<span class="prov">response 253 · characters 39 to 148 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-dependence</span> — Fit of &#x27;negative_impacts-dependence&#x27; to its quote in response 218 is 0.236 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:negative_impacts-dependence</span> — Routes CREATE: nearest &#x27;negative_impacts-job_loss&#x27; at 0.277, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-dependence</span> — Fit of &#x27;negative_impacts-dependence&#x27; to its quote in response 221 is 0.136 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:negative_impacts-dependence</span> — Routes MERGE into &#x27;negative_impacts-dependence&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-dependence</span> — Fit of &#x27;negative_impacts-dependence&#x27; to its quote in response 253 is 0.192 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-dependence</span> — Fit of &#x27;negative_impacts-dependence&#x27; to its quote in response 253 is 0.101 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:negative_impacts-dependence</span> — Routes MERGE into &#x27;negative_impacts-dependence&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-negative-impacts-job-loss">
+<h3>negative_impacts-job_loss</h3>
+<p class="meta">id <span class="id">code-36970a56237694b9</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 3 response(s) · 3 quote(s)</p>
+<p>Existing categories of paid work disappear as AI replaces human labour.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>My worry is the ladder disappearing.<span class="prov">response 207 · characters 0 to 36 · verified · locator score 1.000</span></blockquote>
+<blockquote>Those households had one wage between four people, and I have not heard a single proposal for what replaces it.<span class="prov">response 239 · characters 127 to 238 · verified · locator score 1.000</span></blockquote>
+<blockquote>That dependence worries me more than any job losses.<span class="prov">response 253 · characters 149 to 201 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-job_loss</span> — Fit of &#x27;negative_impacts-job_loss&#x27; to its quote in response 207 is 0.160 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:negative_impacts-job_loss</span> — Routes CREATE: nearest &#x27;applications-healthcare&#x27; at 0.092, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-job_loss</span> — Fit of &#x27;negative_impacts-job_loss&#x27; to its quote in response 239 is 0.088 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:negative_impacts-job_loss</span> — Routes MERGE into &#x27;negative_impacts-job_loss&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:negative_impacts-job_loss</span> — Fit of &#x27;negative_impacts-job_loss&#x27; to its quote in response 253 is 0.277 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:negative_impacts-job_loss</span> — Routes MERGE into &#x27;negative_impacts-job_loss&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<h3 id="family-positive-impacts">positive_impacts</h3>
+<p class="sub">3 code(s) · <a href="#summary">back to the family table</a></p>
+<section class="code" id="code-positive-impacts-access">
+<h3>positive_impacts-access</h3>
+<p class="meta">id <span class="id">code-46697fdf41a8a235</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 1 response(s) · 1 quote(s)</p>
+<p>AI extends services to people who cannot reach them today.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>By 2050 that reach will be wider still.<span class="prov">response 212 · characters 84 to 123 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-access</span> — Fit of &#x27;positive_impacts-access&#x27; to its quote in response 212 is 0.151 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:positive_impacts-access</span> — Routes CREATE: nearest &#x27;applications-healthcare&#x27; at 0.201, below tau_low 0.45.</li>
+</ul>
+</section>
+<section class="code" id="code-positive-impacts-problem-solving">
+<h3>positive_impacts-problem_solving</h3>
+<p class="meta">id <span class="id">code-501aa6af5eefaa00</span> · parent <span class="id">none</span> · created in <span class="id">snap-8c8e1bb384bd3da4</span> · 3 response(s) · 3 quote(s)</p>
+<p>AI solves problems respondents believe people cannot solve alone.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>strikes me as a real improvement in how that work is done.<span class="prov">response 217 · characters 228 to 286 · verified · locator score 1.000</span></blockquote>
+<blockquote>I am hopeful - these tools will help us with problems too large to hold in one head, like drought planning and drug discovery.<span class="prov">response 244 · characters 0 to 126 · verified · locator score 1.000</span></blockquote>
+<blockquote>Quality of life improves on average.<span class="prov">response 258 · characters 136 to 172 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-problem_solving</span> — Fit of &#x27;positive_impacts-problem_solving&#x27; to its quote in response 217 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:positive_impacts-problem_solving</span> — Routes CREATE: nearest &#x27;positive_impacts-access&#x27; at 0.442, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-problem_solving</span> — Fit of &#x27;positive_impacts-problem_solving&#x27; to its quote in response 244 is 0.115 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:positive_impacts-problem_solving</span> — Routes MERGE into &#x27;positive_impacts-problem_solving&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-problem_solving</span> — Fit of &#x27;positive_impacts-problem_solving&#x27; to its quote in response 258 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:positive_impacts-problem_solving</span> — Routes MERGE into &#x27;positive_impacts-problem_solving&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<section class="code" id="code-positive-impacts-quality-of-life">
+<h3>positive_impacts-quality_of_life</h3>
+<p class="meta">id <span class="id">code-0154457d5dcd5ab4</span> · parent <span class="id">none</span> · created in <span class="id">snap-4041159865476169</span> · 2 response(s) · 2 quote(s)</p>
+<p>Everyday life becomes easier, safer or more comfortable.</p>
+<h4 class="sub">Evidence</h4>
+<blockquote>It is convenient right up to the moment you want something the profile did not predict<span class="prov">response 245 · characters 130 to 216 · verified · locator score 1.000</span></blockquote>
+<blockquote>Quality of life improves on average.<span class="prov">response 258 · characters 136 to 172 · verified · locator score 1.000</span></blockquote>
+<h4 class="sub">Findings on this code</h4>
+<ul class="findings">
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-quality_of_life</span> — Judge ruled UNNECESSARY on &#x27;positive_impacts-quality_of_life&#x27; in response 231 (fit 0.175 &lt; tau_fit 0.30): the code did not have to be applied here, so the quote is removed from this candidate&#x27;s evidence.</li>
+<li><span class="sev sev-ERROR">ERROR</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-quality_of_life</span> — Candidate &#x27;positive_impacts-quality_of_life&#x27; is dropped: every verified quote was ruled UNNECESSARY, so nothing in the corpus supports it any longer.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-quality_of_life</span> — Fit of &#x27;positive_impacts-quality_of_life&#x27; to its quote in response 245 is 0.000 (below tau_fit 0.30, but the judge ruled APPLIES).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:positive_impacts-quality_of_life</span> — Routes CREATE: nearest &#x27;positive_impacts-problem_solving&#x27; at 0.348, below tau_low 0.45.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M3</span> <span class="mono">candidate:positive_impacts-quality_of_life</span> — Fit of &#x27;positive_impacts-quality_of_life&#x27; to its quote in response 258 is 0.408 (&gt;= tau_fit 0.30).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M2</span> <span class="mono">candidate:positive_impacts-quality_of_life</span> — Routes MERGE into &#x27;positive_impacts-quality_of_life&#x27; at cosine 1.000 (&gt;= tau_high 0.80); the dedup gate blocks a new code here.</li>
+</ul>
+</section>
+<h2 id="other-findings">Findings not attached to a code</h2>
+<p>Findings about a segment, a response, a pair or the codebook as a whole. They belong to the run rather than to any single code.</p>
+<ul class="findings">
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;future-imagined_scenario</span> — Coders agree: &#x27;future-imagined_scenario&#x27; and &#x27;future-imagined_scenario&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-data_driven_systems&lt;-&gt;applications-data_driven_systems</span> — Coders agree: &#x27;applications-data_driven_systems&#x27; and &#x27;applications-data_driven_systems&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-healthcare&lt;-&gt;applications-healthcare</span> — Coders agree: &#x27;applications-healthcare&#x27; and &#x27;applications-healthcare&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">S2</span> <span class="mono">candidate:future-superintelligence</span> — Quote could not be located in the response and has been dropped from the candidate&#x27;s evidence.</li>
+<li><span class="sev sev-ERROR">ERROR</span> <span class="mono">S2</span> <span class="mono">candidate:future-superintelligence</span> — No quote could be verified against the response, so the candidate has no evidence left to stand on.</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-education&lt;-&gt;applications-education</span> — Coders agree: &#x27;applications-education&#x27; and &#x27;applications-education&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;adoption-social_change</span> — Coders dispute: &#x27;future-imagined_scenario&#x27; and &#x27;adoption-social_change&#x27; match at only cosine 0.000 (&lt; tau_low 0.45).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:negative_impacts-job_loss&lt;-&gt;negative_impacts-job_loss</span> — Coders agree: &#x27;negative_impacts-job_loss&#x27; and &#x27;negative_impacts-job_loss&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-industry_and_transport&lt;-&gt;applications-industry_and_transport</span> — Coders agree: &#x27;applications-industry_and_transport&#x27; and &#x27;applications-industry_and_transport&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-personalisation&lt;-&gt;applications-personalisation</span> — Coders agree: &#x27;applications-personalisation&#x27; and &#x27;applications-personalisation&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;adoption-social_change</span> — Coders dispute: &#x27;future-imagined_scenario&#x27; and &#x27;adoption-social_change&#x27; match at only cosine 0.000 (&lt; tau_low 0.45).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:positive_impacts-access&lt;-&gt;positive_impacts-access</span> — Coders agree: &#x27;positive_impacts-access&#x27; and &#x27;positive_impacts-access&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:adoption-social_change&lt;-&gt;adoption-social_change</span> — Coders agree: &#x27;adoption-social_change&#x27; and &#x27;adoption-social_change&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-industry_and_transport&lt;-&gt;applications-industry_and_transport</span> — Coders agree: &#x27;applications-industry_and_transport&#x27; and &#x27;applications-industry_and_transport&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;future-imagined_scenario</span> — Coders agree: &#x27;future-imagined_scenario&#x27; and &#x27;future-imagined_scenario&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:positive_impacts-problem_solving&lt;-&gt;positive_impacts-problem_solving</span> — Coders agree: &#x27;positive_impacts-problem_solving&#x27; and &#x27;positive_impacts-problem_solving&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:adoption-social_change&lt;-&gt;adoption-social_change</span> — Coders agree: &#x27;adoption-social_change&#x27; and &#x27;adoption-social_change&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-data_driven_systems&lt;-&gt;applications-data_driven_systems</span> — Coders agree: &#x27;applications-data_driven_systems&#x27; and &#x27;applications-data_driven_systems&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:negative_impacts-dependence&lt;-&gt;negative_impacts-dependence</span> — Coders agree: &#x27;negative_impacts-dependence&#x27; and &#x27;negative_impacts-dependence&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;future-imagined_scenario</span> — Coders agree: &#x27;future-imagined_scenario&#x27; and &#x27;future-imagined_scenario&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:adoption-social_change&lt;-&gt;adoption-social_change</span> — Coders agree: &#x27;adoption-social_change&#x27; and &#x27;adoption-social_change&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:negative_impacts-dependence&lt;-&gt;negative_impacts-dependence</span> — Coders agree: &#x27;negative_impacts-dependence&#x27; and &#x27;negative_impacts-dependence&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-education&lt;-&gt;applications-education</span> — Coders agree: &#x27;applications-education&#x27; and &#x27;applications-education&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;future-imagined_scenario</span> — Coders agree: &#x27;future-imagined_scenario&#x27; and &#x27;future-imagined_scenario&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-healthcare&lt;-&gt;applications-healthcare</span> — Coders agree: &#x27;applications-healthcare&#x27; and &#x27;applications-healthcare&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:positive_impacts-quality_of_life&lt;-&gt;positive_impacts-quality_of_life</span> — Coders agree: &#x27;positive_impacts-quality_of_life&#x27; and &#x27;positive_impacts-quality_of_life&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:adoption-social_change&lt;-&gt;adoption-social_change</span> — Coders agree: &#x27;adoption-social_change&#x27; and &#x27;adoption-social_change&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-industry_and_transport&lt;-&gt;applications-industry_and_transport</span> — Coders agree: &#x27;applications-industry_and_transport&#x27; and &#x27;applications-industry_and_transport&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-automation&lt;-&gt;applications-automation</span> — Coders agree: &#x27;applications-automation&#x27; and &#x27;applications-automation&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:negative_impacts-job_loss&lt;-&gt;negative_impacts-job_loss</span> — Coders agree: &#x27;negative_impacts-job_loss&#x27; and &#x27;negative_impacts-job_loss&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-automation&lt;-&gt;applications-automation</span> — Coders agree: &#x27;applications-automation&#x27; and &#x27;applications-automation&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:future-imagined_scenario&lt;-&gt;future-imagined_scenario</span> — Coders agree: &#x27;future-imagined_scenario&#x27; and &#x27;future-imagined_scenario&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:positive_impacts-problem_solving&lt;-&gt;positive_impacts-problem_solving</span> — Coders agree: &#x27;positive_impacts-problem_solving&#x27; and &#x27;positive_impacts-problem_solving&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:adoption-social_change&lt;-&gt;adoption-social_change</span> — Coders agree: &#x27;adoption-social_change&#x27; and &#x27;adoption-social_change&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-healthcare&lt;-&gt;applications-healthcare</span> — Coders agree: &#x27;applications-healthcare&#x27; and &#x27;applications-healthcare&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:positive_impacts-quality_of_life&lt;-&gt;positive_impacts-quality_of_life</span> — Coders agree: &#x27;positive_impacts-quality_of_life&#x27; and &#x27;positive_impacts-quality_of_life&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:negative_impacts-dependence&lt;-&gt;negative_impacts-dependence</span> — Coders agree: &#x27;negative_impacts-dependence&#x27; and &#x27;negative_impacts-dependence&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:negative_impacts-job_loss&lt;-&gt;negative_impacts-job_loss</span> — Coders agree: &#x27;negative_impacts-job_loss&#x27; and &#x27;negative_impacts-job_loss&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:applications-data_driven_systems&lt;-&gt;applications-data_driven_systems</span> — Coders agree: &#x27;applications-data_driven_systems&#x27; and &#x27;applications-data_driven_systems&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-INFO">INFO</span> <span class="mono">M1</span> <span class="mono">pair:future-uncertainty&lt;-&gt;future-uncertainty</span> — Coders agree: &#x27;future-uncertainty&#x27; and &#x27;future-uncertainty&#x27; match at cosine 1.000 (&gt;= tau_high 0.80).</li>
+<li><span class="sev sev-WARN">WARN</span> <span class="mono">M1</span> <span class="mono">pair:positive_impacts-problem_solving&lt;-&gt;positive_impacts-quality_of_life</span> — Coders dispute: &#x27;positive_impacts-problem_solving&#x27; and &#x27;positive_impacts-quality_of_life&#x27; match at only cosine 0.348 (&lt; tau_low 0.45).</li>
+</ul>
+<footer>
+<p>Generated by gaf from run <span class="mono">demo</span>. 153 finding(s), 3 of them ERROR. This file is self-contained: no script, no network request, no external asset.</p>
+</footer>
+</main>
+</body>
+</html>

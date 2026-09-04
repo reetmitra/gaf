@@ -4,6 +4,39 @@ Every non-obvious choice gets an entry. Format: context, decision, consequences.
 Superseded ADRs stay in place with a pointer, never deleted — the log is part of the
 audit trail.
 
+## Index
+
+| ADR | Title | Status |
+|---|---|---|
+| [ADR-0001](#adr-0001--clean-room-rebuild-rather-than-refactoring-pipeline3-main) | Clean-room rebuild rather than refactoring `pipeline3-main` | accepted (Wave 0) |
+| [ADR-0002](#adr-0002--sqlite-blackboard-rather-than-a-directory-of-json-files) | SQLite blackboard rather than a directory of JSON files | accepted (Wave 0) |
+| [ADR-0003](#adr-0003--embedding-first-matching-never-lexical-for-meaning) | Embedding-first matching, never lexical, for meaning | accepted (Wave 0) |
+| [ADR-0004](#adr-0004--the-human-gate-sits-at-codebook-refactor-level-not-per-response) | The human gate sits at codebook-refactor level, not per response | accepted (Wave 0) |
+| [ADR-0005](#adr-0005--grounded-theory-vocabulary-throughout-no-entman-framing) | Grounded theory vocabulary throughout; no Entman framing | accepted (Wave 0) |
+| [ADR-0006](#adr-0006--stdlib-frozen-dataclasses-not-pydantic) | Stdlib frozen dataclasses, not Pydantic | accepted (Wave 0) |
+| [ADR-0007](#adr-0007--created_in_snapshot-instead-of-created_at-on-a-code) | `created_in_snapshot` instead of `created_at` on a code | accepted (Wave 0) |
+| [ADR-0008](#adr-0008--the-evidence-loader-accepts-both-on-disk-shapes) | The evidence loader accepts both on-disk shapes | accepted (Wave 0) |
+| [ADR-0009](#adr-0009--operationtype-stays-a-literal-with-a-runtime-whitelist-beside-it) | `Operation.type` stays a `Literal`, with a runtime whitelist beside it | accepted (Wave 0) |
+| [ADR-0010](#adr-0010--the-low-frequency-filter-supports-both-an-absolute-count-and-chans-fraction) | The low-frequency filter supports both an absolute count and Chan's fraction | accepted (Wave 0) |
+| [ADR-0011](#adr-0011--scikit-learn-pinned-below-110) | scikit-learn pinned below 1.10 | accepted (Wave 0) |
+| [ADR-0012](#adr-0012--python-pinned-to-312) | Python pinned to 3.12 | accepted (Wave 0) |
+| [ADR-0013](#adr-0013--a-description-that-copies-its-own-quote-is-a-warn) | A description that copies its own quote is a WARN | accepted (Wave 0) |
+| [ADR-0014](#adr-0014--the-embedding-protocol-is-frozen-separately-from-its-implementation) | The embedding protocol is frozen separately from its implementation | accepted (Wave 0) |
+| [ADR-0015](#adr-0015--s2b-also-bounds-a-quote-by-word-count) | S2b also bounds a quote by word count | accepted (Wave 1, orchestrator amendment to a frozen contract) |
+| [ADR-0016](#adr-0016--mojibake-is-repaired-at-ingest-never-in-normalisation) | Mojibake is repaired at ingest, never in normalisation | accepted (Wave 1) |
+| [ADR-0017](#adr-0017--store-write-semantics-immutable-by-content-and-a-total-order-on-every-read) | Store write semantics: immutable-by-content, and a total order on every read | accepted (Wave 1, A1) |
+| [ADR-0018](#adr-0018--content-addressed-ids-carry-an-ordinal-where-content-can-legitimately-repeat) | Content-addressed ids carry an ordinal where content can legitimately repeat | accepted (Wave 1, A1) |
+| [ADR-0019](#adr-0019--m3-does-not-discriminate-in-the-offline-embedding-space-and-is-documented-as-such) | M3 does not discriminate in the offline embedding space, and is documented as such | accepted (Wave 1, orchestrator finding) |
+| [ADR-0020](#adr-0020--chans-cluster-count-rule-is-not-robust-at-n--20-and-is-not-silently-repaired) | Chan's cluster-count rule is not robust at n = 20, and is not silently repaired | accepted (Wave 1, orchestrator finding) |
+| [ADR-0021](#adr-0021--coders-read-the-frozen-snapshot-integration-routes-against-the-working-codebook) | Coders read the frozen snapshot; integration routes against the working codebook | accepted (Wave 2, B2 — verified by the orchestrator) |
+| [ADR-0022](#adr-0022--m3-is-84-of-frontier-calls-on-the-real-sample) | M3 is 84% of frontier calls on the real sample | accepted (Wave 2, orchestrator measurement) |
+| [ADR-0023](#adr-0023--where-framing-is-permitted-and-where-it-is-not) | Where "framing" is permitted, and where it is not | accepted (Wave 3, orchestrator ruling on a violation C2 reported) |
+| [ADR-0024](#adr-0024--real-respondent-text-reached-git-history-and-what-was-done-about-it) | Real respondent text reached git history, and what was done about it | accepted (Wave 4, after an independent adversarial review) |
+| [ADR-0025](#adr-0025--findings-of-the-wave-4-adversarial-review) | Findings of the Wave 4 adversarial review | accepted (Wave 4) |
+| [ADR-0026](#adr-0026--a-meaning-ruling-never-is-an-error-but-it-can-leave-a-state-that-is) | A meaning ruling never *is* an ERROR, but it can leave a state that is | accepted (Wave 4, second adversarial review) |
+| [ADR-0027](#adr-0027--what-the-history-rewrite-cost-and-what-was-done-about-it) | What the history rewrite cost, and what was done about it | accepted (Wave 4, second adversarial review) |
+| [ADR-0028](#adr-0028--gitignore-protects-git-not-the-directory) | `.gitignore` protects git, not the directory | accepted (Wave 4, second adversarial review) |
+
 ---
 
 ## ADR-0001 — Clean-room rebuild rather than refactoring `pipeline3-main`
