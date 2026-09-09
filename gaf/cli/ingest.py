@@ -20,7 +20,6 @@ from gaf.config import QUESTION_VARIANTS, RunConfig
 from gaf.ingest.corpus import corpus_content_hash, load_corpus_with_report, write_corpus_json
 from gaf.ingest.xlsx import SpreadsheetFormatError
 
-
 #: What the survey's own file names say about the question that produced them. The
 #: State sample ("in 2050, what kind of roles") is v3; the Process sample ("from now to
 #: 2050, what impacts") is v2. The default variant is v2, which is a trap for a State
