@@ -14,8 +14,11 @@ DEMO_DIR ?= runs/demo
 DEMO_CORPUS := $(DEMO_DIR)/corpus.json
 DEMO_ANALYSIS := $(DEMO_DIR)/analysis
 EXAMPLE_DIR := examples/demo-run
+RESULTS_RUN ?= runs/process
+RESULTS_OUT ?= results/india-process-1-20
+RESULTS_LABEL ?= India Process sample, responses 1-20
 
-.PHONY: help install test lint typecheck check-all scrub demo check analyse example provenance
+.PHONY: help install test lint typecheck check-all scrub demo check analyse example provenance results
 
 help:
 	@echo "make install    — uv sync (core + dev)"
@@ -29,6 +32,7 @@ help:
 	@echo "make analyse    — occurrence matrix, Ward's HCA and the saturation curve"
 	@echo "make example    — regenerate examples/demo-run/ from a fresh make demo + make analyse"
 	@echo "make provenance — scan every tracked file for real respondent text (needs the real corpus on this machine)"
+	@echo "make results    — export a real run as Markdown with no respondent text (RESULTS_RUN=runs/process RESULTS_OUT=results/<name>)"
 
 install:
 	uv sync --all-groups
@@ -95,10 +99,21 @@ scrub:
 	@echo "done. runs/ and .gaf_cache/ removed; re-create them with: make demo"
 
 # tests/test_golden.py::test_no_tracked_file_contains_real_respondent_text reads the
-# real corpus in place (../Grounded AI Futures/data/) and fails if any tracked file
+# real workbooks in place (../data, ../codebook, ../Grounded AI Futures/data) and fails if any tracked file
 # shares a 30-character run with a real response. It skips — silently, under plain
 # `make test` — when the real file is absent, which is the common case on CI and on
 # any machine other than the researcher's own. Run this target on a machine that has
 # the real corpus before sharing or publishing the repository.
 provenance:
 	uv run pytest tests/test_golden.py::test_no_tracked_file_contains_real_respondent_text -q -rs
+
+# -- results for sharing ---------------------------------------------------- #
+#
+# A real run holds the coded corpus verbatim and never enters git. What CAN be shared
+# is everything about the coding that is not the respondents' words: counts, code
+# names, response numbers, metrics, cluster structure, threshold curves. The exporter
+# writes exactly that, then re-reads what it wrote and fails - deleting its output -
+# if any file shares a 20-character run with any text it was told to withhold.
+# results/ is tracked; make provenance covers it like every other tracked file.
+results:
+	uv run python scripts/export_results.py --run $(RESULTS_RUN) --out $(RESULTS_OUT) --label "$(RESULTS_LABEL)"

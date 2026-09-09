@@ -36,6 +36,8 @@ audit trail.
 | [ADR-0026](#adr-0026--a-meaning-ruling-never-is-an-error-but-it-can-leave-a-state-that-is) | A meaning ruling never *is* an ERROR, but it can leave a state that is | accepted (Wave 4, second adversarial review) |
 | [ADR-0027](#adr-0027--what-the-history-rewrite-cost-and-what-was-done-about-it) | What the history rewrite cost, and what was done about it | accepted (Wave 4, second adversarial review) |
 | [ADR-0028](#adr-0028--gitignore-protects-git-not-the-directory) | `.gitignore` protects git, not the directory | accepted (Wave 4, second adversarial review) |
+| [ADR-0029](#adr-0029--the-pis-files-arrive-in-two-shapes-the-readers-did-not-know-and-one-of-them-names-no-response) | The PI's files arrive in two shapes the readers did not know, and one of them names no response | accepted (Wave 4, second adversarial review) |
+| [ADR-0030](#adr-0030--a-respondent-fragment-reached-a-local-commit-through-a-code-comment-the-provenance-scan-read-one-corpus-only) | A respondent fragment reached a local commit through a code comment; the provenance scan read one corpus only | accepted (results export, 2026-09-09) |
 
 ---
 
@@ -878,3 +880,108 @@ outputs are reproducible from the corpus, so nothing of value is lost.
 way: no automated check can know when a directory is about to be shared. It is the same
 class of control as the provenance scan — a check the researcher runs deliberately, at
 the moment it matters, rather than a property the repository can enforce on its own.
+
+---
+
+## ADR-0029 — The PI's files arrive in two shapes the readers did not know, and one of them names no response
+
+**Status:** accepted (2026-09-09, on receipt of the golden set)
+
+**Context.** The principal investigator sent his own coding of a sample —
+`CodebookIndiaProcess(1-20).xlsx` — and the corpus it was made on,
+`CorpusSample(IndiaProcess1-20).xlsx`. Neither matched the shapes the ingest readers
+were built for, and both readers correctly refused rather than guessing.
+
+*The corpus* is one column with no header; each cell opens with the response number:
+`11. <the response text>`. **Two different responses are numbered 44.**
+
+*The codebook* is a coding-tool highlights export: `id | document | tag | content`. It
+carries each coded segment and its code, and **no response number at all**. Its one
+`document` is "Narrative Process Responses India (1-100)": the PI coded a hundred
+responses, and the corpus file holds twenty of them.
+
+**Decisions.**
+
+1. *Numbered single-column corpus:* detected, not declared, so `gaf ingest` accepts
+   either shape from one command. A repeated number **does not raise** here, unlike
+   the headed reader: both responses are genuine respondents. The first keeps its
+   number; the k-th extra occurrence gets `number + 1000·k` and the number as written
+   is kept on the record's metadata and reported in the ingest line. Silently dropping
+   one respondent, or silently renumbering, were the alternatives, and both hide a fact
+   about the PI's file that he should be told.
+2. *Highlights export:* every highlight is placed by **locating its text** — an exact
+   substring of exactly one normalised response, else the single response above the
+   S2 fuzzy threshold, using the same locator S2 uses. A highlight fitting more than
+   one response is ambiguous and excluded; one fitting none is unlocated and excluded.
+   Both are counted and listed. The tool's own highlight ids were checked as a
+   tie-breaker and rejected: they follow the order the PI *coded* in, not document
+   order (six inversions; one response's ids span the first and last batches).
+3. On the real file: **147 of 342 highlights map** (all exact, 0 fuzzy), 2 are
+   ambiguous (the single words "defence" and "education", present in two responses),
+   193 are unlocated — every one scoring 0.41–0.45 against the twenty, i.e. text from
+   the eighty responses not sent. Every one of the twenty responses receives at least
+   two highlights; the golden subset holds 76 of his 117 codes.
+
+**Consequences.**
+
+*For open item 3 (question variant).* The file is "IndiaProcess"; the earlier sample
+was "NarrativeState". "Process" is the *from now to 2050, what impacts* question (v2)
+and "State" is the *in 2050, what roles* question (v3). That reading, combined with the
+column-name evidence already recorded in `config.py`, means **the State-sample runs in
+this repository used the wrong question text in the coder prompt** — v2 where v3 was
+right. It did not affect the Process results reported today, which use v2 correctly.
+Recorded here; the State runs should be repeated with v3 before anything from them is
+quoted.
+
+*For validation.* The export has code names but **no code descriptions**. The machine
+codebook has both. In the lexical fallback space, a name-plus-description vector against
+a name-only vector scores the same concept at 0.4–0.7 — `problem_solving` against
+`problem-solving` at 0.696, the identical name `future-inevitability` at 0.426 — so the
+code-level matching at τ_high found one pair in seventy-six. Matched name-against-name,
+the same pair scores 1.000. This is an input asymmetry, not a property of the method,
+and the runbook now says to compare without descriptions until the PI's definitions
+arrive. The agreement figures reported from the mock coder remain what they are: the
+mock is a keyword table (two catch-all codes account for 134 of its 197 assignments on
+this sample), and its agreement with an expert's coding was never the question. The
+question the live path must answer is now stated in the PI's own units.
+
+## ADR-0030 — A respondent fragment reached a local commit through a code comment; the provenance scan read one corpus only
+
+**Status:** accepted (results export, 2026-09-09)
+
+**Context.** Before the principal investigator was added as a collaborator, every blob in
+every commit was scanned against every real workbook on the machine: both corpora and his
+coding export, 30-character shingles. One non-exempt hit: the working copy of
+`gaf/ingest/xlsx.py` carried, in a comment illustrating the numbered-column shape, the
+first thirty characters of response 11 of the *Process* corpus. Shorter fragments of the
+same sentence sat in `docs/RUNBOOK.md` and ADR-0029. All three were written the same day
+the readers were, by copying the first cell of the file as the example.
+
+`make provenance` had passed. It could not have failed: `_real_responses()` read one
+file, the *State* corpus at its original path, and the fragment came from the *Process*
+corpus that arrived later. The test asserted the right property against the wrong set.
+
+**What was decided.**
+
+1. The scan reads every workbook directly under `../data`, `../codebook` and
+   `../Grounded AI Futures/data`, every sheet, every string cell long enough to carry a
+   shingle. Which column holds the response differs by shape; reading all of them costs
+   nothing and cannot copy anything.
+2. The three fragments were replaced with `<the response text>`. Examples in code and
+   docs are written from the shape, never from the file.
+3. The commit was local only; the remote was and is clean. Under the standing rule —
+   "if you commit one by accident, stop and tell me; do not attempt a history rewrite on
+   your own" — the amend that removes the blob from the local history was left to the
+   researcher, with the exact command, and nothing was committed on top of it.
+4. Results for sharing come from `scripts/export_results.py`, which emits counts, code
+   names, response numbers, metrics, cluster structure and threshold curves, never a
+   segment, quote or response body — and then re-reads what it wrote against every text
+   it was told to withhold (20-character shingles, stricter than the repository guard)
+   and deletes its own output on a hit. `results/` is tracked and therefore inside
+   `make provenance` as well.
+
+**Consequences.** Two independent guards now sit between a run directory and the
+repository, and the full-history scan is the thing to run before any change in who can
+see the repository. The lesson of ADR-0024 held a second time in a milder form: a check
+that passes is evidence only about the set it was pointed at.
+

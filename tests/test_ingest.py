@@ -425,3 +425,176 @@ def test_ingest_report_serialises() -> None:
     )
     assert report.to_json()["repaired_response_ids"] == [57]
     assert json.dumps(report.to_json())  # JSON-serialisable, for the run report
+
+
+# --------------------------------------------------------------------------- #
+# The two shapes the PI's Process sample arrived in (2026-09-09). Synthetic text only.
+# --------------------------------------------------------------------------- #
+
+from gaf.ingest.corpus import (  # noqa: E402 - grouped with the tests that use them
+    META_DUPLICATE_OF_NUMBER,
+    META_DUPLICATE_ORDINAL,
+    META_SOURCE_NUMBER,
+)
+from gaf.ingest.xlsx import (  # noqa: E402
+    DUPLICATE_ID_STRIDE,
+    read_highlights_xlsx,
+    read_numbered_column_xlsx,
+    sniff_numbered_column,
+)
+from tests.fixtures.corpus import synthetic_corpus  # noqa: E402
+
+
+def _numbered_workbook(path: Path, cells: list[str]) -> Path:
+    """One column, no header, each cell 'NN. text' — the PI's corpus-sample shape."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "IndiaProcess"
+    for cell in cells:
+        sheet.append([cell])
+    workbook.save(path)
+    return path
+
+
+def test_numbered_column_is_detected_and_the_headed_shape_is_not(tmp_path: Path) -> None:
+    numbered = _numbered_workbook(tmp_path / "n.xlsx", ["5. Clinics get support.", "7. Posts vanish."])
+    headed = write_narrative_state_xlsx(tmp_path / "h.xlsx")
+    assert sniff_numbered_column(numbered) is True
+    assert sniff_numbered_column(headed) is False
+
+
+def test_numbered_column_splits_the_number_off_and_keeps_file_order(tmp_path: Path) -> None:
+    path = _numbered_workbook(
+        tmp_path / "n.xlsx",
+        ["11. Clinics get diagnostic support.", "14) Posts in the office vanish.", " 19.   By then the reservoirs run themselves."],
+    )
+    rows = read_numbered_column_xlsx(path)
+    assert [r.response_id for r in rows] == [11, 14, 19]
+    assert [r.source_number for r in rows] == [11, 14, 19]
+    assert all(r.duplicate_ordinal == 0 for r in rows)
+    assert rows[0].content == "Clinics get diagnostic support."
+    assert rows[2].content == "By then the reservoirs run themselves."  # prefix and padding stripped
+
+
+def test_a_repeated_number_keeps_both_responses_and_records_the_fact(tmp_path: Path) -> None:
+    """The real file numbers two different responses 44. Neither may be dropped or merged.
+
+    The headed reader raises on a duplicate id because two rows claiming one respondent
+    cannot both be that respondent. Here the number is the PI's own label and both
+    texts are genuine, so the second is offset to stay unique and the original number
+    is kept on the row — reported, never silently repaired.
+    """
+    path = _numbered_workbook(
+        tmp_path / "dup.xlsx",
+        ["44. The first response numbered forty-four.", "44. A different response, also forty-four.", "45. The next one."],
+    )
+    rows = read_numbered_column_xlsx(path)
+    assert [r.response_id for r in rows] == [44, 44 + DUPLICATE_ID_STRIDE, 45]
+    assert [r.source_number for r in rows] == [44, 44, 45]
+    assert [r.duplicate_ordinal for r in rows] == [0, 1, 0]
+    assert rows[1].content.startswith("A different response")
+
+
+def test_load_corpus_autodetects_the_numbered_shape_and_reports_duplicates(tmp_path: Path) -> None:
+    path = _numbered_workbook(
+        tmp_path / "corpus.xlsx",
+        ["3. Rural clinics get support.", "3. A second three.", "8. Posts vanish quietly."],
+    )
+    responses, report = load_corpus_with_report(path)
+    assert [r.id for r in responses] == [3, 8, 3 + DUPLICATE_ID_STRIDE]  # (source, id) order
+    assert all(r.question for r in responses), "the survey question is attached to every record"
+    dup = next(r for r in responses if r.id == 3 + DUPLICATE_ID_STRIDE)
+    assert dup.meta[META_SOURCE_NUMBER] == 3
+    assert dup.meta[META_DUPLICATE_OF_NUMBER] == 3
+    assert dup.meta[META_DUPLICATE_ORDINAL] == 1
+    assert report.duplicate_numbers == ((3, 3 + DUPLICATE_ID_STRIDE),)
+    assert "number 3 appears again" in report.summary()
+
+
+def test_a_two_column_sheet_without_headers_is_still_refused(tmp_path: Path) -> None:
+    """Autodetection must not turn the reader into a guesser."""
+    path = tmp_path / "two.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["11. text", "extra"])
+    workbook.save(path)
+    with pytest.raises(SpreadsheetFormatError):
+        load_corpus_with_report(path)
+
+
+def _highlights_workbook(path: Path, rows: list[tuple[str, str, str, str]]) -> Path:
+    """A coding-tool export: id | document | tag | content. No response number."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "highlights"
+    sheet.append(["id", "document", "tag", "content"])
+    for row in rows:
+        sheet.append(list(row))
+    workbook.save(path)
+    return path
+
+
+def test_highlights_are_placed_by_locating_their_text(tmp_path: Path) -> None:
+    """The export names no response; every highlight is placed by where its text occurs.
+
+    Built on the synthetic corpus: exact substrings of three different responses, the
+    same segment coded twice (the PI's two-codes-per-segment rule in the data), one
+    single word that appears in two responses (ambiguous, excluded), and one string
+    that appears nowhere (unlocated, excluded).
+    """
+    corpus = synthetic_corpus()
+    by_id = {r.id: r for r in corpus}
+    seg203 = "Rural clinics get diagnostic support"
+    seg207 = "Firms will hand ticket triage and first-draft paperwork to software"
+    seg253 = "nobody in the depot will remember how the rota used to be built"
+    assert seg203 in by_id[203].content and seg207 in by_id[207].content and seg253 in by_id[253].content
+    shared_word = "will"  # present in many responses -> ambiguous
+    assert sum(1 for r in corpus if shared_word in r.content.split()) > 1
+
+    path = _highlights_workbook(
+        tmp_path / "hl.xlsx",
+        [
+            ("1", "Doc (1-100)", "positive_impacts-healthcare", seg203),
+            ("2", "Doc (1-100)", "negative_impacts-job_destruction", seg207),
+            ("3", "Doc (1-100)", "negative_impacts-dependence", seg253),
+            ("3", "Doc (1-100)", "future-uncertainty", seg253),  # same segment, second code
+            ("4", "Doc (1-100)", "future-inevitability", shared_word),
+            ("5", "Doc (1-100)", "future-superintelligence", "a sentence that occurs in no response at all"),
+        ],
+    )
+    assignments, report = read_highlights_xlsx(path, corpus)
+
+    assert report.total == 6
+    assert (report.exact, report.fuzzy, report.ambiguous, report.unlocated) == (4, 0, 1, 1)
+    assert report.mapped == 4
+    assert [a.response_id for a in assignments] == [203, 207, 253, 253]
+    assert [a.code for a in assignments][2:] == ["negative_impacts-dependence", "future-uncertainty"]
+    assert report.per_response == {203: 1, 207: 1, 253: 2}
+    outcomes = {m.highlight_id: m.outcome for m in report.mappings}
+    assert outcomes["4"] == "ambiguous" and len(next(m for m in report.mappings if m.highlight_id == "4").candidates) > 1
+    assert outcomes["5"] == "unlocated"
+    assert "4 mapped" in report.summary() and "1 ambiguous" in report.summary()
+
+
+def test_highlights_accept_code_and_text_as_header_synonyms(tmp_path: Path) -> None:
+    corpus = synthetic_corpus()
+    path = tmp_path / "syn.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["Code", "Text"])
+    sheet.append(["positive_impacts-healthcare", "Rural clinics get diagnostic support"])
+    workbook.save(path)
+    assignments, report = read_highlights_xlsx(path, corpus)
+    assert len(assignments) == 1 and assignments[0].response_id == 203
+    assert report.mappings[0].highlight_id == "0"  # no id column -> row offset
+
+
+def test_highlights_missing_tag_column_raises_naming_the_file(tmp_path: Path) -> None:
+    path = tmp_path / "bad.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["id", "content"])
+    sheet.append(["1", "anything"])
+    workbook.save(path)
+    with pytest.raises(SpreadsheetFormatError, match=r"bad\.xlsx"):
+        read_highlights_xlsx(path, synthetic_corpus())

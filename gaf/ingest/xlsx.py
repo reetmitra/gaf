@@ -38,6 +38,7 @@ alters the bytes it was given.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,7 +46,8 @@ from typing import Any
 
 from openpyxl import load_workbook
 
-from gaf.models import Assignment
+from gaf.models import Assignment, Response
+from gaf.textnorm import normalise
 
 __all__ = [
     "CODE_HEADERS",
@@ -149,6 +151,12 @@ class RawResponseRow:
     response_id: int
     content: str
     encoding_repaired: bool = False
+    #: The number as written in the source file. Equal to `response_id` except for a
+    #: duplicate, where `response_id` has been offset to stay unique (see
+    #: `read_numbered_column_xlsx`). Carried so the PI's own numbering is never lost.
+    source_number: int | None = None
+    #: 0 for a normal row; k for the k-th *extra* row that repeats an earlier number.
+    duplicate_ordinal: int = 0
 
 
 # --------------------------------------------------------------------------- #
@@ -358,3 +366,281 @@ def read_coded_xlsx(path: Path | str, *, sheet: str | None = None) -> list[Assig
             )
         )
     return out
+
+
+# --------------------------------------------------------------------------- #
+# Numbered single-column corpus:  "11. <the response text> ..."
+# --------------------------------------------------------------------------- #
+
+#: Matches a cell whose text opens with the response number: "11. text", "11) text".
+_NUMBERED_CELL = re.compile(r"^\s*(\d+)\s*[.)]\s*(.+)$", re.S)
+
+#: Offset applied to the k-th extra occurrence of a repeated source number, so two
+#: responses the PI numbered identically both survive with distinct ids. 1000 is far
+#: above any response number a study of this size will reach; a collision with a
+#: genuine later number raises rather than being absorbed.
+DUPLICATE_ID_STRIDE = 1000
+
+
+def looks_like_numbered_column(rows: Sequence[tuple[Any, ...]]) -> bool:
+    """True when every non-blank row is a single cell that opens with "NN. ".
+
+    This is the shape the principal investigator's corpus samples arrive in: no header,
+    one column, the response number folded into the text. It is detected rather than
+    declared so `load_corpus` can accept either shape from one command.
+    """
+    seen = 0
+    for row in rows:
+        cells = [c for c in row if not _is_blank(c)]
+        if not cells:
+            continue
+        if len(cells) != 1 or not _NUMBERED_CELL.match(_cell_text(cells[0])):
+            return False
+        seen += 1
+    return seen > 0
+
+
+def sniff_numbered_column(path: Path | str, *, sheet: str | None = None) -> bool:
+    """`looks_like_numbered_column` for a path, so callers need no private helper."""
+    return looks_like_numbered_column(_read_sheet_rows(Path(path), sheet))
+
+
+def read_numbered_column_xlsx(
+    path: Path | str, *, sheet: str | None = None
+) -> list[RawResponseRow]:
+    """Read a corpus whose only column holds "NN. response text", in file order.
+
+    The number is split off and becomes the response id. **A repeated number does not
+    raise here**, unlike `read_narrative_state_xlsx`: the real file numbers two
+    different responses 44, and both are genuine respondents. The first keeps its
+    number; the k-th extra occurrence is given ``number + DUPLICATE_ID_STRIDE * k`` and
+    the original number is kept on `RawResponseRow.source_number` with
+    `duplicate_ordinal = k`, so the fact is reported rather than silently repaired or
+    silently dropped.
+    """
+    path = Path(path)
+    rows = _read_sheet_rows(path, sheet)
+    if not looks_like_numbered_column(rows):
+        raise SpreadsheetFormatError(
+            f"{path}: not a numbered single-column corpus (expected every row to be one "
+            'cell opening with "NN. ")'
+        )
+    out: list[RawResponseRow] = []
+    occurrences: dict[int, int] = {}
+    assigned: set[int] = set()
+    for index, row in enumerate(rows):
+        cells = [c for c in row if not _is_blank(c)]
+        if not cells:
+            continue
+        match = _NUMBERED_CELL.match(_cell_text(cells[0]))
+        assert match is not None  # guaranteed by looks_like_numbered_column
+        number = int(match.group(1))
+        body = match.group(2).strip()
+        if not body:
+            raise SpreadsheetFormatError(f"{path} row {index + 1}: response {number} has no text")
+        ordinal = occurrences.get(number, 0)
+        occurrences[number] = ordinal + 1
+        response_id = number + DUPLICATE_ID_STRIDE * ordinal
+        if response_id in assigned:
+            raise SpreadsheetFormatError(
+                f"{path} row {index + 1}: the duplicate offset for repeated number {number} "
+                f"collides with an existing id {response_id}; renumber the source file"
+            )
+        assigned.add(response_id)
+        repaired = repair_mojibake(body)
+        out.append(
+            RawResponseRow(
+                response_id=response_id,
+                content=repaired,
+                encoding_repaired=repaired != body,
+                source_number=number,
+                duplicate_ordinal=ordinal,
+            )
+        )
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# A coding-tool "highlights" export:  id | document | tag | content
+# --------------------------------------------------------------------------- #
+
+HIGHLIGHT_TAG_HEADERS: tuple[str, ...] = ("tag", "code")
+HIGHLIGHT_CONTENT_HEADERS: tuple[str, ...] = ("content", "text", "segment", "highlight")
+HIGHLIGHT_ID_HEADERS: tuple[str, ...] = ("id", "highlight_id", "highlight id")
+
+
+@dataclass(frozen=True, slots=True)
+class HighlightMapping:
+    """Where one highlight landed, and how confidently."""
+
+    highlight_id: str
+    tag: str
+    content: str
+    response_id: int | None
+    outcome: str  # "exact" | "fuzzy" | "ambiguous" | "unlocated"
+    score: float
+    candidates: tuple[int, ...]
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "highlight_id": self.highlight_id,
+            "tag": self.tag,
+            "content": self.content,
+            "response_id": self.response_id,
+            "outcome": self.outcome,
+            "score": self.score,
+            "candidates": list(self.candidates),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class HighlightsReport:
+    """What mapping a highlights export onto a corpus did, as countable facts.
+
+    An export names no response; every highlight is placed by locating its text. The
+    counts here are the evidence for that placement, and the unlocated list is the
+    first thing to read: on the real sample it is the highlights that belong to
+    responses the corpus file does not contain.
+    """
+
+    path: str
+    total: int
+    exact: int
+    fuzzy: int
+    ambiguous: int
+    unlocated: int
+    per_response: dict[int, int]
+    mappings: tuple[HighlightMapping, ...]
+
+    @property
+    def mapped(self) -> int:
+        return self.exact + self.fuzzy
+
+    def summary(self) -> str:
+        return (
+            f"{self.total} highlights: {self.mapped} mapped to a response "
+            f"({self.exact} exact, {self.fuzzy} fuzzy), {self.ambiguous} ambiguous "
+            f"(excluded), {self.unlocated} unlocated (not in this corpus)"
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "path": self.path,
+            "total": self.total,
+            "mapped": self.mapped,
+            "exact": self.exact,
+            "fuzzy": self.fuzzy,
+            "ambiguous": self.ambiguous,
+            "unlocated": self.unlocated,
+            "per_response": {str(k): v for k, v in sorted(self.per_response.items())},
+            "mappings": [m.to_json() for m in self.mappings],
+        }
+
+
+def read_highlights_xlsx(
+    path: Path | str,
+    corpus: Sequence[Response],
+    *,
+    sheet: str | None = None,
+    fuzzy_threshold: float = 0.85,
+) -> tuple[list[Assignment], HighlightsReport]:
+    """Read a coding-tool highlights export and map every highlight onto the corpus.
+
+    The export carries the coded text and its tag but **no response number**, so each
+    highlight is placed by locating its text: an exact substring of exactly one
+    normalised response, else the single response scoring at or above
+    `fuzzy_threshold` under the same locator S2 uses. A highlight that fits more than
+    one response (a single word, typically) is **ambiguous and excluded**; one that fits
+    none is **unlocated and excluded**. Both are counted and listed, never guessed.
+
+    Returns the mapped highlights as `Assignment` rows — the row-oriented shape every
+    downstream comparison consumes — plus the report. The same segment coded twice in
+    the tool becomes two rows, which is how the PI's "at most two codes on one piece of
+    text" shows up in the data.
+    """
+    from gaf.checks.structural import locate_quote  # one quote locator in the codebase
+
+    path = Path(path)
+    rows = _read_sheet_rows(path, sheet)
+    columns, data_rows, raw_headers, header_row = _resolve_columns(rows, path)
+    tag_col = _require_column(columns, HIGHLIGHT_TAG_HEADERS, path=path, raw_headers=raw_headers)
+    content_col = _require_column(
+        columns, HIGHLIGHT_CONTENT_HEADERS, path=path, raw_headers=raw_headers
+    )
+    id_col = next((columns[h] for h in HIGHLIGHT_ID_HEADERS if h in columns), None)
+
+    texts = {r.id: normalise(r.content) for r in corpus}
+    assignments: list[Assignment] = []
+    mappings: list[HighlightMapping] = []
+    per_response: dict[int, int] = {}
+    exact = fuzzy = ambiguous = unlocated = 0
+
+    for offset, row in enumerate(data_rows):
+        if all(map(_is_blank, row)):
+            continue
+        tag_value = row[tag_col] if tag_col < len(row) else None
+        content_value = row[content_col] if content_col < len(row) else None
+        if _is_blank(tag_value) or _is_blank(content_value):
+            raise SpreadsheetFormatError(
+                f"{path} row {header_row + 1 + offset}: a highlight needs both a tag and content"
+            )
+        highlight_id = (
+            _cell_text(row[id_col]) if id_col is not None and id_col < len(row) else str(offset)
+        )
+        tag = _cell_text(tag_value).strip()
+        content = repair_mojibake(_cell_text(content_value))
+        needle = normalise(content)
+
+        hits = [rid for rid, text in texts.items() if needle in text]
+        outcome, score, response_id = "unlocated", 0.0, None
+        if len(hits) == 1:
+            outcome, score, response_id = "exact", 1.0, hits[0]
+        elif len(hits) > 1:
+            outcome = "ambiguous"
+        else:
+            scored = sorted(
+                ((locate_quote(needle, text, fuzzy_threshold)[1], rid) for rid, text in texts.items()),
+                reverse=True,
+            )
+            best, best_rid = scored[0] if scored else (0.0, None)
+            above = [rid for s, rid in scored if s >= fuzzy_threshold]
+            score = float(best)
+            if len(above) == 1:
+                outcome, response_id = "fuzzy", best_rid
+                hits = above
+            elif len(above) > 1:
+                outcome, hits = "ambiguous", above
+        if outcome == "exact":
+            exact += 1
+        elif outcome == "fuzzy":
+            fuzzy += 1
+        elif outcome == "ambiguous":
+            ambiguous += 1
+        else:
+            unlocated += 1
+        if response_id is not None:
+            assignments.append(Assignment(response_id=response_id, segment=content, code=tag))
+            per_response[response_id] = per_response.get(response_id, 0) + 1
+        mappings.append(
+            HighlightMapping(
+                highlight_id=highlight_id,
+                tag=tag,
+                content=content,
+                response_id=response_id,
+                outcome=outcome,
+                score=score,
+                candidates=tuple(sorted(hits)),
+            )
+        )
+
+    report = HighlightsReport(
+        path=str(path),
+        total=len(mappings),
+        exact=exact,
+        fuzzy=fuzzy,
+        ambiguous=ambiguous,
+        unlocated=unlocated,
+        per_response=per_response,
+        mappings=tuple(mappings),
+    )
+    return assignments, report

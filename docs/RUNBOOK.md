@@ -82,6 +82,56 @@ The run directory holds `codebook.json`, `assignments.json`, `findings.json`,
 
 ---
 
+## The two shapes the PI's files arrive in
+
+The principal investigator's samples do not come as `Number | Response` workbooks.
+Both shapes below are handled; neither is guessed.
+
+**A numbered single-column corpus.** One column, no header, the response number folded
+into the cell: `11. <the response text>`. `gaf ingest` detects this and reads
+it; nothing to pass. Two responses carrying the *same* number are both kept — the
+second is given `number + 1000` as its id, the number as written is kept on the
+record's metadata, and the ingest line says so (`number 44 appears again -> id 1044`).
+A headed workbook with a duplicate id still raises, because there two rows claiming one
+respondent cannot both be that respondent; here the number is a label the PI wrote.
+
+**A coding-tool highlights export.** Columns `id | document | tag | content` — the
+coded text and its code, but **no response number**. Every highlight is placed by
+locating its text in the corpus: an exact substring of exactly one normalised response,
+else the single response above the S2 fuzzy threshold. A highlight that fits more than
+one response (a single word, typically) is *ambiguous* and excluded; one that fits none
+is *unlocated* and excluded. Both are counted and listed, never assigned by guess.
+
+There is no CLI flag for the highlights export yet; it is a Python call:
+
+```bash
+uv run python -c "
+import json
+from gaf.ingest.corpus import load_corpus
+from gaf.ingest.xlsx import read_highlights_xlsx
+corpus = load_corpus('runs/process/corpus.json')
+rows, report = read_highlights_xlsx('../codebook/CodebookIndiaProcess(1-20).xlsx', corpus)
+print(report.summary())
+json.dump([a.to_json() for a in rows], open('runs/process/golden.json', 'w'), indent=2)
+json.dump(report.to_json(), open('runs/process/golden_mapping.json', 'w'), indent=2)
+"
+```
+
+`golden.json` is the row-oriented assignments shape every comparison consumes, and the
+path to hand to `GAF_GOLDEN_HUMAN_CODING`. **Read the summary line first.** On the
+Process sample it reads `342 highlights: 147 mapped ... 193 unlocated` — because the
+export covers a 100-response document and the corpus file holds 20 of them. The
+unlocated highlights are not errors; they belong to responses you were not sent.
+
+**Before comparing against it, know what the export lacks.** It carries code *names*
+but no code *descriptions*. The machine codebook carries both. Matching a
+name-plus-description vector against a name-only vector in the lexical space scores the
+same concept at 0.4–0.7 — `problem_solving` against `problem-solving` at 0.696, an
+identical name at 0.426 — so almost nothing clears τ_high. Run
+`gaf validate agreement` **without** `--codebook` to match name against name, and ask
+the PI for his code definitions; a comparison with descriptions on one side only is
+not a fair one.
+
 ## The human gate
 
 This is the one place a person's decision changes the codebook, and it is the only
@@ -234,6 +284,23 @@ watch the `llm_calls` table on a small batch first, and read ADR-0019 and ADR-00
 Responses are cached by content hash, so a re-run costs nothing for anything unchanged.
 
 ---
+
+## Exporting results for a collaborator
+
+A run directory is the coded corpus, verbatim, and stays gitignored. To share the
+*results* — what was found, not what respondents wrote — export them:
+
+```bash
+make results RESULTS_RUN=runs/process RESULTS_OUT=results/india-process-1-20
+```
+
+`scripts/export_results.py` reads the run and writes numbered Markdown files (inputs,
+his codebook profiled, structural checks, clustering, saturation, agreement, calibration,
+the machine run) plus the two SVGs. It never emits a segment, quote, highlight content or
+response body, and after writing it re-reads every file it produced against every text it
+was told to withhold; a hit aborts the export and deletes the output. The result directory
+is tracked, so `make provenance` covers it as well. Write the narrative `README.md` in the
+result directory by hand, from those files, and keep respondent text out of it too.
 
 ## When something breaks
 

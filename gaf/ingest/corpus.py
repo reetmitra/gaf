@@ -68,6 +68,11 @@ __all__ = [
 
 #: Key set on `Response.meta` when `repair_mojibake` changed the source text.
 META_ENCODING_REPAIRED = "encoding_repaired"
+#: The number as written in the source file, when the file carries one inline.
+META_SOURCE_NUMBER = "source_number"
+#: Set on the k-th extra response that repeats an earlier source number.
+META_DUPLICATE_OF_NUMBER = "duplicate_of_number"
+META_DUPLICATE_ORDINAL = "duplicate_ordinal"
 
 XLSX_SUFFIXES: tuple[str, ...] = (".xlsx", ".xlsm")
 JSON_SUFFIXES: tuple[str, ...] = (".json",)
@@ -95,6 +100,9 @@ class IngestReport:
     question_variant: str
     record_count: int
     repaired_response_ids: tuple[int, ...] = ()
+    #: (number as written, id assigned) for every response that repeated an earlier
+    #: number in a numbered single-column file. Empty for a headed workbook.
+    duplicate_numbers: tuple[tuple[int, int], ...] = ()
 
     @property
     def repaired_count(self) -> int:
@@ -106,6 +114,11 @@ class IngestReport:
             f"{self.record_count} responses from {self.source} "
             f"(question {self.question_variant}); "
             f"{self.repaired_count} of {self.record_count} required encoding repair"
+            + (
+                "; " + ", ".join(f"number {n} appears again -> id {i}" for n, i in self.duplicate_numbers)
+                if self.duplicate_numbers
+                else ""
+            )
         )
 
     def to_json(self) -> dict[str, Any]:
@@ -115,6 +128,7 @@ class IngestReport:
             "question_variant": self.question_variant,
             "record_count": self.record_count,
             "repaired_response_ids": list(self.repaired_response_ids),
+            "duplicate_numbers": [list(pair) for pair in self.duplicate_numbers],
         }
 
 
@@ -189,6 +203,13 @@ def _record_from_row(row: RawResponseRow, *, question: str, source: str) -> Resp
         # Observable, not silent: the run report counts these and the audit trail can
         # name the responses whose bytes ingest altered.
         meta[META_ENCODING_REPAIRED] = True
+    if row.source_number is not None:
+        meta[META_SOURCE_NUMBER] = row.source_number
+    if row.duplicate_ordinal:
+        # Two responses numbered identically in the source file. Both are kept; the
+        # later one has an offset id, and this records what the PI actually wrote.
+        meta[META_DUPLICATE_OF_NUMBER] = row.source_number
+        meta[META_DUPLICATE_ORDINAL] = row.duplicate_ordinal
     return Response(
         id=row.response_id, question=question, content=row.content, source=source, meta=meta
     )
@@ -254,15 +275,36 @@ def load_corpus_with_report(
         repaired_response_ids=tuple(
             r.id for r in ordered if r.meta.get(META_ENCODING_REPAIRED)
         ),
+        duplicate_numbers=tuple(
+            (int(r.meta[META_DUPLICATE_OF_NUMBER]), r.id)
+            for r in ordered
+            if META_DUPLICATE_OF_NUMBER in r.meta
+        ),
     )
     return ordered, report
 
 
 def _load_xlsx(path: Path, *, question: str, source: str) -> list[Response]:
-    return [
-        _record_from_row(row, question=question, source=source)
-        for row in read_narrative_state_xlsx(path)
-    ]
+    """Read either workbook shape the PI's samples arrive in.
+
+    The headed shape (`Number | Response`) is tried first. If its required columns are
+    absent and the sheet is a single numbered column ("11. text ..."), that reader is
+    used instead. Any other shape re-raises the original, named error — the reader
+    never guesses a column by position.
+    """
+    from gaf.ingest.xlsx import (
+        SpreadsheetFormatError,
+        read_numbered_column_xlsx,
+        sniff_numbered_column,
+    )
+
+    try:
+        rows = read_narrative_state_xlsx(path)
+    except SpreadsheetFormatError:
+        if not sniff_numbered_column(path):
+            raise
+        rows = read_numbered_column_xlsx(path)
+    return [_record_from_row(row, question=question, source=source) for row in rows]
 
 
 def read_corpus_json(

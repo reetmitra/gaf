@@ -964,10 +964,19 @@ def test_no_real_survey_data_is_committed() -> None:
     )
 
 
-#: Where the real corpus lives, relative to the repository. Set GAF_REAL_CORPUS to
-#: override. The provenance test below skips when it is absent, which is the state in
-#: CI and in any clean clone — the real file must never be inside the repository.
-REAL_CORPUS_DEFAULT = REPO_ROOT.parent / "Grounded AI Futures" / "data" / "NarrativeState(IndiaSample1-20).xlsx"
+#: Where the real files live, relative to the repository. Every workbook directly under
+#: these directories is read in place: corpora in either shape and the principal
+#: investigator's coding exports, because respondent text arrives in all of them. The
+#: first version of this scan read one corpus only, and a fragment of a *different*
+#: corpus reached a commit through a code comment (ADR-0030). Set GAF_REAL_CORPUS to a
+#: file or a directory (several, separated by os.pathsep) to override.
+REAL_DATA_DIRS: tuple[Path, ...] = (
+    REPO_ROOT.parent / "data",
+    REPO_ROOT.parent / "codebook",
+    REPO_ROOT.parent / "Grounded AI Futures" / "data",
+)
+#: Kept for callers that name the original corpus explicitly.
+REAL_CORPUS_DEFAULT = REAL_DATA_DIRS[2] / "NarrativeState(IndiaSample1-20).xlsx"
 
 #: Runs of this many characters or more, shared verbatim with a real response, are
 #: treated as respondent text. Thirty is short enough to catch a paraphrase that kept a
@@ -983,16 +992,60 @@ PROVENANCE_SHINGLE = 30
 PROVENANCE_EXEMPT = {"docs/CODING_RULES.md"}
 
 
+def _real_sources() -> list[Path]:
+    """Every real workbook the scan can find, read in place. Never copied into the repo."""
+    override = os.environ.get("GAF_REAL_CORPUS")
+    roots = [Path(p) for p in override.split(os.pathsep)] if override else list(REAL_DATA_DIRS)
+    files: list[Path] = []
+    for root in roots:
+        if root.is_file():
+            files.append(root)
+        elif root.is_dir():
+            files.extend(sorted(p for p in root.glob("*.xlsx") if not p.name.startswith("~$")))
+    return files
+
+
+#: Column headers that mark a column as labels rather than prose: a coding export's
+#: tag, id and document-title columns. A cell in such a column is never respondent text.
+NON_TEXT_HEADERS = {"id", "tag", "code", "document", "number", "highlight_id", "response_id"}
+
+
 def _real_responses() -> list[str]:
-    """The real survey responses, read in place. Never copied into the repository."""
+    """Every prose cell of every real workbook that is long enough to carry a shingle.
+
+    Reading every sheet rather than one named column is deliberate: the corpus files
+    put the response in column B, the numbered-column shape puts it in column A, and
+    a coding export puts it under "content". Two cells are *not* respondent text and
+    are skipped: anything in a column whose header is in NON_TEXT_HEADERS (the
+    principal investigator's code names and document titles, which this repository
+    legitimately reuses), and any cell with no whitespace at all, which is a label,
+    not a sentence. Over-inclusion elsewhere only makes the scan stricter; it never
+    copies anything.
+    """
     from openpyxl import load_workbook
 
-    path = Path(os.environ.get("GAF_REAL_CORPUS", str(REAL_CORPUS_DEFAULT)))
-    if not path.exists():
-        pytest.skip(f"real corpus not present at {path}; provenance scan skipped")
-    sheet = load_workbook(path, data_only=True).active
-    rows = [r for r in sheet.iter_rows(values_only=True) if r and any(c is not None for c in r)]
-    return [re.sub(r"\s+", " ", str(r[1])).casefold().strip() for r in rows[1:]]
+    sources = _real_sources()
+    if not sources:
+        pytest.skip("no real workbook present under REAL_DATA_DIRS; provenance scan skipped")
+    texts: list[str] = []
+    for path in sources:
+        workbook = load_workbook(path, read_only=True, data_only=True)
+        for sheet in workbook.worksheets:
+            rows = sheet.iter_rows(values_only=True)
+            first = next(rows, None)
+            if first is None:
+                continue
+            header = [str(c).strip().casefold() if c is not None else "" for c in first]
+            skip = {i for i, h in enumerate(header) if h in NON_TEXT_HEADERS}
+            body = rows if skip else (r for r in (first, *rows))
+            for row in body:
+                for i, cell in enumerate(row):
+                    if i in skip or not isinstance(cell, str):
+                        continue
+                    if len(cell) < PROVENANCE_SHINGLE or not re.search(r"\s", cell):
+                        continue
+                    texts.append(re.sub(r"\s+", " ", cell).casefold().strip())
+    return texts
 
 
 def test_no_tracked_file_contains_real_respondent_text() -> None:
