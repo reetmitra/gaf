@@ -931,7 +931,7 @@ column-name evidence already recorded in `config.py`, means **the State-sample r
 this repository used the wrong question text in the coder prompt** — v2 where v3 was
 right. It did not affect the Process results reported today, which use v2 correctly.
 Recorded here; the State runs should be repeated with v3 before anything from them is
-quoted.
+quoted. *Done 2026-09-10: re-run with v3; assignments, codebook and snapshot ids identical to the v2 run, only the model-call statistics differ. `gaf ingest` now names the question it attached and warns on a file-name mismatch.*
 
 *For validation.* The export has code names but **no code descriptions**. The machine
 codebook has both. In the lexical fallback space, a name-plus-description vector against

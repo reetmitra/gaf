@@ -56,8 +56,11 @@ They carry **76 of his 117 codes**.
 file was *NarrativeState* — the "in 2050, what roles" question. This is *Process* — the
 "from now to 2050, what impacts" question. That naming resolves an open item and exposes
 a mistake: the earlier State runs used the Process question text in the coder prompt. The
-mock coder never reads the question, so those results are unaffected in substance, but
-they should be re-run with the right variant before anything from them is quoted.
+mock coder never reads the question, so those results are unaffected in substance. The
+State sample was re-run with v3 on 10 September 2026 (`runs/state/`, local): response
+bodies, assignments, codebook and snapshot ids are identical to the v2 run, and only the
+model-call statistics differ, because the prompt text does. `gaf ingest` now prints the
+question it attached and warns when the file name disagrees with the variant.
 
 ---
 

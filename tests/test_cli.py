@@ -943,6 +943,41 @@ def test_ingest_reads_a_workbook_into_the_canonical_corpus(tmp_path: Path, capsy
     assert len(rows) == len(RAW_RESPONSES)
 
 
+def test_ingest_names_the_question_it_attached(tmp_path: Path, capsys):
+    workbook = write_narrative_state_xlsx(tmp_path / "raw.xlsx", RAW_RESPONSES)
+    target = tmp_path / "corpus.json"
+    assert run_cli(
+        "ingest", "--xlsx", str(workbook), "--question-variant", "v3", "--out", str(target)
+    ) == EXIT_OK
+    out = capsys.readouterr().out
+    assert "question            v3: In 2050, what kind of roles" in out
+    assert "WARNING" not in out
+
+
+def test_ingest_warns_when_the_file_name_disagrees_with_the_variant(tmp_path: Path, capsys):
+    """A State file under the default (v2) question is the mistake ADR-0029 records."""
+    from gaf.cli.ingest import variant_hint
+
+    assert variant_hint(Path("NarrativeState(IndiaSample1-20).xlsx"), "v2") is not None
+    assert variant_hint(Path("NarrativeState(IndiaSample1-20).xlsx"), "v3") is None
+    assert variant_hint(Path("CorpusSample(IndiaProcess1-20).xlsx"), "v3") is not None
+    assert variant_hint(Path("CorpusSample(IndiaProcess1-20).xlsx"), "v2") is None
+    assert variant_hint(Path("raw.xlsx"), "v2") is None
+
+    workbook = write_narrative_state_xlsx(tmp_path / "NarrativeState(Sample).xlsx", RAW_RESPONSES)
+    target = tmp_path / "corpus.json"
+    # Default variant, State file name: reported, never corrected — the corpus is still written.
+    assert run_cli("ingest", "--xlsx", str(workbook), "--out", str(target)) == EXIT_OK
+    out = capsys.readouterr().out
+    assert "WARNING" in out
+    assert "the file name says 'state', which is the v3 question" in out
+    assert target.exists()
+    assert run_cli(
+        "ingest", "--xlsx", str(workbook), "--question-variant", "v3", "--out", str(target)
+    ) == EXIT_OK
+    assert "WARNING" not in capsys.readouterr().out
+
+
 def test_analyse_writes_the_matrix_the_clusters_and_the_curve(
     demo: Path, corpus_json: Path, tmp_path: Path, capsys
 ):

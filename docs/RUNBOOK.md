@@ -53,8 +53,14 @@ unverifiable quotes; that is the check layer working.
 ## Coding a real corpus
 
 ```bash
-uv run gaf ingest --xlsx "../Grounded AI Futures/data/NarrativeState(IndiaSample1-20).xlsx" --out runs/india/corpus.json
+uv run gaf ingest --xlsx "../data/NarrativeState(IndiaSample1-20).xlsx" --question-variant v3 --out runs/state/corpus.json
 ```
+
+**Name the question.** *State* files ("in 2050, what kind of roles") are `v3`; *Process*
+files ("from now to 2050, what impacts") are `v2`. The default is `v2`, so a State file
+ingested without the flag gets the wrong question in the coder prompt — which happened
+once (ADR-0029). The ingest line now prints the question it attached and warns when the
+file name disagrees with the variant; it never guesses on your behalf.
 
 Real survey data lives **outside the repository** and stays there. `data/` is gitignored
 except `data/synthetic/`, and every spreadsheet and document extension is excluded
@@ -73,8 +79,8 @@ repairs mis-encoded text — reporting how many responses needed it rather than 
 silently.
 
 ```bash
-uv run gaf run --corpus runs/india/corpus.json --out runs/india
-uv run gaf report --run runs/india
+uv run gaf run --corpus runs/state/corpus.json --out runs/state
+uv run gaf report --run runs/state
 ```
 
 The run directory holds `codebook.json`, `assignments.json`, `findings.json`,
@@ -140,7 +146,7 @@ propose, and integration merges or admits, but nothing splits, re-parents or ren
 outside a checkpoint.
 
 ```bash
-uv run gaf checkpoint --run runs/india --interactive
+uv run gaf checkpoint --run runs/state --interactive
 ```
 
 **What you will see.** The Refactorer sees the whole codebook with usage statistics and
@@ -173,7 +179,7 @@ meta-analysis finds synergy. See `docs/METHODS.md` §2.
 ## The analysis tail
 
 ```bash
-uv run gaf analyse --assignments runs/india/assignments.json --data runs/india/corpus.json --out runs/india/analysis
+uv run gaf analyse --assignments runs/state/assignments.json --data runs/state/corpus.json --out runs/state/analysis
 ```
 
 Writes the occurrence matrix as CSV, the agglomeration schedule, cluster assignments and
@@ -193,10 +199,10 @@ from a corpus large enough for the rule to behave, or state it and say that you 
 ## Validation
 
 ```bash
-uv run gaf validate agreement --human golden.json --machine runs/india/assignments.json --data runs/india/corpus.json
+uv run gaf validate agreement --human golden.json --machine runs/state/assignments.json --data runs/state/corpus.json
 # --score-from codes derives the score from each response's codes, so it needs the codebook
-uv run gaf validate lexical --table runs/india/scored.json --score-from codes \
-  --codebook runs/india/codebook.json
+uv run gaf validate lexical --table runs/state/scored.json --score-from codes \
+  --codebook runs/state/codebook.json
 ```
 
 No command writes `scored.json` — it is a pooled table of `(response_id, text, score,
@@ -208,8 +214,8 @@ uv run python -c "
 import json
 from gaf.ingest.corpus import load_corpus
 rows = [{'response_id': r.id, 'text': r.content, 'group': r.source}
-        for r in load_corpus('runs/india/corpus.json')]
-json.dump(rows, open('runs/india/scored.json', 'w'), indent=2)
+        for r in load_corpus('runs/state/corpus.json')]
+json.dump(rows, open('runs/state/scored.json', 'w'), indent=2)
 "
 ```
 
@@ -249,10 +255,10 @@ from gaf.ingest.xlsx import read_coded_xlsx
 from gaf.models import Assignment
 
 human = read_coded_xlsx('../Grounded AI Futures/data/<his file>.xlsx')
-machine = [Assignment.from_json(r) for r in json.load(open('runs/india/assignments.json'))]
+machine = [Assignment.from_json(r) for r in json.load(open('runs/state/assignments.json'))]
 report = calibrate_thresholds(human, machine, EmbeddingService(), CodingRules())
 print(report.paragraph())
-json.dump(report.to_json(), open('runs/india/calibration_report.json', 'w'), indent=2)
+json.dump(report.to_json(), open('runs/state/calibration_report.json', 'w'), indent=2)
 "
 ```
 
@@ -268,7 +274,7 @@ Live models are opt-in and no test or CI run ever touches them.
 ```bash
 cp .env.example .env      # then fill in the keys you actually intend to use
 uv sync --extra live      # provider SDKs are optional extras, not core dependencies
-uv run gaf run --corpus runs/india/corpus.json --out runs/india --live
+uv run gaf run --corpus runs/state/corpus.json --out runs/state --live
 ```
 
 Two coders from **different providers** and a judge from a **third** — the epistemic

@@ -21,6 +21,28 @@ from gaf.ingest.corpus import corpus_content_hash, load_corpus_with_report, writ
 from gaf.ingest.xlsx import SpreadsheetFormatError
 
 
+#: What the survey's own file names say about the question that produced them. The
+#: State sample ("in 2050, what kind of roles") is v3; the Process sample ("from now to
+#: 2050, what impacts") is v2. The default variant is v2, which is a trap for a State
+#: file ingested without the flag: the State sample was once coded under the Process
+#: question that way (ADR-0029). The name is a hint, not an authority, so a mismatch is
+#: reported on the ingest line and never silently corrected.
+_FILENAME_HINTS: tuple[tuple[str, str], ...] = (("state", "v3"), ("process", "v2"))
+
+
+def variant_hint(source: Path, variant: str) -> str | None:
+    """One sentence if the file name suggests a different question than ``variant``."""
+    name = source.name.casefold()
+    for token, expected in _FILENAME_HINTS:
+        if token in name and expected != variant:
+            return (
+                f"the file name says '{token}', which is the {expected} question, but "
+                f"--question-variant is {variant}; pass --question-variant {expected} if "
+                "this is that survey"
+            )
+    return None
+
+
 def cmd_ingest(args: argparse.Namespace) -> int:
     """Read a raw-response workbook into the canonical corpus JSON."""
     source = Path(args.xlsx)
@@ -44,6 +66,11 @@ def cmd_ingest(args: argparse.Namespace) -> int:
             + ", ".join(str(r) for r in report.repaired_response_ids)
             + "  (recorded on the response metadata, never applied silently)"
         )
+    question = QUESTION_VARIANTS[args.question_variant]
+    _out(f"  question            {args.question_variant}: {question[:60]}...")
+    hint = variant_hint(source, args.question_variant)
+    if hint:
+        _out(f"  WARNING             {hint}")
     _out(f"  written             {out}")
     return EXIT_OK
 
