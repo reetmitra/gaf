@@ -13,7 +13,8 @@ Usage::
     uv run python scripts/export_results.py --run runs/process --out results/india-process-1-20
 
 Inputs are located by the run layout ``gaf`` writes (``corpus.json``, ``golden.json``,
-``golden_mapping.json``, ``golden_checks.json``, ``analysis_golden/``, ``agreement/``,
+``golden_mapping.json``, ``golden_checks.json``, ``analysis_golden/`` (or ``analysis/`` for a
+run without human coding), ``agreement/``,
 ``agreement_nameonly/``, ``calibration_report.json``, ``stats.json``, ``codebook.json``,
 ``assignments.json``). A missing input skips its section and says so.
 """
@@ -100,6 +101,8 @@ _NUMERIC = {
     "id",
     "number",
     "distinct codes",
+    "machine assignments",
+    "distinct machine codes",
     "segments",
     "evidence",
     "assignments",
@@ -147,6 +150,12 @@ def _write(out: Path, name: str, body: str) -> Path:
     return path
 
 
+def _drop_empty(header: list[str], rows: list[list[Any]]) -> tuple[list[str], list[list[Any]]]:
+    """Remove columns that carry nothing but '-' in every row."""
+    keep = [i for i in range(len(header)) if any(r[i] != "-" for r in rows)]
+    return [header[i] for i in keep], [[r[i] for i in keep] for r in rows]
+
+
 # --------------------------------------------------------------------------- withheld
 
 
@@ -189,6 +198,17 @@ class Withheld:
         return hits
 
 
+def _analysis_dir(run: Path) -> tuple[Path, str]:
+    """The analysis to export and whose coding it was computed over.
+
+    A run with a golden set carries ``analysis_golden/`` (the tail run over the human
+    coding); a run without one carries only ``analysis/`` (over the machine's).
+    """
+    if (run / "analysis_golden").is_dir():
+        return run / "analysis_golden", "his coding"
+    return run / "analysis", "the machine's coding"
+
+
 # --------------------------------------------------------------------------- sections
 
 
@@ -205,9 +225,17 @@ def section_inputs(run: Path, withheld: Withheld, label: str) -> str | None:
     for r in grows:
         withheld.add(r.get("segment"))
 
-    highlights = Counter(int(r["response_id"]) for r in grows)
+    if grows:
+        coded_rows, col_n, col_d = grows, "highlights", "distinct codes"
+    else:
+        assignments = _load(run / "assignments.json")
+        coded_rows = _rows(assignments) if assignments is not None else []
+        for r in coded_rows:
+            withheld.add(r.get("segment"))
+        col_n, col_d = "machine assignments", "distinct machine codes"
+    highlights = Counter(int(r["response_id"]) for r in coded_rows)
     distinct = defaultdict(set)
-    for r in grows:
+    for r in coded_rows:
         distinct[int(r["response_id"])].add(r["code"])
     rows = []
     for r in sorted(responses, key=lambda x: int(x["id"])):
@@ -239,7 +267,7 @@ def section_inputs(run: Path, withheld: Withheld, label: str) -> str | None:
         "Word counts are derived from the response bodies; the bodies themselves stay in the",
         "gitignored run directory.",
         "",
-        _table(["id", "number as written", "note", "words", "highlights", "distinct codes"], rows),
+        _table(*_drop_empty(["id", "number as written", "note", "words", col_n, col_d], rows)),
         "",
     ]
     if mapping is not None:
@@ -444,14 +472,14 @@ def section_structural(run: Path) -> str | None:
 
 
 def section_clustering(run: Path, out: Path) -> str | None:
-    adir = run / "analysis_golden"
+    adir, whose = _analysis_dir(run)
     clusters = _load(adir / "clusters.json")
     matrix = _load(adir / "occurrence_matrix.json")
     if clusters is None:
         return None
     sched = clusters["schedule"]
     filt = (matrix or {}).get("filter", {})
-    parts = ["# 04 - Ward's hierarchical cluster analysis over his coding", ""]
+    parts = [f"# 04 - Ward's hierarchical cluster analysis over {whose}", ""]
     parts += [
         f"{clusters['n_responses']} responses x {clusters['n_codes']} codes after the low-frequency filter",
         f"(minimum {filt.get('min_code_frequency', '?')} responses per code: {filt.get('n_kept', '?')} kept, {filt.get('n_dropped', '?')} dropped).",
@@ -475,6 +503,8 @@ def section_clustering(run: Path, out: Path) -> str | None:
         "![dendrogram](dendrogram.svg)",
         "",
     ]
+    for warning in sched.get("warnings", []):
+        parts += ["> **The analysis's own warning.** " + warning, ""]
     for k, means in sorted(clusters["means"].items()):
         top = sorted(means, key=lambda m: (-m["mean"], m["code"]))[:10]
         parts += [
@@ -511,11 +541,11 @@ def section_clustering(run: Path, out: Path) -> str | None:
 
 
 def section_saturation(run: Path, out: Path) -> str | None:
-    adir = run / "analysis_golden"
+    adir, whose = _analysis_dir(run)
     sat = _load(adir / "saturation.json")
     if sat is None:
         return None
-    parts = ["# 05 - Theoretical saturation over his coding", ""]
+    parts = [f"# 05 - Theoretical saturation over {whose}", ""]
     parts += [
         f"Batch size {sat['batch_size']}; {sat['total_codes']} distinct codes in total; "
         + (
@@ -792,6 +822,19 @@ def section_machine_run(run: Path, withheld: Withheld) -> str | None:
     frows = [
         [k, v.get("ERROR", 0), v.get("WARN", 0), v.get("INFO", 0)] for k, v in sorted(f.items())
     ]
+    findings = _load(run / "findings.json")
+    frows_marker: list[list[Any]] = []
+    flagged: Counter[tuple[str, str, str, str, str]] = Counter()
+    if findings is not None:
+        by_marker: Counter[tuple[str, str, str]] = Counter()
+        for x in _rows(findings):
+            marker = str((x.get("data") or {}).get("marker", "-"))
+            by_marker[(x["check_id"], x["severity"], marker)] += 1
+            if x["severity"] in ("ERROR", "WARN"):
+                flagged[
+                    (x["check_id"], x["severity"], marker, str(x.get("subject", "-")), x["message"])
+                ] += 1
+        frows_marker = [[c, sev, mk, n] for (c, sev, mk), n in sorted(by_marker.items())]
     top2 = per_code.most_common(2)
     parts = [f"# 08 - The machine run (offline stand-in coder), run id `{stats.get('run_id')}`", ""]
     parts += [
@@ -811,6 +854,26 @@ def section_machine_run(run: Path, withheld: Withheld) -> str | None:
         "",
         _table(["check", "ERROR", "WARN", "INFO"], frows),
         "",
+    ]
+    if frows_marker:
+        parts += [
+            "## Findings by marker",
+            "",
+            _table(["check", "severity", "marker", "n"], frows_marker, align="lllr"),
+            "",
+        ]
+    if flagged:
+        parts += [
+            "## Every ERROR and WARN (subject is the candidate or response concerned)",
+            "",
+            _table(
+                ["check", "severity", "marker", "subject", "message", "n"],
+                [[*k, n] for k, n in sorted(flagged.items())],
+                align="lllllr",
+            ),
+            "",
+        ]
+    parts += [
         "## Pipeline counts",
         "",
         _table(

@@ -17,6 +17,33 @@ The two most-used machine codes account for 134 of 197 assignments: `future-imag
 | M3 | 0 | 0 | 197 |
 | S2 | 2 | 0 | 2 |
 
+## Findings by marker
+
+| check | severity | marker | n |
+|---|---|---|---:|
+| M1 | INFO | coders_agree | 74 |
+| M1 | WARN | coder_unmatched | 7 |
+| M1 | WARN | coders_dispute | 2 |
+| M2 | INFO | route_create | 17 |
+| M2 | INFO | route_merge | 67 |
+| M2 | WARN | route_judge | 1 |
+| M3 | INFO | fit_ok | 197 |
+| S2 | ERROR | no_verified_evidence | 2 |
+| S2 | INFO | quote_unverified | 2 |
+
+## Every ERROR and WARN (subject is the candidate or response concerned)
+
+| check | severity | marker | subject | message | n |
+|---|---|---|---|---|---:|
+| M1 | WARN | coder_unmatched | (unmatched)<->adoption-social_change | Coder B proposed 'adoption-social_change' and the other coder proposed nothing that could be assigned to it. | 2 |
+| M1 | WARN | coder_unmatched | (unmatched)<->future-imagined_scenario | Coder B proposed 'future-imagined_scenario' and the other coder proposed nothing that could be assigned to it. | 2 |
+| M1 | WARN | coder_unmatched | adoption-social_change<->(unmatched) | Coder A proposed 'adoption-social_change' and the other coder proposed nothing that could be assigned to it. | 1 |
+| M1 | WARN | coder_unmatched | future-imagined_scenario<->(unmatched) | Coder A proposed 'future-imagined_scenario' and the other coder proposed nothing that could be assigned to it. | 2 |
+| M1 | WARN | coders_dispute | future-imagined_scenario<->adoption-social_change | Coders dispute: 'future-imagined_scenario' and 'adoption-social_change' match at only cosine 0.000 (< tau_low 0.45). | 1 |
+| M1 | WARN | coders_dispute | positive_impacts-job_creation<->adoption-everyday_life | Coders dispute: 'positive_impacts-job_creation' and 'adoption-everyday_life' match at only cosine 0.084 (< tau_low 0.45). | 1 |
+| M2 | WARN | route_judge | negative_impacts-job_loss | Routes JUDGE against 'positive_impacts-job_creation' at cosine 0.462, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
+| S2 | ERROR | no_verified_evidence | future-superintelligence | No quote could be verified against the response, so the candidate has no evidence left to stand on. | 2 |
+
 ## Pipeline counts
 
 | quantity | value |
