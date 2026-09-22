@@ -55,6 +55,7 @@ audit trail.
 | [ADR-0045](#adr-0045--triple-candidates-are-ranked-by-their-exact-support-bound-before-the-cap-cuts-them) | Triple candidates are ranked by their exact support bound before the cap cuts them | accepted (fix pass F1, from the R1 correctness audit) |
 | [ADR-0046](#adr-0046--a-family-tagged-both-ways-keeps-its-own-segments-and-a-description-never-travels-without-its-source) | A family tagged both ways keeps its own segments, and a description never travels without its source | accepted (fix pass F1; ADR-0032 made structural) |
 | [ADR-0047](#adr-0047--the-provenance-guard-scans-at-the-exporters-twenty-characters-keeps-short-cells-subtracts-the-instrument-and-counts-respondents) | The provenance guard scans at the exporter's twenty characters, keeps short cells, subtracts the instrument and counts respondents | accepted (fix pass F2, from the R2 privacy audit) |
+| [ADR-0048](#adr-0048--the-default-live-registry-names-models-that-exist-at-prices-read-on-a-stated-date) | The default live registry names models that exist, at prices read on a stated date | accepted (PI feedback pass; amends `gaf/config.py`, the ADR-0015 precedent) |
 
 ---
 
@@ -2596,3 +2597,113 @@ alternative measured here — running at 30 — is the hole this entry closes. T
 also remains, as ADR-0038 decision 1 says, a finder of candidates and not a judge of
 them: every future hit is a person's ruling, and the right answer to an invented string
 is still to reword it.
+
+## ADR-0048 — The default live registry names models that exist, at prices read on a stated date
+
+**Status:** accepted (PI feedback pass, from the live-run cost estimate of 23 September
+2026; amends the frozen contract `gaf/config.py` additively, on the ADR-0015 precedent)
+
+**Context.** `--live` swaps in `DEFAULT_LIVE_REGISTRY` unconditionally and reads no other
+registry: `gaf/cli/_common.py` has no flag for one, so that constant *is* the live
+configuration. It had two defects, and neither could be found offline, because no test
+and no CI job ever builds a provider client.
+
+The first would have stopped a live run dead. `coder_b` named `gemini-2.0-flash`, which
+Google's own deprecation page lists with a shutdown date of **1 June 2026** — nearly four
+months before this entry — and which no longer appears on its pricing page at all. The
+failure would have landed on the *second* call of the first response, after the coder-A
+call on the same response had already been paid for.
+
+The second would have been quieter and worse. Prices live only on `ModelSpec`, which is
+the point: `cost_usd` is computed nowhere else, and `stats.llm.cost_usd` in a run report
+is whatever those four pairs say. Three of the four were wrong. `coder_b` carried the
+retired model's rates. `judge` carried 3.00 / 15.00 where Claude Sonnet 5 is 2.00 /
+10.00, and `refactorer` carried 15.00 / 75.00 where Claude Opus 5 is 5.00 / 25.00 — the
+rates of an Opus generation that has since been retired. Run against the measured call
+profile of `runs/process200` (2,278 calls; 1,876 of them the judge's fit check), the four
+stale numbers price the full corpus at about 54% above what it would actually cost. A
+number that is wrong by half, printed beside a coding, is worse than no number.
+
+Neither defect was detectable by reading the file, because the prices carried no date. A
+rate with no date cannot be checked, only believed.
+
+**Decision.**
+
+1. **The four bindings are the ones the providers themselves published on 23 September
+   2026**, each read from that provider's own page on that date:
+
+   | Role | Provider | Model id | Input $/Mtok | Output $/Mtok | Source |
+   |---|---|---|---:|---:|---|
+   | `coder_a` | openai | `gpt-4o-mini` | 0.15 | 0.60 | `https://developers.openai.com/api/docs/pricing` |
+   | `coder_b` | gemini | `gemini-3.6-flash` | 0.75 | 3.75 | `https://ai.google.dev/gemini-api/docs/pricing` |
+   | `judge` | anthropic | `claude-sonnet-5` | 2.00 | 10.00 | `https://platform.claude.com/docs/en/about-claude/pricing` |
+   | `refactorer` | anthropic | `claude-opus-5` | 5.00 | 25.00 | same |
+
+   `gpt-4o-mini` appears on OpenAI's deprecation page in none of its own rows (only its
+   transcribe, audio and realtime variants are deprecated), and both Anthropic ids are
+   current on the pricing page above. Only one id had to move.
+
+2. **`coder_b` takes `gemini-3.6-flash` because Google names it the replacement**, on the
+   same deprecation page that retires `gemini-2.0-flash`. Two newer Flash models
+   (`gemini-3.7-flash`, released 13 August 2026; `gemini-3.8-flash`, 2 September 2026)
+   are on the pricing page at the *same* list rate and with no announced shutdown date,
+   so this is not a cost choice — it is a defensibility one. "We used the replacement the
+   provider documented" needs no methodological argument in a methods appendix; "we used
+   the newest thing available on the day" needs one. Secondary web sources naming a 2.5
+   Flash successor were read and discarded: the provider's own page is the source of
+   record.
+
+   The rate is introductory. Google states 0.75 / 3.75 **through 31 December 2026** and
+   1.50 / 7.50 from 1 January 2027. The registry is therefore known to be wrong from that
+   date, which is exactly the kind of thing decision 3 exists to make visible.
+
+3. **`ModelSpec` gains `priced_on`, and `to_json()` omits it when it is empty.** The field
+   is additive with a default of `""`, so every existing construction of a `ModelSpec` is
+   unchanged and `MOCK_REGISTRY` carries no date, which is correct: a mock has no price to
+   date. The omission is deliberate and is the reason this entry does not move a single
+   byte of offline output. `RunConfig.to_json()` is compared **verbatim** by
+   `Blackboard.register_run` before a run id may be continued, and it is committed, in
+   full, in `tests/fixtures/golden/manifest.json` and rendered into
+   `examples/demo-run/report.txt`. A key emitted unconditionally would have moved the
+   golden fixture and the committed example to record an empty string about a model that
+   costs nothing. Emitted only where a price date exists, it travels with every live run —
+   the store, the manifest and the report all carry the date its rates were read — and
+   with no offline one. `gaf.cli._common._run_config_from_json` needs no change: it
+   already filters an incoming spec by `ModelSpec.__dataclass_fields__`, so the new field
+   round-trips by name, and a test asserts the round trip is exact.
+
+4. **Four assertions stand between these numbers and a silent drift**, in
+   `tests/test_contracts.py` and `tests/test_cli.py`: every model id in both registries
+   matches its provider's own prefix convention (`gpt-`, `gemini-`, `claude-`, `mock-`),
+   which is what the retired id would *not* have failed and is therefore a guard against
+   the next mismatch rather than this one; `distinct_coder_providers()` still holds, since
+   it is the epistemic-diversity mechanism and not a preference; the four price pairs and
+   their `priced_on` date are pinned to this entry; and a live-registry config survives
+   the JSON round trip byte for byte, which is what `Blackboard.register_run` requires.
+
+5. **The triple itself is not re-chosen here.** `claude-sonnet-5` and `claude-opus-5` keep
+   their slots because both are current, not because they are optimal — Anthropic's
+   pricing page also lists a newer Opus 5.5 tier at 4.00 / 20.00. Which models code this
+   corpus is the principal investigator's decision and belongs in a methods appendix; this
+   entry only makes the registry runnable and its arithmetic honest.
+
+**Consequences.**
+
+*What it buys.* A live run can now be started at all, and the `cost_usd` it prints can be
+reconstructed by anyone who reads this entry: four rates, four sources, one date. The
+cost estimate's recommendation (the registry's own triple with the retired id replaced)
+and the registry now agree, so the budget the PI approves is the budget the code would
+spend.
+
+*What it costs.* A second additive amendment to a frozen contract, after ADR-0015. The
+conditional key in `to_json()` is a small asymmetry — the serialisation of a `ModelSpec`
+is no longer a plain `asdict` — and it is the price of leaving the golden set untouched;
+`CheckpointPolicy.to_json()` already customises its output, so the shape is not new.
+
+*What remains open.* Prices decay, and this entry dates them rather than fixing them: the
+Google rate has a **known** step on 1 January 2027, and any of the four may move sooner.
+Re-pricing is another ADR and another commit, and the pinned test is what will force one.
+`gaf/config.py` is still the only place a triple can be changed — there is no CLI flag
+for a registry, and this entry does not add one. The live path remains unexercised by any
+test, by design (`CONTRIBUTING.md`, "The offline rule"), so these bindings are verified
+against the providers' documentation and not against the providers.

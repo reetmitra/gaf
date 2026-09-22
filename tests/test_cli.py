@@ -881,6 +881,18 @@ def test_live_components_requires_two_different_coder_providers():
     assert "different providers" in str(excinfo.value)
 
 
+def test_a_live_registry_config_survives_the_json_round_trip_byte_for_byte():
+    """`Blackboard.register_run` compares the stored config JSON verbatim before it lets
+    a run id continue, so the reader must return every field the writer emitted —
+    `priced_on` included, which is new in ADR-0048 and reaches the JSON only on a spec
+    that carries a price date."""
+    from gaf.cli._common import _run_config_from_json
+
+    echo = RunConfig(offline=False, models=DEFAULT_LIVE_REGISTRY).to_json()
+    assert echo["models"]["coder_b"]["priced_on"] == "2026-09-23"
+    assert _run_config_from_json(echo).to_json() == echo
+
+
 def test_live_components_names_the_extra_or_the_key_it_needs(monkeypatch):
     """No SDK and no key: the error must say which, and must never reach the network."""
     for variable in ("OPENAI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):

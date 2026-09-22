@@ -522,6 +522,13 @@ embedder cannot separate a code label from a quote. Whether a real embedding mod
 is an open empirical question. Budget for the worst case of one judge call per quote,
 watch the `llm_calls` table on a small batch first, and read ADR-0019 and ADR-0022.
 
+**The registry's prices carry the date they were read.** `DEFAULT_LIVE_REGISTRY` in
+`gaf/config.py` is the only registry `--live` reads, and each of its four bindings now
+records a `priced_on` date beside its two rates — 23 September 2026, from the providers'
+own pages (ADR-0048). `stats.llm.cost_usd` is only as good as those four numbers, so
+check them before a paid run: the coder-B rate is an introductory one that rises on
+1 January 2027, and a model id that has been retired fails on the call, not before it.
+
 Responses are cached by content hash, so a re-run costs nothing for anything unchanged.
 
 ---

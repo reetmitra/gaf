@@ -24,6 +24,7 @@ from typing import Any, Literal
 __all__ = [
     "DEFAULT_LIVE_REGISTRY",
     "DEFAULT_QUESTION_VARIANT",
+    "LIVE_REGISTRY_PRICED_ON",
     "MOCK_REGISTRY",
     "QUESTION_V2",
     "QUESTION_V3",
@@ -154,6 +155,11 @@ class ModelSpec:
     max_output_tokens: int = 4096
     input_usd_per_mtok: float = 0.0
     output_usd_per_mtok: float = 0.0
+    #: ISO date the two rates above were read from the provider's own page, or "" where
+    #: there is nothing to date (every mock spec). A rate with no date cannot be checked,
+    #: only believed — and these decay: see ADR-0048 for the four sources and the one
+    #: rate with a known step on 1 January 2027.
+    priced_on: str = ""
 
     def cost_usd(self, input_tokens: int, output_tokens: int) -> float:
         return (
@@ -161,7 +167,13 @@ class ModelSpec:
         ) / 1_000_000
 
     def to_json(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        if not self.priced_on:
+            # An unpriced spec emits no date, so `RunConfig.to_json()` — which the store
+            # compares verbatim and the golden manifest commits in full — is unchanged
+            # for every offline run. ADR-0048.
+            del data["priced_on"]
+        return data
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,25 +229,43 @@ MOCK_REGISTRY = ModelRegistry(
     refactorer=ModelSpec(provider="mock", model="mock-refactorer", role="refactorer"),
 )
 
+#: The date every rate below was read from the provider's own published page (ADR-0048).
+LIVE_REGISTRY_PRICED_ON = "2026-09-23"
+
 #: A suggested live triple — two mid-tier coders from different providers and one
 #: frontier judge from a third (brief §16.8). Never reached unless `offline=False`;
 #: override wholesale in a RunConfig rather than editing this constant.
+#:
+#: `--live` reads this constant and no other (`gaf/cli/_common.py`), so a retired id or a
+#: stale rate here is a run that fails, or a `cost_usd` nobody can reconstruct. Every id
+#: and both of its rates were read on `LIVE_REGISTRY_PRICED_ON` from:
+#:   openai     https://developers.openai.com/api/docs/pricing
+#:   gemini     https://ai.google.dev/gemini-api/docs/pricing  (and .../docs/deprecations)
+#:   anthropic  https://platform.claude.com/docs/en/about-claude/pricing
+#: `gemini-3.6-flash` is the replacement Google itself names for `gemini-2.0-flash`, which
+#: it shut down on 1 June 2026; its 0.75/3.75 is an introductory rate that becomes
+#: 1.50/7.50 on 1 January 2027. Re-pricing any line is an ADR, not an edit: ADR-0048, and
+#: the pinned test in `tests/test_contracts.py`.
 DEFAULT_LIVE_REGISTRY = ModelRegistry(
     coder_a=ModelSpec(
         provider="openai", model="gpt-4o-mini", role="coder_a",
         input_usd_per_mtok=0.15, output_usd_per_mtok=0.60,
+        priced_on=LIVE_REGISTRY_PRICED_ON,
     ),
     coder_b=ModelSpec(
-        provider="gemini", model="gemini-2.0-flash", role="coder_b",
-        input_usd_per_mtok=0.10, output_usd_per_mtok=0.40,
+        provider="gemini", model="gemini-3.6-flash", role="coder_b",
+        input_usd_per_mtok=0.75, output_usd_per_mtok=3.75,
+        priced_on=LIVE_REGISTRY_PRICED_ON,
     ),
     judge=ModelSpec(
         provider="anthropic", model="claude-sonnet-5", role="judge",
-        input_usd_per_mtok=3.00, output_usd_per_mtok=15.00,
+        input_usd_per_mtok=2.00, output_usd_per_mtok=10.00,
+        priced_on=LIVE_REGISTRY_PRICED_ON,
     ),
     refactorer=ModelSpec(
         provider="anthropic", model="claude-opus-5", role="refactorer",
-        max_output_tokens=8192, input_usd_per_mtok=15.00, output_usd_per_mtok=75.00,
+        max_output_tokens=8192, input_usd_per_mtok=5.00, output_usd_per_mtok=25.00,
+        priced_on=LIVE_REGISTRY_PRICED_ON,
     ),
 )
 
