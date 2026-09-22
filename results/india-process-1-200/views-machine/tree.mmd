@@ -1,0 +1,61 @@
+flowchart LR
+  ROOT(["Codebook"]):::root
+  P1["adoption<br/>n=201"]:::parent
+  ROOT --> P1
+  P1L1["everyday_life<br/>n=22"]:::leaf
+  P1 --> P1L1
+  P1L2["social_change<br/>n=179"]:::leaf
+  P1 --> P1L2
+  P2["applications<br/>n=205"]:::parent
+  ROOT --> P2
+  P2L1["automation<br/>n=44"]:::leaf
+  P2 --> P2L1
+  P2L2["data_driven_systems<br/>n=30"]:::leaf
+  P2 --> P2L2
+  P2L3["education<br/>n=39"]:::leaf
+  P2 --> P2L3
+  P2L4["healthcare<br/>n=48"]:::leaf
+  P2 --> P2L4
+  P2L5["industry_and_transport<br/>n=35"]:::leaf
+  P2 --> P2L5
+  P2L6["personalisation<br/>n=9"]:::leaf
+  P2 --> P2L6
+  P3["future<br/>n=206"]:::parent
+  ROOT --> P3
+  P3L1["imagined_scenario<br/>n=178"]:::leaf
+  P3 --> P3L1
+  P3L2["inevitability<br/>n=13"]:::leaf
+  P3 --> P3L2
+  P3L3["superintelligence<br/>n=8"]:::leaf
+  P3 --> P3L3
+  P3L4["uncertainty<br/>n=7"]:::leaf
+  P3 --> P3L4
+  P4["governance<br/>n=13"]:::parent
+  ROOT --> P4
+  P4L1["responsible_development<br/>n=13"]:::leaf
+  P4 --> P4L1
+  P5["negative_impacts<br/>n=81"]:::parent
+  ROOT --> P5
+  P5L1["dependence<br/>n=35"]:::leaf
+  P5 --> P5L1
+  P5L2["inequality<br/>n=1"]:::leaf
+  P5 --> P5L2
+  P5L3["job_loss<br/>n=27"]:::leaf
+  P5 --> P5L3
+  P5L4["surveillance<br/>n=17"]:::leaf
+  P5 --> P5L4
+  P5L5["unskilled_workers<br/>n=1"]:::leaf
+  P5 --> P5L5
+  P6["positive_impacts<br/>n=142"]:::parent
+  ROOT --> P6
+  P6L1["access<br/>n=10"]:::leaf
+  P6 --> P6L1
+  P6L2["job_creation<br/>n=14"]:::leaf
+  P6 --> P6L2
+  P6L3["problem_solving<br/>n=83"]:::leaf
+  P6 --> P6L3
+  P6L4["quality_of_life<br/>n=35"]:::leaf
+  P6 --> P6L4
+  classDef root fill:#1b1b1b,color:#ffffff,stroke:#1b1b1b
+  classDef parent fill:#29506d,color:#ffffff,stroke:#29506d
+  classDef leaf fill:#f2efe9,color:#1b1b1b,stroke:#d8d5cf
