@@ -710,16 +710,26 @@ def test_checkpoint_signals_report_the_policy_triggers(embedder):
     assert json.loads(json.dumps(fired.to_json()))["recommend_checkpoint"] is True
 
 
-def test_checkpoint_hard_floor_fires_on_its_own(embedder):
+def test_checkpoint_hard_floor_fires_on_its_own_and_counts_from_the_last_checkpoint(
+    embedder,
+):
+    """R1 I1: the floor is "how long since a human looked", not "how far into the run"."""
     metrics = codebook_health(toy_codebook(), embedder, RULES)
+    policy = CheckpointPolicy(hard_floor_responses=50)
 
     signals = checkpoint_signals(
-        metrics, CheckpointPolicy(hard_floor_responses=50), responses_coded=50,
-        responses_since_checkpoint=0,
+        metrics, policy, responses_coded=50, responses_since_checkpoint=50
     )
-
     assert signals.hard_floor_reached is True
     assert signals.recommend_checkpoint is True
+    assert any("since the last checkpoint" in reason for reason in signals.reasons)
+
+    cleared = checkpoint_signals(
+        metrics, policy, responses_coded=200, responses_since_checkpoint=3
+    )
+    assert cleared.hard_floor_reached is False, "a checkpoint clears the floor"
+    assert cleared.recommend_checkpoint is False
+    assert cleared.responses_coded == 200, "where in the run the row sits is still reported"
 
 
 # --------------------------------------------------------------------------- #

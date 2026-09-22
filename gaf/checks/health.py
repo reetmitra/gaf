@@ -43,6 +43,7 @@ from typing import Any
 
 import numpy as np
 
+from gaf.checks.growth import Spike
 from gaf.checks.semantic import (
     DEFAULT_RULES,
     MARKER_KEY,
@@ -259,6 +260,10 @@ class CheckpointSignals:
 
     `recommend_checkpoint` is a *reading of the policy*, not an instruction: the slow
     loop (Wave 3) decides whether to wake, and a human gates whatever it proposes.
+
+    `responses_coded` is where in the run this row sits; `responses_since_checkpoint`
+    is how long it has been since a human last looked. Both the spacing rule and the
+    hard floor are measured against the second (R1 I1).
     """
 
     mode: str
@@ -276,6 +281,13 @@ class CheckpointSignals:
     hard_floor_reached: bool
     recommend_checkpoint: bool
     reasons: list[str]
+    #: Whether the batch this row describes spiked, and the `gaf.checks.growth.Spike`
+    #: that says so. Measured by `gaf.checks.growth.detect_spikes` and reported here
+    #: beside the other two event triggers; both default to "no spike was offered", so
+    #: a caller that does not compute a growth curve sees exactly the pre-ADR-0033
+    #: behaviour (ADR-0033).
+    spike_detected: bool = False
+    spike: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -294,6 +306,8 @@ class CheckpointSignals:
             "hard_floor_reached": self.hard_floor_reached,
             "recommend_checkpoint": self.recommend_checkpoint,
             "reasons": list(self.reasons),
+            "spike_detected": self.spike_detected,
+            "spike": dict(self.spike) if self.spike is not None else None,
         }
 
 
@@ -303,17 +317,39 @@ def checkpoint_signals(
     *,
     responses_coded: int,
     responses_since_checkpoint: int,
+    spike: Spike | None = None,
 ) -> CheckpointSignals:
     """Report the event-driven checkpoint triggers against a health row.
 
-    An event trigger fires when near-duplicate pairs or new codes per batch exceed the
-    policy's maxima *and* enough responses have passed since the last checkpoint. The
-    hard floor fires on its own, so a quiet codebook still gets a human look.
+    An event trigger fires when near-duplicate pairs, new codes per batch or the spike
+    rule exceed the policy *and* enough responses have passed since the last
+    checkpoint. The hard floor fires on its own, so a quiet codebook still gets a human
+    look.
+
+    **The floor is measured since the last checkpoint, not since the run began.**
+    ``responses_coded`` is a running total that no checkpoint resets, so comparing the
+    floor against it meant that once the floor had been crossed every later batch of
+    every later run reported a checkpoint due under trigger ``floor`` (R1 I1) — a
+    fixed schedule wearing an event trigger's name. "A quiet codebook still gets a
+    human look" is a statement about how long it has been since the last look, which is
+    ``responses_since_checkpoint``. ``responses_coded`` is still reported, because a
+    reader needs to know where in the run the row sits.
+
+    A batch after the floor is crossed and before a checkpoint is taken still reports
+    ``hard_floor_reached``: the look is still owed. What has gone is the latch across
+    a checkpoint, which is what made the trigger uninformative.
+
+    ``spike`` is measured elsewhere — `gaf.checks.growth.detect_spikes` reads the growth
+    curve, which is a fact about a *sequence* of batches and not about the one codebook
+    this health row describes. It is reported here so that the three event triggers sit
+    on one row; passing nothing leaves every number and every reason exactly as it was
+    before ADR-0033.
     """
     near_exceeded = metrics.near_duplicate_pairs > policy.max_near_duplicate_pairs
     new_exceeded = metrics.new_codes > policy.max_new_codes_per_batch
+    spiked = spike is not None
     spacing_ok = responses_since_checkpoint >= policy.min_responses_between_checkpoints
-    floor_reached = responses_coded >= policy.hard_floor_responses
+    floor_reached = responses_since_checkpoint >= policy.hard_floor_responses
 
     reasons: list[str] = []
     if near_exceeded:
@@ -325,17 +361,21 @@ def checkpoint_signals(
         reasons.append(
             f"new codes this batch {metrics.new_codes} > {policy.max_new_codes_per_batch}"
         )
-    event = (near_exceeded or new_exceeded) and spacing_ok and policy.mode == "event_driven"
+    if spike is not None:
+        reasons.append(f"spike: {spike.reason}")
+    exceeded = near_exceeded or new_exceeded or spiked
+    event = exceeded and spacing_ok and policy.mode == "event_driven"
     if event and not reasons:  # pragma: no cover - defensive; event implies a reason
         reasons.append("event trigger exceeded")
-    if not spacing_ok and (near_exceeded or new_exceeded):
+    if not spacing_ok and exceeded:
         reasons.append(
             f"held: only {responses_since_checkpoint} of "
             f"{policy.min_responses_between_checkpoints} responses since the last checkpoint"
         )
     if floor_reached:
         reasons.append(
-            f"hard floor reached: {responses_coded} >= {policy.hard_floor_responses} responses"
+            f"hard floor reached: {responses_since_checkpoint} >= "
+            f"{policy.hard_floor_responses} responses since the last checkpoint"
         )
     return CheckpointSignals(
         mode=policy.mode,
@@ -353,6 +393,8 @@ def checkpoint_signals(
         hard_floor_reached=floor_reached,
         recommend_checkpoint=event or floor_reached,
         reasons=reasons,
+        spike_detected=spiked,
+        spike=spike.to_json() if spike is not None else None,
     )
 
 

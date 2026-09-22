@@ -168,7 +168,8 @@ class ModelSpec:
 class ModelRegistry:
     """The provider triple plus the Refactorer.
 
-    Three LLM roles exist (Coder, Judge, Refactorer); four bindings, because the two
+    Three LLM roles run inside the loops (Coder, Judge, Refactorer); the Definer is a
+    fourth, outside both and with no binding here (ADR-0034). Four bindings, because the two
     coders must come from *different providers* — that difference is the epistemic
     diversity mechanism and, because only a grey-zone score between the two coders
     escalates to the judge, also the cost-control mechanism. Nothing is hard-coded anywhere else in the package.
@@ -283,6 +284,29 @@ class CheckpointPolicy:
     max_near_duplicate_pairs: int = 3
     max_new_codes_per_batch: int = 8
     min_responses_between_checkpoints: int = 10
+
+    # -- the spike rule (ADR-0033) ------------------------------------------ #
+    #
+    # An absolute ceiling cannot tell a first batch, where every code is new, from a
+    # late batch where eight new codes means the codebook has stopped converging. These
+    # three fields add a *relative* rule beside the absolute one: a batch spikes when it
+    # admits at least `spike_min_new_codes` codes AND at least `spike_factor` times the
+    # median of the previous `spike_window` batches. The first `spike_window` batches
+    # have no baseline and therefore do not spike at all: the absolute fallback they
+    # once used was retired by ADR-0040, because it repeated the comparison
+    # `gaf.checks.health` already makes under `handover.new_codes`, which is the rule
+    # that speaks there. See `gaf.checks.growth.RULE_ABSOLUTE`.
+    #
+    # UNCALIBRATED. Like tau_fit, these are set by argument rather than against human
+    # judgment: 2.0 is "twice the recent normal", 3 is the shortest window whose median
+    # is not just the previous batch, and 4 is the floor below which a doubling is
+    # noise at this corpus size. Move them through a calibration report, not by hand.
+    #: Multiple of the recent median that counts as a spike.
+    spike_factor: float = 2.0
+    #: How many previous batches the baseline median is taken over.
+    spike_window: int = 3
+    #: A batch below this many new codes never spikes, whatever the ratio says.
+    spike_min_new_codes: int = 4
 
     def to_json(self) -> dict[str, Any]:
         data = asdict(self)

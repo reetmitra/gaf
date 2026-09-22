@@ -63,7 +63,7 @@ from typing import Any
 from gaf.agents.coder import CoderAgent, CodingProposal, subject_for
 from gaf.agents.judge import JudgeAgent
 from gaf.checks.contracts import CheckFinding, CheckReport, Severity
-from gaf.checks.health import checkpoint_signals, codebook_health
+from gaf.checks.growth import GrowthCurve, growth_from_admissions
 from gaf.checks.semantic import (
     Judge,
     check_code_evidence_fit,
@@ -80,6 +80,11 @@ from gaf.llm.cache import CachingLLMClient
 from gaf.llm.mock import MockCoderClient, MockJudgeClient
 from gaf.models import Assignment, Candidate, Code, Codebook, Response
 from gaf.pipeline import prep, router
+from gaf.pipeline.decision_matrix import (
+    HandoverEvaluation,
+    evaluate_handover,
+    trace_to_checkpoint_due,
+)
 from gaf.pipeline.prep import PreparedResponse
 from gaf.pipeline.router import ORIGINS, AcceptanceResult, IntegrationDecision
 from gaf.store.blackboard import AssignmentRecord, Blackboard
@@ -264,11 +269,38 @@ class RunStats:
     llm: dict[str, Any]
     snapshot_ids: list[str]
     caveats: list[str]
-    #: Whether the slow loop is due, and why. Computed at the end of the run from the
-    #: health metrics and `CheckpointPolicy`; the fast loop reports it and never acts on
-    #: it, because opening the gate needs a human at a terminal and a batch run cannot
-    #: block for one. `gaf checkpoint` is how the operator acts on it. See ADR-0027.
+    #: Whether the slow loop is due, and why. **Derived from the last row of
+    #: `decision_trace`**, not computed separately at the end of the run (ADR-0033): a
+    #: second end-of-run computation was a second place the trigger could be read, and
+    #: the two could disagree. Keeps the `fires`/`trigger`/`reason` keys every reader
+    #: already uses, and adds `batch`, `verdict` and `batches_due`. The fast loop
+    #: reports it and never acts on it, because opening the gate needs a human at a
+    #: terminal and a batch run cannot block for one. `gaf checkpoint` is how the
+    #: operator acts on it. See ADR-0027.
     checkpoint_due: dict[str, Any]
+    #: One `gaf.pipeline.decision_matrix.HandoverEvaluation` per batch boundary, in
+    #: batch order, already JSON-shaped. This is the run's answer to "when did the
+    #: codebook ask for a human, and why" — a spike at batch 2 that had quietened by
+    #: batch 7 is invisible in `checkpoint_due` alone (ADR-0033).
+    decision_trace: list[dict[str, Any]] = field(default_factory=list)
+    #: The batch after which `halt_on_checkpoint` stopped the run, or `None` when the
+    #: run coded every response.
+    halted_at_batch: int | None = None
+    #: How many responses were left uncoded by that halt. Zero for a complete run.
+    responses_uncoded: int = 0
+    #: What this run was seeded from, or ``None`` for a cold start. On the stats rather
+    #: than beside them: a seeded run's agreement with the seed is not independent
+    #: validation (ADR-0035), so the fact belongs with the numbers a reader is about to
+    #: read, and on the ``run_started`` event so the audit log says it too. `gaf.cli.run`
+    #: still writes the same ``seeded_from`` key into ``stats.json``, so nothing that
+    #: read it before has to change.
+    seeded_from: dict[str, Any] | None = None
+    #: Responses coded since the last checkpoint, at the **end** of this run. A resumed
+    #: run (`gaf run --skip-coded`) carries the previous run's count forward when no
+    #: checkpoint has been taken since, so the hard floor measures how long it has been
+    #: since a human looked rather than how far into this particular process it is
+    #: (R1 I1).
+    responses_since_checkpoint: int = 0
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -298,6 +330,11 @@ class RunStats:
             "snapshot_ids": list(self.snapshot_ids),
             "caveats": list(self.caveats),
             "checkpoint_due": dict(self.checkpoint_due),
+            "seeded_from": dict(self.seeded_from) if self.seeded_from is not None else None,
+            "responses_since_checkpoint": self.responses_since_checkpoint,
+            "decision_trace": [dict(row) for row in self.decision_trace],
+            "halted_at_batch": self.halted_at_batch,
+            "responses_uncoded": self.responses_uncoded,
         }
 
 
@@ -932,6 +969,9 @@ def run_fast_loop(
     board: Blackboard,
     components: LoopComponents,
     codebook: Codebook | None = None,
+    halt_on_checkpoint: bool = False,
+    seeded_from: dict[str, Any] | None = None,
+    responses_since_checkpoint_at_start: int = 0,
 ) -> FastLoopResult:
     """Code a corpus: prep, two coders, checks, the router, integration, the store.
 
@@ -944,6 +984,34 @@ def run_fast_loop(
     `codebook` seeds the run — an empty one for a cold start, or the codebook a previous
     run or a slow-loop checkpoint left behind. It is never mutated: every integration
     step returns a new `Codebook`.
+
+    **The handover is evaluated at every batch boundary** (ADR-0033), not once at the
+    end: `gaf.pipeline.decision_matrix.evaluate_handover` fires the handover rows of the
+    decision matrix against the batch's health row and the run's growth curve, one
+    ``checkpoint_evaluated`` audit event is written per batch, and every evaluation is
+    kept on `RunStats.decision_trace`. `RunStats.checkpoint_due` is the last row of that
+    trace, so "is the slow loop due" has exactly one computation behind it.
+
+    `halt_on_checkpoint` stops the run after the first batch whose evaluation says
+    ``checkpoint_due``. The run still **closes normally** — closing S6 and M4, a final
+    snapshot, a `run_completed` event — because a half-written run directory is worse
+    than a short one; `RunStats.halted_at_batch` and `RunStats.responses_uncoded` say
+    what was left. The default is `False`, and with it the fast loop behaves exactly as
+    before: it reports the handover and never blocks for it, because opening the gate
+    needs a human at a terminal.
+
+    `seeded_from` describes the codebook `codebook` came from, when it came from one.
+    It is recorded on `RunStats` and on the ``run_started`` event rather than left to
+    the caller to write beside the stats, because a seeded run's agreement with its
+    seed is not independent validation and that fact belongs with the numbers
+    (ADR-0035).
+
+    `responses_since_checkpoint_at_start` is how many responses had been coded since
+    the last checkpoint **before this run began**. Zero for a fresh run; for a resumed
+    one (`gaf run --skip-coded`) it is the count the previous run left behind, unless a
+    checkpoint has been taken since. The hard floor is measured against it, so "a quiet
+    codebook still gets a human look" counts from the last look rather than from the
+    start of whichever process happens to be running (R1 I1).
 
     The run ends with S6 over the final codebook and M4 over its leaves, folded into the
     same report, so that "the codebook this run produced is well formed" is answered by
@@ -965,6 +1033,8 @@ def run_fast_loop(
         space_id=components.embedder.space_id,
         judge_available=components.judge_available,
         retrieval_top_k=config.retrieval_top_k,
+        seeded_from=seeded_from,
+        responses_since_checkpoint_at_start=responses_since_checkpoint_at_start,
     )
 
     working = codebook if codebook is not None else Codebook()
@@ -975,10 +1045,16 @@ def run_fast_loop(
     snapshot = recorder.snapshot(working, parent_id=None, reason="seed")
     snapshot_ids = [snapshot.snapshot_id]
 
+    admissions: list[tuple[int, str]] = []
+    processed: list[int] = []
+    trace: list[HandoverEvaluation] = []
+    halted_at_batch: int | None = None
+
     for number, batch in enumerate(batches(ordered, config.batch_size)):
         if number and config.snapshot_policy == "per_batch":
             snapshot = recorder.snapshot(working, parent_id=snapshot.snapshot_id, reason="batch")
             snapshot_ids.append(snapshot.snapshot_id)
+        at_batch_start = working
         for response in batch:
             outcome, working = _code_response(
                 response,
@@ -992,26 +1068,32 @@ def run_fast_loop(
             seen.setdefault(outcome.content_hash, response.id)
             outcomes.append(outcome)
             report.extend(outcome.report)
+            processed.append(response.id)
+            admissions.extend((response.id, name) for name in outcome.created)
             for record in outcome.assignments:
                 rows.setdefault(record.assignment_id, record)
 
-    # Is the slow loop due? Reported, never acted on: the human gate needs a terminal
-    # and a batch run must not block for one, so the operator acts with `gaf checkpoint`.
-    # Field names are read directly rather than through getattr: a defensive default here
-    # once silently reported "not due" for every run because the attribute did not exist.
-    _metrics = codebook_health(working, components.embedder, config.rules)
-    _signals = checkpoint_signals(
-        _metrics,
-        config.checkpoints,
-        responses_coded=len(ordered),
-        responses_since_checkpoint=len(ordered),
-    )
-    checkpoint_due = {
-        "fires": bool(_signals.recommend_checkpoint),
-        "trigger": "health" if (_signals.near_duplicates_exceeded or _signals.new_codes_exceeded)
-                   else ("floor" if _signals.hard_floor_reached else "none"),
-        "reason": "; ".join(_signals.reasons),
-    }
+        # The batch boundary: is the slow loop due? Reported, never acted on unless the
+        # caller asked to halt — the human gate needs a terminal and a batch run must
+        # not block for one, so the operator acts with `gaf checkpoint`.
+        evaluation = _evaluate_batch(
+            working,
+            components=components,
+            config=config,
+            batch=number + 1,
+            processed=processed,
+            admissions=admissions,
+            previous=at_batch_start,
+            recorder=recorder,
+            snapshot_id=snapshot.snapshot_id,
+            responses_since_checkpoint=responses_since_checkpoint_at_start + len(processed),
+        )
+        trace.append(evaluation)
+        if halt_on_checkpoint and evaluation.checkpoint_due:
+            halted_at_batch = evaluation.batch
+            break
+
+    checkpoint_due = trace_to_checkpoint_due(trace)
 
     closing = CheckReport()
     closing.extend(check_codebook(working, [response.id for response in ordered], config.rules))
@@ -1032,6 +1114,11 @@ def run_fast_loop(
         codebook=working,
         assignments=ordered_assignments,
         snapshot_ids=snapshot_ids,
+        trace=trace,
+        halted_at_batch=halted_at_batch,
+        responses_uncoded=len(ordered) - len(processed),
+        seeded_from=seeded_from,
+        responses_since_checkpoint=responses_since_checkpoint_at_start + len(processed),
     )
     recorder.emit(
         "run_completed",
@@ -1056,6 +1143,55 @@ def run_fast_loop(
 # --------------------------------------------------------------------------- #
 
 
+def _evaluate_batch(
+    codebook: Codebook,
+    *,
+    components: LoopComponents,
+    config: RunConfig,
+    batch: int,
+    processed: Sequence[int],
+    admissions: Sequence[tuple[int, str]],
+    previous: Codebook,
+    recorder: _Recorder,
+    snapshot_id: str,
+    responses_since_checkpoint: int,
+) -> HandoverEvaluation:
+    """Evaluate the handover rows at one batch boundary, and write the audit row.
+
+    `responses_since_checkpoint` counts from the last checkpoint, not from the start of
+    this process: a fast-loop run never *takes* a checkpoint, so within one run it is
+    this run's own response count plus whatever a resumed run carried forward. Resetting
+    it at a batch whose verdict was ``checkpoint_due`` would claim a checkpoint happened
+    that did not, and would then hold the next real trigger behind a spacing rule
+    measured from a fiction. `gaf run --skip-coded` is where the true reset lives,
+    because only it can read whether a checkpoint was taken (R1 I1).
+
+    `previous` is the codebook as it stood when this batch started, so `new_codes` is
+    the new codes of *this* batch rather than of the whole run.
+    """
+    curve: GrowthCurve = growth_from_admissions(
+        admissions, response_order=processed, batch_size=config.batch_size
+    )
+    evaluation = evaluate_handover(
+        codebook,
+        components.embedder,
+        config,
+        batch=batch,
+        responses_coded=len(processed),
+        responses_since_checkpoint=responses_since_checkpoint,
+        curve=curve,
+        previous=previous,
+    )
+    recorder.emit(
+        "checkpoint_evaluated",
+        scope="run",
+        subject=str(batch),
+        snapshot_id=snapshot_id,
+        **evaluation.to_json(),
+    )
+    return evaluation
+
+
 def _stats(
     *,
     config: RunConfig,
@@ -1066,6 +1202,11 @@ def _stats(
     assignments: Sequence[Assignment],
     snapshot_ids: Sequence[str],
     checkpoint_due: Mapping[str, Any],
+    trace: Sequence[HandoverEvaluation] = (),
+    halted_at_batch: int | None = None,
+    responses_uncoded: int = 0,
+    seeded_from: dict[str, Any] | None = None,
+    responses_since_checkpoint: int = 0,
 ) -> RunStats:
     """Fold the per-response outcomes into the run report's numbers. Pure."""
     proposed: Counter[str] = Counter()
@@ -1126,4 +1267,9 @@ def _stats(
         snapshot_ids=list(snapshot_ids),
         caveats=[_OFFLINE_CAVEAT] if config.offline else [],
         checkpoint_due=dict(checkpoint_due),
+        decision_trace=[evaluation.to_json() for evaluation in trace],
+        halted_at_batch=halted_at_batch,
+        responses_uncoded=responses_uncoded,
+        seeded_from=dict(seeded_from) if seeded_from is not None else None,
+        responses_since_checkpoint=responses_since_checkpoint,
     )
