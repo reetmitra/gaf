@@ -63,8 +63,8 @@ RULES = CodingRules()
 #: whole, tripping S2b, starving S5 and risking a spurious S4 error.
 UNPUNCTUATED = (
     "By 2050 these systems will sit in every office in my district and they will help "
-    "doctors and farmers and teachers but many people will lose their jobs because "
-    "machines can do repetitive work faster so the government must plan for this while "
+    "doctors and farmers and teachers but plenty of clerks will be out of work since "
+    "routine tasks get handled by software so the government must plan for this while "
     "the technology keeps improving every year which nobody can stop"
 )
 

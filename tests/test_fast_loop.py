@@ -77,7 +77,7 @@ NO_TERMINATOR = (
 #: twenty real responses also are.
 VERY_SHORT = (
     "Society will become dependent. If the whole system goes down for a week "
-    "nobody will remember how to do the work manually. We should be careful about that."
+    "nobody will remember how to do the work manually. That risk deserves a name now."
 )
 
 

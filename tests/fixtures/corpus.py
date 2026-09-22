@@ -8,7 +8,7 @@ version of this file reproduced verbatim runs of up to 72 characters from real s
 responses, and reused nine of the real sample's response ids. That happened because the
 first version was written immediately after profiling the real data and drew on its
 phrasing. The current text is deliberately built from different scenarios and different
-vocabulary, and a test asserts that no run of 30 characters or more matches any real
+vocabulary, and a test asserts that no run of 20 characters or more matches any real
 response. See ADR-0024.
 
 Planted material, all documented so a reader knows why an odd sentence exists:

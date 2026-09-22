@@ -142,20 +142,22 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import importlib.util
 import json
 import os
 import random
 import re
-from collections.abc import Mapping, Sequence
+import sys
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from gaf.agents.prompts.loader import all_templates
+from gaf.agents.prompts.loader import LOOP_ROLES, all_templates
 from gaf.analysis.agreement import AgreementReport, concurrent_validation
-from gaf.config import CodingRules, EmbeddingSpaceConfig, RunConfig
+from gaf.config import QUESTION_V2, CodingRules, EmbeddingSpaceConfig, RunConfig
 from gaf.embed.protocol import Embedder
 from gaf.embed.service import EmbeddingService
 from gaf.ids import content_hash
@@ -315,6 +317,20 @@ def validate_against_golden(
 # --------------------------------------------------------------------------- #
 
 
+def _run_prompt_hashes() -> dict[str, str]:
+    """``role/version -> hash`` for the prompts a *run* consults.
+
+    The Definer is registered in `gaf.agents.prompts.loader` with the other three but
+    runs outside both loops, so it is excluded here: this manifest answers "what wording
+    produced this coding", and the Definer produced none of it (ADR-0034, R1 N7a).
+    """
+    return {
+        f"{template.role}/{template.version}": content_hash(template.all_text())
+        for template in all_templates()
+        if template.role in LOOP_ROLES
+    }
+
+
 def golden_config(run_id: str = GOLDEN_RUN_ID) -> RunConfig:
     """The configuration the committed fixture was generated under.
 
@@ -403,10 +419,13 @@ def expected_manifest(result: FastLoopResult, config: RunConfig) -> dict[str, An
         "embedding": config.embedding.to_json(),
         "rules": config.rules.to_json(),
         "models": config.models.to_json(),
-        "prompts": {
-            f"{template.role}/{template.version}": content_hash(template.all_text())
-            for template in all_templates()
-        },
+        # `LOOP_ROLES`, not every template in the build: this manifest records the
+        # wording that produced *this coding*, and the Definer (registered in the
+        # loader since R1 N7a) runs outside both loops and never sees a response being
+        # coded. Its hash here would claim the coding depended on wording it never
+        # read, and a Definer prompt edit would fail this fixture with that claim as
+        # its message (ADR-0034).
+        "prompts": _run_prompt_hashes(),
         "counts": {
             "responses": result.stats.n_responses,
             "segments": result.stats.n_segments,
@@ -568,10 +587,7 @@ def test_manifest_matches_the_live_configuration() -> None:
     )
     assert committed["embedding"] == config.embedding.to_json()
     assert committed["models"] == config.models.to_json()
-    live_prompts = {
-        f"{template.role}/{template.version}": content_hash(template.all_text())
-        for template in all_templates()
-    }
+    live_prompts = _run_prompt_hashes()
     assert committed["prompts"] == live_prompts, (
         "a prompt template's static text changed. Every coding in the fixture was "
         "produced under the committed wording; regenerate on purpose:\n"
@@ -964,26 +980,97 @@ def test_no_real_survey_data_is_committed() -> None:
     )
 
 
-#: Where the real files live, relative to the repository. Every workbook directly under
-#: these directories is read in place: corpora in either shape and the principal
-#: investigator's coding exports, because respondent text arrives in all of them. The
-#: first version of this scan read one corpus only, and a fragment of a *different*
-#: corpus reached a commit through a code comment (ADR-0030). Set GAF_REAL_CORPUS to a
-#: file or a directory (several, separated by os.pathsep) to override.
+#: Where the real files live, relative to the repository. Every workbook **and every
+#: CSV** directly under these directories is read in place: corpora in either shape and
+#: the principal investigator's coding exports, because respondent text arrives in all
+#: of them. The first version of this scan read one corpus only, and a fragment of a
+#: *different* corpus reached a commit through a code comment (ADR-0030). The second
+#: read workbooks only, and the full Process corpus arrived as a CSV — 180 responses
+#: the guard could not see, which is ADR-0030's lesson a third time. Set
+#: GAF_REAL_CORPUS to a file or a directory (several, separated by os.pathsep) to
+#: override.
 REAL_DATA_DIRS: tuple[Path, ...] = (
     REPO_ROOT.parent / "data",
     REPO_ROOT.parent / "codebook",
     REPO_ROOT.parent / "Grounded AI Futures" / "data",
+    REPO_ROOT.parent / "Grounded AI Futures" / "codebook",
 )
 #: Kept for callers that name the original corpus explicitly.
 REAL_CORPUS_DEFAULT = REAL_DATA_DIRS[2] / "NarrativeState(IndiaSample1-20).xlsx"
 
+#: File types the scan reads. Anything a respondent's words can be stored in: the two
+#: workbook shapes, the two delimited shapes, and the principal investigator's codebook
+#: Markdown, which the Makefile points the pipeline at as `FULL_DEFINITIONS_MD`. Reading
+#: more of them costs nothing and cannot copy anything.
+#:
+#: `*.docx` is named in `REAL_DATA_SUFFIXES` and in `.gitignore` and is deliberately
+#: **not** here, and this was measured rather than assumed. The one real `.docx` is a
+#: mirror of the Markdown codebook. A table reader skips a code-name column because
+#: `NON_TEXT_HEADERS` names its header; a Word paragraph has no header to skip on, so
+#: reading the mirror puts the investigator's **code names and own definitions** into
+#: the needle set. Measured: it would charge 20 tracked files, among them
+#: `examples/demo-run/codebook.json` and `analysis/clusters.md`, for containing a code
+#: name this project legitimately reuses. Neither a code name nor his definition is a
+#: respondent's words — the same ruling `_instrument_shingles` makes about the survey
+#: question (ADR-0047 decision 3) — and the independent audit's own scanner excluded
+#: this file for this reason. Nothing a respondent said is lost: his verbatim
+#: highlights reach the scan through the coding exports and the Markdown blockquotes.
+REAL_DATA_GLOBS: tuple[str, ...] = ("*.xlsx", "*.xlsm", "*.csv", "*.tsv", "*.md")
+
+def _exporter() -> Any:
+    """`scripts/export_results.py`, loaded as a module so its constants can be read.
+
+    The script is not on the import path and is not meant to be; loading it by
+    specification is what `tests/test_export_results.py` already does, and the module
+    is cached under the same name so it is executed at most once per session.
+    """
+    cached = sys.modules.get("gaf_export_results")
+    if cached is not None:
+        return cached
+    spec = importlib.util.spec_from_file_location(
+        "gaf_export_results", REPO_ROOT / "scripts" / "export_results.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["gaf_export_results"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 #: Runs of this many characters or more, shared verbatim with a real response, are
-#: treated as respondent text. Thirty is short enough to catch a paraphrase that kept a
-#: clause and long enough that ordinary English ("the technology will", "quality of
-#: life") does not trip it. Measured headroom: the longest incidental overlap between
-#: the invented corpus and the real one is 18 characters.
-PROVENANCE_SHINGLE = 30
+#: treated as respondent text. **Loaded from the results exporter, never copied**: this
+#: scan governs what may be committed and the exporter's governs what may be shipped,
+#: and for one whole branch they disagreed — 30 here against 20 there. A 25-character
+#: run of a respondent's words consequently sat in a tracked ADR, invisible, while the
+#: stricter guard beside it would have caught it (R2 C-2 and I-1). Twenty is also where
+#: the measurement points: 84 of the 342 highlights in the PI's own coding export
+#: normalise to under 30 characters, 50 of them into the 20-to-29 band the old value could
+#: not see at all. Measured headroom for 20: outside `docs/CODING_RULES.md` the longest
+#: respondent run anywhere in the repository is 29 characters, and it is a stock phrase
+#: shared with fourteen different responses.
+PROVENANCE_SHINGLE: int = _exporter().GUARD_SHINGLE
+
+#: A cell shorter than the shingle is kept **whole** as a needle rather than discarded.
+#: This is the floor below which it is not kept at all. The old scan dropped every short
+#: cell before the needle set was built, so a short answer was undetectable at any
+#: length — a hole distinct from the shingle's, and the one that made the 20-to-29 band
+#: unreachable even after lowering the shingle. Twelve is chosen so that a needle is at
+#: least a short clause: below it, a cell that survives the "must contain whitespace"
+#: rule is a two-word fragment that any English sentence can reproduce by accident.
+PROVENANCE_MIN_CELL = 12
+
+#: How many **different** respondents must share a window before it stops being one
+#: respondent's words and becomes the corpus's language. A sentence copied out of one
+#: answer cannot appear in a second answer written by somebody else, so a window two
+#: people both produced was not copied from either. This is the ground R2 applied by
+#: hand to thirty-seven of its seventy-five runs; mechanising it is what lets the scan
+#: run at twenty characters over a repository whose subject *is* the corpus's subject,
+#: where "the difference between" and the PI's own family name "positive impact" are
+#: otherwise charged as respondent text. Two is the strictest value that works, and it
+#: was regression-tested against the run this pass removed from ADR-0016: all six of
+#: that run's windows are unique to a single response, so the rule would still have
+#: caught it. See ADR-0047.
+PROVENANCE_MIN_SOURCES = 2
 
 #: The one file permitted to contain respondent text, by the principal investigator's
 #: explicit decision: it reproduces his own GPTPrompts.docx negative examples, and the
@@ -993,7 +1080,7 @@ PROVENANCE_EXEMPT = {"docs/CODING_RULES.md"}
 
 
 def _real_sources() -> list[Path]:
-    """Every real workbook the scan can find, read in place. Never copied into the repo."""
+    """Every real table the scan can find, read in place. Never copied into the repo."""
     override = os.environ.get("GAF_REAL_CORPUS")
     roots = [Path(p) for p in override.split(os.pathsep)] if override else list(REAL_DATA_DIRS)
     files: list[Path] = []
@@ -1001,8 +1088,9 @@ def _real_sources() -> list[Path]:
         if root.is_file():
             files.append(root)
         elif root.is_dir():
-            files.extend(sorted(p for p in root.glob("*.xlsx") if not p.name.startswith("~$")))
-    return files
+            for pattern in REAL_DATA_GLOBS:
+                files.extend(p for p in root.glob(pattern) if not p.name.startswith("~$"))
+    return sorted(set(files))
 
 
 #: Column headers that mark a column as labels rather than prose: a coding export's
@@ -1010,42 +1098,203 @@ def _real_sources() -> list[Path]:
 NON_TEXT_HEADERS = {"id", "tag", "code", "document", "number", "highlight_id", "response_id"}
 
 
-def _real_responses() -> list[str]:
-    """Every prose cell of every real workbook that is long enough to carry a shingle.
+def _harvest(rows: Iterator[tuple[Any, ...]], texts: list[str]) -> None:
+    """Append every prose cell of one table to `texts`, applying the skipping rules.
 
-    Reading every sheet rather than one named column is deliberate: the corpus files
-    put the response in column B, the numbered-column shape puts it in column A, and
-    a coding export puts it under "content". Two cells are *not* respondent text and
-    are skipped: anything in a column whose header is in NON_TEXT_HEADERS (the
-    principal investigator's code names and document titles, which this repository
-    legitimately reuses), and any cell with no whitespace at all, which is a label,
-    not a sentence. Over-inclusion elsewhere only makes the scan stricter; it never
-    copies anything.
+    Two kinds of cell are *not* respondent text and are skipped: anything in a column
+    whose header is in NON_TEXT_HEADERS (the principal investigator's code names and
+    document titles, which this repository legitimately reuses), and any cell with no
+    whitespace at all, which is a label rather than a sentence. Over-inclusion
+    elsewhere only makes the scan stricter; it never copies anything.
+
+    A cell is measured **after** normalisation and kept whenever it reaches
+    `PROVENANCE_MIN_CELL`, not `PROVENANCE_SHINGLE`. Keeping only cells long enough to
+    carry a shingle is what made short answers undetectable at any length; a short cell
+    is instead compared whole by `_provenance_needles` (R2 I-1).
     """
+    first = next(rows, None)
+    if first is None:
+        return
+    header = [str(c).strip().casefold() if c is not None else "" for c in first]
+    skip = {i for i, h in enumerate(header) if h in NON_TEXT_HEADERS}
+    body = rows if skip else (r for r in (first, *rows))
+    for row in body:
+        for i, cell in enumerate(row):
+            if i in skip or not isinstance(cell, str):
+                continue
+            if not re.search(r"\s", cell):
+                continue
+            text = re.sub(r"\s+", " ", cell).casefold().strip()
+            if len(text) < PROVENANCE_MIN_CELL:
+                continue
+            texts.append(text)
+
+
+def _read_real_source(path: Path) -> list[str]:
+    """Every prose cell, row or quoted line of one real file, normalised.
+
+    Dispatches on the suffix, because respondent text arrives in five shapes:
+
+    * ``.xlsx`` / ``.xlsm`` — every sheet, every column. The corpus workbooks put the
+      response in column B, the numbered shape puts it in column A.
+    * ``.csv`` / ``.tsv`` — the numbered CSV puts the response in "All" *and* again in
+      "Trimmed", and a coding export puts it under "content". The PI's full
+      200-response corpus is a CSV, and a scan that read workbooks only was blind to
+      180 of those responses while still passing. ``utf-8-sig`` because his exports
+      carry a byte-order mark, which would otherwise leave the first header
+      unrecognised and its column unskipped.
+    * ``.md`` — the PI's codebook Markdown, which the Makefile hands the pipeline as
+      `FULL_DEFINITIONS_MD`. **Only its ``> `` blockquote lines are read**: those are
+      his verbatim highlights of respondents. The headings, the tree diagram and the
+      definitions beside them are his own writing, and this project reproduces his
+      definitions on purpose (ADR-0032) — putting them in the needle set would charge
+      it for doing so.
+    """
+    import csv
+
+    texts: list[str] = []
+    suffix = path.suffix.casefold()
+    if suffix in {".csv", ".tsv"}:
+        delimiter = "\t" if suffix == ".tsv" else ","
+        with path.open("r", encoding="utf-8-sig", newline="", errors="replace") as handle:
+            _harvest((tuple(row) for row in csv.reader(handle, delimiter=delimiter)), texts)
+        return texts
+    if suffix == ".md":
+        quoted = [
+            (line.lstrip()[2:],)
+            for line in path.read_text(encoding="utf-8", errors="replace").splitlines()
+            if line.lstrip().startswith("> ")
+        ]
+        # A header row would be consumed, so give the harvest one it will discard.
+        _harvest(iter([("quote",), *quoted]), texts)
+        return texts
+
     from openpyxl import load_workbook
 
+    workbook = load_workbook(path, read_only=True, data_only=True)
+    try:
+        for sheet in workbook.worksheets:
+            _harvest(sheet.iter_rows(values_only=True), texts)
+    finally:
+        workbook.close()
+    return texts
+
+
+def _real_responses() -> list[str]:
+    """Every respondent text this machine can reach, from every real file in every shape."""
     sources = _real_sources()
     if not sources:
-        pytest.skip("no real workbook present under REAL_DATA_DIRS; provenance scan skipped")
+        pytest.skip("no real corpus present under REAL_DATA_DIRS; provenance scan skipped")
     texts: list[str] = []
     for path in sources:
-        workbook = load_workbook(path, read_only=True, data_only=True)
-        for sheet in workbook.worksheets:
-            rows = sheet.iter_rows(values_only=True)
-            first = next(rows, None)
-            if first is None:
-                continue
-            header = [str(c).strip().casefold() if c is not None else "" for c in first]
-            skip = {i for i, h in enumerate(header) if h in NON_TEXT_HEADERS}
-            body = rows if skip else (r for r in (first, *rows))
-            for row in body:
-                for i, cell in enumerate(row):
-                    if i in skip or not isinstance(cell, str):
-                        continue
-                    if len(cell) < PROVENANCE_SHINGLE or not re.search(r"\s", cell):
-                        continue
-                    texts.append(re.sub(r"\s+", " ", cell).casefold().strip())
+        texts.extend(_read_real_source(path))
     return texts
+
+
+def _instrument_shingles() -> set[str]:
+    """Every window of the survey's own question, in every variant `gaf.config` holds.
+
+    The question is the principal investigator's, not a respondent's, and it travels on
+    every `Response` record — so it is inside every answer cell the harvest reads, and
+    respondents echo it back besides. Left in the needle set it charges three files
+    that exist in order to reproduce it: `gaf/config.py`, which holds it as a frozen
+    constant; `results/*/01-inputs.md`, which prints what was asked; and
+    `examples/demo-run/corpus.json`, which carries it on every record. None of those can
+    be reworded, so the correction belongs here. Read from the module rather than
+    repeated, so a new variant is covered the day it is added.
+    """
+    from gaf.config import QUESTION_VARIANTS
+
+    windows: set[str] = set()
+    for question in QUESTION_VARIANTS.values():
+        text = re.sub(r"\s+", " ", question).casefold().strip()
+        for i in range(max(0, len(text) - PROVENANCE_SHINGLE + 1)):
+            windows.add(text[i : i + PROVENANCE_SHINGLE])
+    return windows
+
+
+def _provenance_needles(responses: Iterable[str]) -> dict[int, set[str]]:
+    """The needle set, bucketed by run length: `{length: {run, ...}}`.
+
+    A response at or above `PROVENANCE_SHINGLE` contributes every run of exactly that
+    length. A response below it contributes **itself, whole**, in its own bucket, so
+    that it is looked for at the only length at which it can be found rather than not
+    at all. This is the same shape `gaf.report.trail._RunWording` uses for the same
+    reason, one level up in words instead of characters.
+
+    The survey question is then subtracted: see `_instrument_shingles`.
+    """
+    needles: dict[int, set[str]] = {}
+    for text in responses:
+        size = min(PROVENANCE_SHINGLE, len(text))
+        if size < PROVENANCE_MIN_CELL:
+            continue
+        bucket = needles.setdefault(size, set())
+        for i in range(len(text) - size + 1):
+            bucket.add(text[i : i + size])
+    if PROVENANCE_SHINGLE in needles:
+        needles[PROVENANCE_SHINGLE] -= _instrument_shingles()
+    return {size: bucket for size, bucket in needles.items() if bucket}
+
+
+def _source_count(window: str, sources: Sequence[str]) -> int:
+    """How many different respondents could have produced `window`.
+
+    Counted over *maximal* texts: the PI's 200-response export carries each answer
+    twice, under `All` and again under `Trimmed`, and the trimmed cell is a substring
+    of the full one. Counting both would let one respondent's sentence pass as two
+    people's language, which is the one way this rule could hide a real copy.
+    """
+    holders = [text for text in sources if window in text]
+    if len(holders) < 2:
+        return len(holders)
+    return len([a for a in holders if not any(a is not b and a in b for b in holders)])
+
+
+def _provenance_hit(
+    body: str,
+    needles: dict[int, set[str]] | None = None,
+    sources: Sequence[str] | None = None,
+) -> tuple[int, int] | None:
+    """`(offset, run length)` of the first candidate window in `body`, or `None`.
+
+    The offset is into the whitespace-collapsed, case-folded body, which is what the
+    comparison is made against. The length is the bucket that matched — a lower bound
+    on the run genuinely shared, not necessarily the maximal one; establishing the
+    maximal run means reading the real text, which belongs in an investigation, not in
+    a failure message.
+
+    `sources` are the distinct real responses. Given them, a window `PROVENANCE_MIN_SOURCES`
+    different respondents share is not a candidate. Omit them and every matching window
+    is a candidate, which is what the unit tests below want.
+    """
+    if needles is None:
+        needles = _provenance_needles(_real_responses())
+    haystack = re.sub(r"\s+", " ", body).casefold()
+    sizes = sorted(needles, reverse=True)
+    for i in range(len(haystack)):
+        for size in sizes:
+            if i + size > len(haystack) or haystack[i : i + size] not in needles[size]:
+                continue
+            if sources is None or _source_count(haystack[i : i + size], sources) < (
+                PROVENANCE_MIN_SOURCES
+            ):
+                return i, size
+            break
+    return None
+
+
+def _offender_line(relative: str, hit: tuple[int, int]) -> str:
+    """One offender, as a location and a length — never as the run itself.
+
+    `scripts/export_results.py` was changed for exactly this reason (R2 M-2): a guard
+    that prints what it caught puts respondent words into a terminal, a CI log and a
+    scrollback buffer, none of which is gitignored and none of which `make scrub`
+    empties. The offset is into the file's whitespace-collapsed, case-folded text, so
+    the person holding the real corpus can find it and nobody else learns anything.
+    """
+    offset, length = hit
+    return f"{relative}: offset {offset}, run length {length}"
 
 
 def test_no_tracked_file_contains_real_respondent_text() -> None:
@@ -1068,10 +1317,8 @@ def test_no_tracked_file_contains_real_respondent_text() -> None:
     researcher runs on the machine that has the data, before publishing anything.
     """
     responses = _real_responses()
-    shingles: set[str] = set()
-    for text in responses:
-        for i in range(len(text) - PROVENANCE_SHINGLE + 1):
-            shingles.add(text[i : i + PROVENANCE_SHINGLE])
+    sources = sorted(set(responses))
+    needles = _provenance_needles(responses)
 
     offenders: list[str] = []
     for path in _tracked_files():
@@ -1082,18 +1329,18 @@ def test_no_tracked_file_contains_real_respondent_text() -> None:
             body = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
-        haystack = re.sub(r"\s+", " ", body).casefold()
-        for i in range(0, max(0, len(haystack) - PROVENANCE_SHINGLE + 1)):
-            if haystack[i : i + PROVENANCE_SHINGLE] in shingles:
-                offenders.append(f"{relative}: ...{haystack[i : i + 64]}...")
-                break
+        hit = _provenance_hit(body, needles=needles, sources=sources)
+        if hit is not None:
+            offenders.append(_offender_line(relative, hit))
 
     assert not offenders, (
         "tracked files contain verbatim runs of real respondent text:\n  "
         + "\n  ".join(offenders)
-        + "\n\nThis is the defect ADR-0024 records. Rewrite the text so it is genuinely "
-        "invented, or — if it is a deliberate, PI-authorised quotation — add the path to "
-        "PROVENANCE_EXEMPT and say so in the README and ADR-0024."
+        + "\n\nThe offset is into the file's whitespace-collapsed, case-folded text; the "
+        "run itself is deliberately not printed (see _offender_line). This is the defect "
+        "ADR-0024 records. Rewrite the text so it is genuinely invented, or — if it is a "
+        "deliberate, PI-authorised quotation — add the path to PROVENANCE_EXEMPT and say "
+        "so in the README and ADR-0024."
     )
 
 
@@ -1105,6 +1352,142 @@ def test_the_exempt_file_is_the_only_one_and_is_declared() -> None:
         "the one file permitted to quote respondents must be named in the README; a "
         "reader must not have to discover it from a test"
     )
+
+
+def test_the_provenance_shingle_is_the_exporters_own_and_cannot_drift() -> None:
+    """One number, two guards. Two numbers is how C-2 stayed green for a whole branch.
+
+    `scripts/export_results.py` has always scanned at 20 and this scan used 30, so
+    anything a respondent said in the 20-to-29 character band was invisible *to the guard
+    that governs what may be committed* while being caught by the one that governs what
+    may be exported. A quarter of the PI's own highlights normalise to under 30
+    characters. This asserts the constant is loaded, not copied.
+    """
+    assert PROVENANCE_SHINGLE == 20
+    assert PROVENANCE_SHINGLE == _exporter().GUARD_SHINGLE
+
+
+def test_a_cell_shorter_than_the_shingle_still_becomes_a_needle() -> None:
+    """A short response is not a safe response; it was merely an unscannable one.
+
+    The old `_harvest` discarded any cell shorter than the shingle *before* the needle
+    set was built, so a short answer could not be detected at any length. Everything
+    below is invented.
+    """
+    rows = iter(
+        [
+            ("id", "All"),
+            (1, "the ferry leaves at six"),  # 23 chars, over the shingle
+            (2, "the pier is shut"),  # 16 chars, under it, still a needle
+            (3, "no idea"),  # 7 chars, under the floor
+            (4, "unanswered"),  # no whitespace: a label, not prose
+        ]
+    )
+    texts: list[str] = []
+    _harvest(rows, texts)
+    assert "the ferry leaves at six" in texts
+    assert "the pier is shut" in texts
+    assert "no idea" not in texts
+    assert "unanswered" not in texts
+
+
+def test_the_scan_matches_a_short_needle_whole_and_a_long_one_by_shingle() -> None:
+    """Below the shingle a needle is compared entire; at or above it, by run.
+
+    Invented text throughout. The negative control is what stops the scan degenerating
+    into "everything matches".
+    """
+    needles = _provenance_needles(["the pier is shut", "the ferry leaves at six today"])
+    assert _provenance_hit("notice: the pier is shut until spring", needles=needles) is not None
+    assert _provenance_hit("we heard the ferry leaves at six today", needles=needles) is not None
+    # One character short of the whole short needle, and nothing of the long one.
+    assert _provenance_hit("the pier is shu", needles=needles) is None
+    assert _provenance_hit("a wholly unrelated sentence about bicycles", needles=needles) is None
+
+
+def test_the_scan_reads_every_file_type_the_project_calls_real_data(tmp_path: Path) -> None:
+    """`REAL_DATA_SUFFIXES` and `.gitignore` name five types; the scan read three.
+
+    A `.tsv` and the principal investigator's codebook Markdown — which the Makefile
+    points the pipeline at as `FULL_DEFINITIONS_MD` — were outside the scan entirely
+    (R2 M-3). Everything below is invented.
+    """
+    assert {"*.xlsx", "*.xlsm", "*.csv", "*.tsv", "*.md"} <= set(REAL_DATA_GLOBS)
+
+    (tmp_path / "corpus.tsv").write_text(
+        "id\tAll\n1\tthe ferry leaves at six every morning\n", encoding="utf-8"
+    )
+    (tmp_path / "codebook.md").write_text(
+        "## harbour-timetable\n\nSailings and their hours.\n\n"
+        "> the pier is shut until spring\n",
+        encoding="utf-8",
+    )
+    texts = _read_real_source(tmp_path / "corpus.tsv") + _read_real_source(
+        tmp_path / "codebook.md"
+    )
+    assert "the ferry leaves at six every morning" in texts
+    # A blockquote is the PI's verbatim highlight of a respondent; his own definition
+    # beside it is his writing, and this project reproduces it on purpose (ADR-0032).
+    assert "the pier is shut until spring" in texts
+    assert not any("sailings and their hours" in t for t in texts)
+
+
+def test_the_survey_instrument_is_not_one_respondents_words() -> None:
+    """The question is the PI's, not an answer, and it travels on every response record.
+
+    Respondents echo the question back, so every needle set built from their answers
+    contains it. Leaving it in makes the guard charge `gaf/config.py` — where the
+    question is a constant — and `results/*/01-inputs.md` and `examples/demo-run/corpus.json`,
+    which reproduce it because reproducing the instrument is what those files are for.
+    None of the three can be reworded, so the correction belongs in the needle set.
+    """
+    instrument = _instrument_shingles()
+    assert instrument, "no question constant was found in gaf.config"
+    sample = re.sub(r"\s+", " ", QUESTION_V2).casefold().strip()
+    window = sample[:PROVENANCE_SHINGLE]
+    assert window in instrument
+    # A response that echoes the question contributes no needle the question already is,
+    # so a file that reproduces the instrument is not charged for it. (Where a respondent
+    # runs his own words up against the question, the window that straddles the join is
+    # his and stays a needle: the subtraction is of the question, not of its neighbours.)
+    needles = _provenance_needles([sample, f"i agree. {sample} i have no answer."])
+    assert window not in needles.get(PROVENANCE_SHINGLE, set())
+    assert _provenance_hit(QUESTION_V2, needles=needles) is None
+
+
+def test_a_window_two_respondents_share_is_the_corpus_language() -> None:
+    """Multiplicity, mechanised: a sentence copied from one answer cannot be in two.
+
+    This is the rule R2 applied by hand to thirty-seven of its seventy-five runs, and
+    the only one that lets the guard run at twenty characters over a repository whose
+    subject is the corpus's own subject. Everything below is invented.
+    """
+    shared = "the pier is shut for the winter months"
+    lone = "the harbour master keeps a ledger of every crossing"
+    sources = [f"{shared} again", f"we were told {shared}", lone]
+    needles = _provenance_needles(sources)
+    # Two different responses carry it, so it is the language, not one person's words.
+    assert _provenance_hit(shared, needles=needles, sources=sources) is None
+    # One response carries it, so it is a candidate and a person must rule it.
+    assert _provenance_hit(lone, needles=needles, sources=sources) is not None
+    # Without a source list there is no multiplicity test and every window is a candidate.
+    assert _provenance_hit(shared, needles=needles) is not None
+
+
+def test_a_provenance_offender_line_carries_no_respondent_text() -> None:
+    """The failure message is a location and a length, never the run it caught.
+
+    The same rule the exporter's guard follows (R2 M-2): a message that prints the text
+    it caught puts respondent words into a terminal, a CI log and a scrollback buffer,
+    none of which is gitignored and none of which `make scrub` empties.
+    """
+    needles = _provenance_needles(["the pier is shut"])
+    hit = _provenance_hit("notice: the pier is shut until spring", needles=needles)
+    assert hit is not None
+    line = _offender_line("docs/EXAMPLE.md", hit)
+    assert "pier" not in line and "shut" not in line
+    assert "docs/EXAMPLE.md" in line
+    assert "offset 8" in line and "run length 16" in line
 
 
 def test_the_gitignore_guards_are_still_in_place() -> None:

@@ -78,7 +78,7 @@ def sub_of(name: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class Response:
-    """One open-ended survey response, with the question that generated it.
+    """One open-ended survey response, carrying the question it answers.
 
     ``question`` travels with every record and with every coding call: the survey
     question is absent from the source spreadsheet, and a coder that cannot see it
