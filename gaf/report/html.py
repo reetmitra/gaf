@@ -341,6 +341,13 @@ def render_codebook_html(artefact: RunArtefact, *, title: str | None = None) -> 
         f'snapshot <span class="mono">{_e(stats.snapshot_ids[-1] if stats.snapshot_ids else "none")}</span></p>',
         '<p class="sub">This page is for reading. Codebook edits happen at the human '
         "gate in the slow loop, never here.</p>",
+        # The one link out of this page. `views.html` is the shareable half of the
+        # pair: it carries no respondent text, where this page carries every quote.
+        '<p class="sub">Eleven views of the same dataset — the codebook tree, the '
+        "response-by-code heatmap, code growth, the timeline, the reorganisation trail "
+        '— are in <a href="views.html">views.html</a>, written beside this page by '
+        "<code>gaf report</code>. That page shows code names, counts and response "
+        "numbers only, and carries no respondent text.</p>",
         "</header>",
     ]
 
