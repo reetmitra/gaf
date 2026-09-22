@@ -40,9 +40,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from openpyxl import load_workbook
 
@@ -55,10 +55,18 @@ __all__ = [
     "RESPONSE_ID_HEADERS",
     "RawResponseRow",
     "SpreadsheetFormatError",
+    "Table",
+    "assign_numbered_ids",
+    "parse_numbered_cell",
+    "place_highlights",
     "read_coded_xlsx",
     "read_narrative_state_xlsx",
+    "read_table",
     "repair_mojibake",
 ]
+
+if TYPE_CHECKING:  # a type only: importing it at runtime would close an import cycle
+    from gaf.ingest.tagged import TaggedPair
 
 #: Accepted spellings of the id column. The PI's prompt versions disagree: Prompt
 #: Version 3 names a "Number" column, and the coded workbooks say "No".
@@ -246,6 +254,73 @@ def _cell_text(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+# --------------------------------------------------------------------------- #
+# One named table, whatever file it came out of
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class Table:
+    """A header row resolved into named columns, plus the data rows beneath it.
+
+    The same abstraction over a workbook sheet and a CSV, so a reader written once
+    accepts both — which is what the PI's later files require: he sent the same
+    pairing export as ``.csv`` and as ``.xlsx``. Columns are addressed **by header
+    name, never by position**, exactly as the workbook readers already insist.
+    """
+
+    path: Path
+    columns: dict[str, int]
+    data_rows: tuple[tuple[Any, ...], ...]
+    raw_headers: tuple[str, ...]
+    #: 1-based source row the header was found on; the first data row is the next one.
+    header_row: int
+
+    def require(self, accepted: Sequence[str]) -> int:
+        """Index of the first present column among `accepted`, or raise by name."""
+        return _require_column(
+            self.columns, accepted, path=self.path, raw_headers=self.raw_headers
+        )
+
+    def optional(self, accepted: Sequence[str]) -> int | None:
+        """Index of the first present column among `accepted`, or ``None``."""
+        return next((self.columns[name] for name in accepted if name in self.columns), None)
+
+    def cell(self, row: tuple[Any, ...], index: int | None) -> Any:
+        """The cell at `index`, or ``None`` when the row is short or `index` is None."""
+        if index is None or index >= len(row):
+            return None
+        return row[index]
+
+    def row_number(self, offset: int) -> int:
+        """Source row number of the data row at 0-based `offset`."""
+        return self.header_row + 1 + offset
+
+
+def read_table(path: Path | str, *, sheet: str | None = None) -> Table:
+    """Read a named table from a workbook sheet or a CSV, resolving its columns.
+
+    The suffix decides which parser runs; everything downstream sees one shape. The
+    CSV reader lives in `gaf.ingest.csv_corpus` and is imported here lazily, so the
+    two modules can depend on each other's public surface without an import cycle.
+    """
+    path = Path(path)
+    if path.suffix.lower() in (".csv",):
+        from gaf.ingest.csv_corpus import read_csv_rows
+
+        rows: Sequence[tuple[Any, ...]] = read_csv_rows(path)
+    else:
+        rows = _read_sheet_rows(path, sheet)
+    columns, data_rows, raw_headers, header_row = _resolve_columns(rows, path)
+    return Table(
+        path=path,
+        columns=columns,
+        data_rows=tuple(data_rows),
+        raw_headers=tuple(raw_headers),
+        header_row=header_row,
+    )
+
+
 def _coerce_response_id(value: Any, *, path: Path, row_number: int) -> int:
     if isinstance(value, bool):
         raise SpreadsheetFormatError(
@@ -382,6 +457,60 @@ _NUMBERED_CELL = re.compile(r"^\s*(\d+)\s*[.)]\s*(.+)$", re.S)
 DUPLICATE_ID_STRIDE = 1000
 
 
+def parse_numbered_cell(text: str) -> tuple[int, str] | None:
+    """``"11. text"`` -> ``(11, "text")``; ``None`` when the cell carries no number.
+
+    The one place the ``NN.`` prefix grammar is written. Both the workbook reader and
+    the CSV reader ask this function, so the two shapes cannot drift apart.
+    """
+    match = _NUMBERED_CELL.match(text)
+    if match is None:
+        return None
+    return int(match.group(1)), match.group(2).strip()
+
+
+def assign_numbered_ids(
+    entries: Sequence[tuple[int, int, str]], *, path: Path
+) -> list[RawResponseRow]:
+    """Turn ``(source row, number, text)`` triples into rows, applying ADR-0029 §1.
+
+    A repeated number does **not** raise: the first occurrence keeps its number and
+    the k-th extra gets ``number + DUPLICATE_ID_STRIDE * k``, with the number as
+    written kept on `RawResponseRow.source_number` and ``duplicate_ordinal = k``. Two
+    responses the principal investigator numbered identically are both genuine
+    respondents; dropping one or silently renumbering hides a fact about his file.
+
+    Encoding damage is repaired here too, so a CSV corpus and a workbook corpus of the
+    same responses produce byte-identical records.
+    """
+    out: list[RawResponseRow] = []
+    occurrences: dict[int, int] = {}
+    assigned: set[int] = set()
+    for row_number, number, body in entries:
+        if not body:
+            raise SpreadsheetFormatError(f"{path} row {row_number}: response {number} has no text")
+        ordinal = occurrences.get(number, 0)
+        occurrences[number] = ordinal + 1
+        response_id = number + DUPLICATE_ID_STRIDE * ordinal
+        if response_id in assigned:
+            raise SpreadsheetFormatError(
+                f"{path} row {row_number}: the duplicate offset for repeated number {number} "
+                f"collides with an existing id {response_id}; renumber the source file"
+            )
+        assigned.add(response_id)
+        repaired = repair_mojibake(body)
+        out.append(
+            RawResponseRow(
+                response_id=response_id,
+                content=repaired,
+                encoding_repaired=repaired != body,
+                source_number=number,
+                duplicate_ordinal=ordinal,
+            )
+        )
+    return out
+
+
 def looks_like_numbered_column(rows: Sequence[tuple[Any, ...]]) -> bool:
     """True when every non-blank row is a single cell that opens with "NN. ".
 
@@ -425,39 +554,15 @@ def read_numbered_column_xlsx(
             f"{path}: not a numbered single-column corpus (expected every row to be one "
             'cell opening with "NN. ")'
         )
-    out: list[RawResponseRow] = []
-    occurrences: dict[int, int] = {}
-    assigned: set[int] = set()
+    entries: list[tuple[int, int, str]] = []
     for index, row in enumerate(rows):
         cells = [c for c in row if not _is_blank(c)]
         if not cells:
             continue
-        match = _NUMBERED_CELL.match(_cell_text(cells[0]))
-        assert match is not None  # guaranteed by looks_like_numbered_column
-        number = int(match.group(1))
-        body = match.group(2).strip()
-        if not body:
-            raise SpreadsheetFormatError(f"{path} row {index + 1}: response {number} has no text")
-        ordinal = occurrences.get(number, 0)
-        occurrences[number] = ordinal + 1
-        response_id = number + DUPLICATE_ID_STRIDE * ordinal
-        if response_id in assigned:
-            raise SpreadsheetFormatError(
-                f"{path} row {index + 1}: the duplicate offset for repeated number {number} "
-                f"collides with an existing id {response_id}; renumber the source file"
-            )
-        assigned.add(response_id)
-        repaired = repair_mojibake(body)
-        out.append(
-            RawResponseRow(
-                response_id=response_id,
-                content=repaired,
-                encoding_repaired=repaired != body,
-                source_number=number,
-                duplicate_ordinal=ordinal,
-            )
-        )
-    return out
+        parsed = parse_numbered_cell(_cell_text(cells[0]))
+        assert parsed is not None  # guaranteed by looks_like_numbered_column
+        entries.append((index + 1, parsed[0], parsed[1]))
+    return assign_numbered_ids(entries, path=path)
 
 
 # --------------------------------------------------------------------------- #
@@ -469,17 +574,28 @@ HIGHLIGHT_CONTENT_HEADERS: tuple[str, ...] = ("content", "text", "segment", "hig
 HIGHLIGHT_ID_HEADERS: tuple[str, ...] = ("id", "highlight_id", "highlight id")
 
 
+#: The outcomes of placing one highlight, in the order a report prints them.
+HIGHLIGHT_OUTCOMES: tuple[str, ...] = ("exact", "fuzzy", "resolved", "ambiguous", "unlocated")
+
+
 @dataclass(frozen=True, slots=True)
 class HighlightMapping:
-    """Where one highlight landed, and how confidently."""
+    """Where one highlight landed, and how confidently.
+
+    ``span`` indexes ``normalise(response.content)``, like every other offset in this
+    project, and is ``None`` exactly when the highlight was not placed. It is recorded
+    here so a later stage can build `gaf.models.Evidence` without re-locating the quote
+    against the corpus.
+    """
 
     highlight_id: str
     tag: str
     content: str
     response_id: int | None
-    outcome: str  # "exact" | "fuzzy" | "ambiguous" | "unlocated"
+    outcome: str  # one of HIGHLIGHT_OUTCOMES
     score: float
     candidates: tuple[int, ...]
+    span: tuple[int, int] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -490,6 +606,7 @@ class HighlightMapping:
             "outcome": self.outcome,
             "score": self.score,
             "candidates": list(self.candidates),
+            "span": list(self.span) if self.span is not None else None,
         }
 
 
@@ -511,16 +628,26 @@ class HighlightsReport:
     unlocated: int
     per_response: dict[int, int]
     mappings: tuple[HighlightMapping, ...]
+    #: Highlights placed by the coded-set rule (ADR-0031): the text fits more than one
+    #: response, but only one of those responses is coded at all. Counted apart from
+    #: `exact` and `fuzzy` because it rests on a different kind of evidence -- the
+    #: coding's own coverage rather than the text -- and included in `mapped`.
+    resolved: int = 0
+    #: How many responses hold at least one exact or fuzzy highlight. This is the set
+    #: `resolved` was decided against, and the denominator a reader needs to judge it.
+    coded_response_count: int = 0
 
     @property
     def mapped(self) -> int:
-        return self.exact + self.fuzzy
+        return self.exact + self.fuzzy + self.resolved
 
     def summary(self) -> str:
         return (
             f"{self.total} highlights: {self.mapped} mapped to a response "
-            f"({self.exact} exact, {self.fuzzy} fuzzy), {self.ambiguous} ambiguous "
-            f"(excluded), {self.unlocated} unlocated (not in this corpus)"
+            f"({self.exact} exact, {self.fuzzy} fuzzy, {self.resolved} resolved against "
+            f"the {self.coded_response_count} responses already coded), "
+            f"{self.ambiguous} ambiguous (excluded), "
+            f"{self.unlocated} unlocated (not in this corpus)"
         )
 
     def to_json(self) -> dict[str, Any]:
@@ -530,11 +657,162 @@ class HighlightsReport:
             "mapped": self.mapped,
             "exact": self.exact,
             "fuzzy": self.fuzzy,
+            "resolved": self.resolved,
             "ambiguous": self.ambiguous,
             "unlocated": self.unlocated,
+            "coded_response_count": self.coded_response_count,
             "per_response": {str(k): v for k, v in sorted(self.per_response.items())},
             "mappings": [m.to_json() for m in self.mappings],
         }
+
+
+def place_highlights(
+    pairs: Sequence[TaggedPair],
+    corpus: Sequence[Response],
+    *,
+    fuzzy_threshold: float = 0.85,
+    path: str = "",
+) -> tuple[list[Assignment], HighlightsReport]:
+    """Place code-text pairings onto a corpus by locating their text. Source-agnostic.
+
+    An export names no response, so each segment is placed by where its text occurs:
+    an exact substring of exactly one normalised response, else the single response
+    scoring at or above `fuzzy_threshold` under the same locator S2 uses.
+
+    **Two passes, and the second one is the only rule that is new** (ADR-0031). On 200
+    responses a short segment sits verbatim in more than one of them, and first-pass
+    ambiguity is no longer rare. After the first pass the **coded set** is every
+    response holding at least one ``exact`` or ``fuzzy`` highlight — the responses this
+    coding demonstrably covers. An ambiguous highlight with exactly one candidate in
+    that set is placed there, with outcome ``resolved``. Everything else stays
+    ``ambiguous`` and is excluded, as is everything ``unlocated``; both are counted and
+    listed, never guessed at.
+
+    The coded set is computed from the whole first pass, so the outcome does not depend
+    on the order the rows arrive in. Nothing here consults the export's own highlight
+    ids: ADR-0029 §2 measured them and found they follow the order the codes were
+    *applied* in, not document order.
+
+    Returns the placed highlights as `Assignment` rows — the row-oriented shape every
+    downstream comparison consumes — plus the report. The same segment coded twice
+    becomes two rows, which is how the PI's "at most two codes on one piece of text"
+    shows up in the data.
+    """
+    from gaf.checks.structural import locate_quote  # one quote locator in the codebase
+
+    texts = {r.id: normalise(r.content) for r in corpus}
+    first_pass: list[HighlightMapping] = []
+
+    for index, pair in enumerate(pairs):
+        content = pair.content
+        needle = normalise(content)
+        highlight_id = pair.highlight_id or str(index)
+        # Verbatim on the mapping (it is a record of the export), stripped only where
+        # it becomes an `Assignment.code` that downstream comparison consumes.
+        tag = pair.tag
+
+        hits = [rid for rid, text in texts.items() if needle and needle in text]
+        outcome, score, response_id = "unlocated", 0.0, None
+        span: tuple[int, int] | None = None
+        if len(hits) == 1:
+            start = texts[hits[0]].find(needle)
+            outcome, score, response_id = "exact", 1.0, hits[0]
+            span = (start, start + len(needle))
+        elif len(hits) > 1:
+            outcome = "ambiguous"
+        elif needle:
+            scored = sorted(
+                (
+                    (locate_quote(needle, text, fuzzy_threshold)[1], rid)
+                    for rid, text in texts.items()
+                ),
+                reverse=True,
+            )
+            best, best_rid = scored[0] if scored else (0.0, None)
+            above = [rid for s, rid in scored if s >= fuzzy_threshold]
+            score = float(best)
+            if len(above) == 1 and best_rid is not None:
+                outcome, response_id = "fuzzy", best_rid
+                hits = above
+                span = locate_quote(needle, texts[best_rid], fuzzy_threshold)[2]
+            elif len(above) > 1:
+                outcome, hits = "ambiguous", above
+        first_pass.append(
+            HighlightMapping(
+                highlight_id=highlight_id,
+                tag=tag,
+                content=content,
+                response_id=response_id,
+                outcome=outcome,
+                score=score,
+                candidates=tuple(sorted(hits)),
+                span=span,
+            )
+        )
+
+    coded_set = {
+        m.response_id
+        for m in first_pass
+        if m.outcome in ("exact", "fuzzy") and m.response_id is not None
+    }
+
+    assignments: list[Assignment] = []
+    mappings: list[HighlightMapping] = []
+    per_response: dict[int, int] = {}
+    counts = dict.fromkeys(HIGHLIGHT_OUTCOMES, 0)
+
+    for mapping in first_pass:
+        if mapping.outcome == "ambiguous":
+            inside = sorted(set(mapping.candidates) & coded_set)
+            if len(inside) == 1:
+                target = inside[0]
+                needle = normalise(mapping.content)
+                # The candidates may have come from the fuzzy branch, where the text is
+                # not a substring of any response; ask the locator for the span rather
+                # than resolving a highlight nothing can point at. A highlight with no
+                # span stays ambiguous, so `mapped` and the evidence always agree.
+                #
+                # The score is recomputed **at the chosen response**. The first pass
+                # left 0.0 on the exact-substring branch and, on the fuzzy branch, the
+                # best score across every response rather than the score here; either
+                # one travels into `Evidence(verified=True, score=...)` and is rendered
+                # as "locator score 0.000" on a verbatim match (R1, brief Important).
+                _found, target_score, span = locate_quote(
+                    needle, texts[target], fuzzy_threshold
+                )
+                if span is not None:
+                    mapping = replace(
+                        mapping,
+                        outcome="resolved",
+                        response_id=target,
+                        span=span,
+                        score=float(target_score),
+                    )
+        counts[mapping.outcome] += 1
+        if mapping.response_id is not None:
+            assignments.append(
+                Assignment(
+                    response_id=mapping.response_id,
+                    segment=mapping.content,
+                    code=mapping.tag.strip(),
+                )
+            )
+            per_response[mapping.response_id] = per_response.get(mapping.response_id, 0) + 1
+        mappings.append(mapping)
+
+    report = HighlightsReport(
+        path=path,
+        total=len(mappings),
+        exact=counts["exact"],
+        fuzzy=counts["fuzzy"],
+        ambiguous=counts["ambiguous"],
+        unlocated=counts["unlocated"],
+        per_response=per_response,
+        mappings=tuple(mappings),
+        resolved=counts["resolved"],
+        coded_response_count=len(coded_set),
+    )
+    return assignments, report
 
 
 def read_highlights_xlsx(
@@ -544,103 +822,15 @@ def read_highlights_xlsx(
     sheet: str | None = None,
     fuzzy_threshold: float = 0.85,
 ) -> tuple[list[Assignment], HighlightsReport]:
-    """Read a coding-tool highlights export and map every highlight onto the corpus.
+    """Read a coding-tool highlights export and place every highlight onto the corpus.
 
-    The export carries the coded text and its tag but **no response number**, so each
-    highlight is placed by locating its text: an exact substring of exactly one
-    normalised response, else the single response scoring at or above
-    `fuzzy_threshold` under the same locator S2 uses. A highlight that fits more than
-    one response (a single word, typically) is **ambiguous and excluded**; one that fits
-    none is **unlocated and excluded**. Both are counted and listed, never guessed.
-
-    Returns the mapped highlights as `Assignment` rows — the row-oriented shape every
-    downstream comparison consumes — plus the report. The same segment coded twice in
-    the tool becomes two rows, which is how the PI's "at most two codes on one piece of
-    text" shows up in the data.
+    Kept as the named entry point for the four-column export; the reading is
+    `gaf.ingest.tagged.read_tagged_pairs` and the placing is `place_highlights`, so a
+    CSV export and a workbook export take exactly the same path.
     """
-    from gaf.checks.structural import locate_quote  # one quote locator in the codebase
+    from gaf.ingest.tagged import read_tagged_pairs
 
-    path = Path(path)
-    rows = _read_sheet_rows(path, sheet)
-    columns, data_rows, raw_headers, header_row = _resolve_columns(rows, path)
-    tag_col = _require_column(columns, HIGHLIGHT_TAG_HEADERS, path=path, raw_headers=raw_headers)
-    content_col = _require_column(
-        columns, HIGHLIGHT_CONTENT_HEADERS, path=path, raw_headers=raw_headers
+    pairs = read_tagged_pairs(path, sheet=sheet)
+    return place_highlights(
+        pairs, corpus, fuzzy_threshold=fuzzy_threshold, path=str(Path(path))
     )
-    id_col = next((columns[h] for h in HIGHLIGHT_ID_HEADERS if h in columns), None)
-
-    texts = {r.id: normalise(r.content) for r in corpus}
-    assignments: list[Assignment] = []
-    mappings: list[HighlightMapping] = []
-    per_response: dict[int, int] = {}
-    exact = fuzzy = ambiguous = unlocated = 0
-
-    for offset, row in enumerate(data_rows):
-        if all(map(_is_blank, row)):
-            continue
-        tag_value = row[tag_col] if tag_col < len(row) else None
-        content_value = row[content_col] if content_col < len(row) else None
-        if _is_blank(tag_value) or _is_blank(content_value):
-            raise SpreadsheetFormatError(
-                f"{path} row {header_row + 1 + offset}: a highlight needs both a tag and content"
-            )
-        highlight_id = (
-            _cell_text(row[id_col]) if id_col is not None and id_col < len(row) else str(offset)
-        )
-        tag = _cell_text(tag_value).strip()
-        content = repair_mojibake(_cell_text(content_value))
-        needle = normalise(content)
-
-        hits = [rid for rid, text in texts.items() if needle in text]
-        outcome, score, response_id = "unlocated", 0.0, None
-        if len(hits) == 1:
-            outcome, score, response_id = "exact", 1.0, hits[0]
-        elif len(hits) > 1:
-            outcome = "ambiguous"
-        else:
-            scored = sorted(
-                ((locate_quote(needle, text, fuzzy_threshold)[1], rid) for rid, text in texts.items()),
-                reverse=True,
-            )
-            best, best_rid = scored[0] if scored else (0.0, None)
-            above = [rid for s, rid in scored if s >= fuzzy_threshold]
-            score = float(best)
-            if len(above) == 1:
-                outcome, response_id = "fuzzy", best_rid
-                hits = above
-            elif len(above) > 1:
-                outcome, hits = "ambiguous", above
-        if outcome == "exact":
-            exact += 1
-        elif outcome == "fuzzy":
-            fuzzy += 1
-        elif outcome == "ambiguous":
-            ambiguous += 1
-        else:
-            unlocated += 1
-        if response_id is not None:
-            assignments.append(Assignment(response_id=response_id, segment=content, code=tag))
-            per_response[response_id] = per_response.get(response_id, 0) + 1
-        mappings.append(
-            HighlightMapping(
-                highlight_id=highlight_id,
-                tag=tag,
-                content=content,
-                response_id=response_id,
-                outcome=outcome,
-                score=score,
-                candidates=tuple(sorted(hits)),
-            )
-        )
-
-    report = HighlightsReport(
-        path=str(path),
-        total=len(mappings),
-        exact=exact,
-        fuzzy=fuzzy,
-        ambiguous=ambiguous,
-        unlocated=unlocated,
-        per_response=per_response,
-        mappings=tuple(mappings),
-    )
-    return assignments, report

@@ -51,6 +51,7 @@ from gaf.ingest.xlsx import RawResponseRow, read_narrative_state_xlsx, repair_mo
 from gaf.models import Response
 
 __all__ = [
+    "CSV_SUFFIXES",
     "JSON_SUFFIXES",
     "META_ENCODING_REPAIRED",
     "XLSX_SUFFIXES",
@@ -76,6 +77,8 @@ META_DUPLICATE_ORDINAL = "duplicate_ordinal"
 
 XLSX_SUFFIXES: tuple[str, ...] = (".xlsx", ".xlsm")
 JSON_SUFFIXES: tuple[str, ...] = (".json",)
+#: The PI's full Process corpus arrived as CSV; see `gaf.ingest.csv_corpus`.
+CSV_SUFFIXES: tuple[str, ...] = (".csv",)
 
 #: Splits a file stem into words: acronyms, CamelCase words, lowercase runs, digits.
 _TOKEN_RE = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]*|[a-z]+|[0-9]+")
@@ -103,6 +106,10 @@ class IngestReport:
     #: (number as written, id assigned) for every response that repeated an earlier
     #: number in a numbered single-column file. Empty for a headed workbook.
     duplicate_numbers: tuple[tuple[int, int], ...] = ()
+    #: Response ids whose source file gave the text twice -- once inside the numbered
+    #: ``All`` cell and once in ``Trimmed`` -- and the two disagreed by more than
+    #: whitespace. ``Trimmed`` was used. Empty for every shape that says the text once.
+    trimmed_disagreements: tuple[int, ...] = ()
 
     @property
     def repaired_count(self) -> int:
@@ -119,6 +126,13 @@ class IngestReport:
                 if self.duplicate_numbers
                 else ""
             )
+            + (
+                "; Trimmed disagreed with All on "
+                + ", ".join(str(i) for i in self.trimmed_disagreements)
+                + " (Trimmed used)"
+                if self.trimmed_disagreements
+                else ""
+            )
         )
 
     def to_json(self) -> dict[str, Any]:
@@ -129,6 +143,7 @@ class IngestReport:
             "record_count": self.record_count,
             "repaired_response_ids": list(self.repaired_response_ids),
             "duplicate_numbers": [list(pair) for pair in self.duplicate_numbers],
+            "trimmed_disagreements": list(self.trimmed_disagreements),
         }
 
 
@@ -251,8 +266,11 @@ def load_corpus_with_report(
     question_text, variant = _resolve_question(config, question)
     source_name = source or source_from_path(path)
     suffix = path.suffix.lower()
+    disagreements: tuple[int, ...] = ()
     if suffix in XLSX_SUFFIXES:
         records = _load_xlsx(path, question=question_text, source=source_name)
+    elif suffix in CSV_SUFFIXES:
+        records, disagreements = _load_csv(path, question=question_text, source=source_name)
     elif suffix in JSON_SUFFIXES:
         records = read_corpus_json(
             path, config=config, question=question, source=source_name
@@ -260,7 +278,7 @@ def load_corpus_with_report(
     else:
         raise ValueError(
             f"{path}: unsupported corpus format {suffix!r}; "
-            f"expected one of {XLSX_SUFFIXES + JSON_SUFFIXES}"
+            f"expected one of {XLSX_SUFFIXES + CSV_SUFFIXES + JSON_SUFFIXES}"
         )
     ordered = _ordered(records)
     # A JSON corpus carries its own source per record; report what the records say
@@ -280,6 +298,7 @@ def load_corpus_with_report(
             for r in ordered
             if META_DUPLICATE_OF_NUMBER in r.meta
         ),
+        trimmed_disagreements=tuple(sorted(disagreements)),
     )
     return ordered, report
 
@@ -305,6 +324,23 @@ def _load_xlsx(path: Path, *, question: str, source: str) -> list[Response]:
             raise
         rows = read_numbered_column_xlsx(path)
     return [_record_from_row(row, question=question, source=source) for row in rows]
+
+
+def _load_csv(
+    path: Path, *, question: str, source: str
+) -> tuple[list[Response], tuple[int, ...]]:
+    """Read the numbered CSV corpus, detected rather than declared.
+
+    `sniff_numbered_csv` answers the same question `sniff_numbered_column` answers for
+    a sheet, so one `gaf ingest` command takes either file. A CSV in neither shape
+    reaches `read_numbered_csv`, which raises naming what it found -- the sniff exists
+    to route, never to swallow the explanation.
+    """
+    from gaf.ingest.csv_corpus import read_numbered_csv
+
+    rows, disagreements = read_numbered_csv(path)
+    records = [_record_from_row(row, question=question, source=source) for row in rows]
+    return records, disagreements
 
 
 def read_corpus_json(
