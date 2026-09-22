@@ -24,7 +24,12 @@ overlay).
 
 Validation principles: **interpretive depth** — restructuring is what keeps nuance out
 of a flattened codebook; **transparency** — every operation carries a rationale naming
-the evidence it rests on, and that sentence is the audit trail the human reads.
+the evidence it rests on *by reference*, and that sentence is the audit trail the human
+reads. It names codes and response numbers and never quotes: `gaf.report.trail` renders
+it into a shareable artefact, and a respondent's words may not travel there (R2 C-1).
+The trail guards the field as well, so the rule holds against a model that ignores this
+paragraph — but a prompt that *required* the quotes was the source of the exposure, and
+this is where it is fixed.
 """
 
 from __future__ import annotations
@@ -101,8 +106,9 @@ codebook review usually fails to use. Look for them first.
 1. SPLIT an overloaded code. Read the quotes under each code and ask whether they all say
    the same thing. A code whose evidence covers two different ideas is overloaded: it will
    look like one concept in the analysis and behave like two. Split it, and give each part
-   a description that says which of the quotes belong to it. Do not leave it alone because
-   it is large, and do not merge it with something else to tidy it up.
+   a description, in your own words, that says which of those ideas belongs to it. Do not
+   leave it alone because it is large, and do not merge it with something else to tidy it
+   up.
 
 2. REPARENT a misplaced code. A code whose name puts it in one family while its meaning
    belongs in another distorts every family-level count downstream. Move it. Promote a
@@ -126,9 +132,20 @@ RATIONALE = """\
 ## Rationales
 
 Every operation must carry a rationale, and the rationale must name the evidence it rests
-on: which codes, how many responses, and what the quotes under them actually said. "These
-are similar" is not a rationale and will be rejected at the gate. The researcher reads
-that one sentence and nothing else before deciding, so it has to carry the argument.
+on **by reference**: the codes by name, the responses by number, and how many of each.
+Then say in your own words what that evidence shows.
+
+Never quote. Do not copy a phrase, a clause or a sentence out of a response or out of a
+quote shown under a code, and do not paraphrase one closely enough that the wording is
+still the respondent's. A rationale is read outside the run directory, by people who are
+not entitled to the raw responses; a respondent's words do not travel with it. Write
+"the eleven responses under X describe a cost, the four under Y describe a delay", not
+the sentences those responses used.
+
+"These are similar" is not a rationale and will be rejected at the gate. Neither is a
+rationale assembled out of quotation. The researcher reads that one sentence and nothing
+else before deciding, so it has to carry the argument on names, numbers and your reading
+of them. The closing `reasoning` paragraph follows the same rule.
 """
 
 
@@ -143,10 +160,10 @@ Return exactly this shape, and nothing outside it:
       "type": "split",
       "targets": ["<code id>"],
       "payload": {"into": [{"name": "...", "description": "..."}, {"name": "...", "description": "..."}]},
-      "rationale": "One sentence naming the evidence: which quotes, under which code, split which way."
+      "rationale": "One sentence naming the evidence by reference: which codes, which response numbers, split which way. No quoted wording."
     }
   ],
-  "reasoning": "A short paragraph on what you changed overall and what you deliberately left alone."
+  "reasoning": "A short paragraph on what you changed overall and what you deliberately left alone. No quoted wording."
 }
 
 Targets are code ids exactly as they appear above, never code names. An operation whose

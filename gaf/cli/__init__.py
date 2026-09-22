@@ -2,12 +2,13 @@
 
 One `argparse` tree over the whole pipeline: ingest a spreadsheet, run the fast loop,
 check an artefact, run the analysis tail, validate against the golden set, render the
-run report and the codebook explorer, and open a slow-loop checkpoint behind the human
-gate. This package owns `main`, the dispatch loop that turns a parsed command into an
-exit code; each subcommand — its logic, its help text and its own docstring naming the
-validation principle it serves — lives in its own module (`ingest.py`, `run.py`,
-`check.py`, `analyse.py`, `validate.py`, `report.py`, `checkpoint.py`), assembled into
-one parser by `parser.py`. `_common.py` holds what more than one of them needs.
+run report and the codebook explorer, open a slow-loop checkpoint behind the human
+gate, and build a codebook from a coding a person has already finished. This package
+owns `main`, the dispatch loop that turns a parsed command into an exit code; each
+subcommand — its logic, its help text and its own docstring naming the validation
+principle it serves — lives in its own module (`ingest.py`, `run.py`, `check.py`,
+`analyse.py`, `validate.py`, `report.py`, `checkpoint.py`, `codebook.py`), assembled
+into one parser by `parser.py`. `_common.py` holds what more than one of them needs.
 
 Three rules hold everywhere in this package.
 

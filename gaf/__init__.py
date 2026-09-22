@@ -2,7 +2,8 @@
 
 Research question: *What are the constituent elements of global AI futures?*
 
-The package implements two loops and three LLM roles, and nothing else:
+The package implements two loops and three LLM roles inside them; the Definer is a
+fourth, outside both (ADR-0034). There is nothing else:
 
 * a **fast loop** (per response) — deterministic prep, two independent coders,
   structural + semantic checks, a router, integration into the codebook;

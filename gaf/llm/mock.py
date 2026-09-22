@@ -7,7 +7,7 @@ processes and platforms, because every branch is driven by `hashlib` rather than
 because none was spent: an offline call is arithmetic, and a fabricated latency in an
 audit log is a small lie.
 
-Three personas, matching the three LLM roles:
+Four personas, one per LLM role:
 
 * `MockCoderClient` — proposes candidates derived **from the response text itself**, so
   it works on arbitrary input, not only on the fixture corpus. Two personas, A and B,
@@ -18,6 +18,11 @@ Three personas, matching the three LLM roles:
 * `MockRefactorerClient` — emits a small, structurally valid edit script including a
   `split` and a `reparent`, the two operations whose absence in the predecessor study
   is the documented cause of codebook flattening.
+* `MockDefinerClient` — writes an extractive stand-in for a code's description from the
+  commonest words of that code's own segments (ADR-0034). It is deliberately unreadable
+  as prose: a plausible invented sentence would be mistaken for a definition, and every
+  artefact carrying one of these is labelled `description_source: "definer-mock"` for
+  the same reason.
 
 **Segmentation is phrase-level, not sentence-level.** The PI's rule is "coding is
 applied on the level of phrase or sentence", and three of the twenty real seed
@@ -39,6 +44,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Sequence
 from typing import Any
 
 from gaf.checks.contracts import FIT_VERDICTS
@@ -52,16 +58,22 @@ __all__ = [
     "FABRICATED_QUOTE",
     "FALLBACK_CODES",
     "KEYWORD_TABLE",
+    "MAX_MOCK_DEFINER_WORDS",
     "MOCKDISPUTE_DROP",
     "MOCKFIT_UNNECESSARY",
     "MOCKROUTE_MERGE",
+    "MOCK_DEFINER_STOPWORDS",
     "PERSONAS",
     "ROUTE_VERDICTS",
     "MockCode",
     "MockCoderClient",
+    "MockDefinerClient",
     "MockJudgeClient",
     "MockRefactorerClient",
     "extract_code_ids",
+    "extract_definer_children",
+    "extract_definer_code",
+    "extract_definer_segments",
     "extract_response_id",
     "extract_response_text",
     "mock_candidates_for",
@@ -602,6 +614,15 @@ _INT_RE = re.compile(r"-?\d+")
 _JSON_ID_RE = re.compile(r'"id"\s*:\s*"([^"]+)"')
 _SLUG_ID_RE = re.compile(r"\bc-[A-Za-z0-9_][A-Za-z0-9_-]*")
 
+#: The definer prompt's two blocks. Spelled out here, as `<response>` is, so this module
+#: does not import `gaf.agents`; a test renders a real prompt and asserts the two still
+#: agree.
+_SEGMENTS_BLOCK_RE = re.compile(r"<segments>(.*?)</segments>", re.DOTALL | re.IGNORECASE)
+_CHILDREN_BLOCK_RE = re.compile(r"<children>(.*?)</children>", re.DOTALL | re.IGNORECASE)
+_BULLET_RE = re.compile(r"^\s*-\s+(.*\S)\s*$", re.MULTILINE)
+_CODE_LINE_RE = re.compile(r"^Code:\s*(\S.*?)\s*$", re.MULTILINE)
+_WORD_TOKEN_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+
 
 def extract_response_text(user: str) -> str:
     """The response body inside a prompt.
@@ -619,6 +640,24 @@ def extract_response_id(subject: str) -> int:
     """The response id `LLMRequest.subject` names; 0 when it names no integer."""
     match = _INT_RE.search(subject)
     return int(match.group(0)) if match else 0
+
+
+def extract_definer_code(user: str) -> str:
+    """The code name a definition prompt is about; `""` when the prompt names none."""
+    match = _CODE_LINE_RE.search(user)
+    return match.group(1) if match else ""
+
+
+def extract_definer_segments(user: str) -> list[str]:
+    """The bullets inside a definition prompt's ``<segments>`` block, in order."""
+    match = _SEGMENTS_BLOCK_RE.search(user)
+    return _BULLET_RE.findall(match.group(1)) if match else []
+
+
+def extract_definer_children(user: str) -> list[str]:
+    """The bullets inside a definition prompt's ``<children>`` block, in order."""
+    match = _CHILDREN_BLOCK_RE.search(user)
+    return _BULLET_RE.findall(match.group(1)) if match else []
 
 
 def extract_code_ids(text: str) -> list[str]:
@@ -855,3 +894,108 @@ class MockRefactorerClient(_MockClient):
                 "rationale": "the remainder of the codebook needs no change at this checkpoint",
             },
         ]
+
+
+class MockDefinerClient(_MockClient):
+    """The Definer, offline: an extractive stand-in, never a definition.
+
+    It reads the definition prompt's own blocks — ``<segments>`` for a leaf,
+    ``<children>`` for a parent — counts the content words it finds there and reports
+    the most frequent of them with their counts. That is a placeholder a researcher can
+    see through at a glance, which is the point: a plausible-sounding invented sentence
+    would be read as a definition, and this must not be.
+
+    Two properties are load-bearing rather than cosmetic.
+
+    * **A count sits between every pair of reported words.** The description's word
+      sequence is therefore ``word, number, word, number, ...``, so a run of consecutive
+      words shared with a segment cannot grow past one through the reported list —
+      which is what keeps the offline path clear of
+      `gaf.agents.definer.MAX_SHARED_WORD_RUN` by construction rather than by luck. The
+      guard still runs; the mock is checked like any other client, not trusted.
+    * **Exactly two sentences**, and the second one says what this text is, so an
+      artefact that loses the ``description_source: "definer-mock"`` label still carries
+      the warning in its own body.
+    """
+
+    def __init__(self, spec: ModelSpec | None = None) -> None:
+        self.spec = spec or MOCK_REGISTRY.refactorer
+
+    def complete_json(self, request: LLMRequest) -> LLMResult:
+        if request.task is not TaskType.REFACTOR:
+            return self._wrong_task(request)
+        segments = extract_definer_segments(request.user)
+        children = extract_definer_children(request.user)
+        if not _SEGMENTS_BLOCK_RE.search(request.user) and not children:
+            # A REFACTOR request that is not a definition prompt: an edit-script
+            # request, say. Degrade rather than answer a question nobody asked.
+            return self._wrong_task(request)
+        code = extract_definer_code(request.user) or request.subject or "this code"
+        return self._result(request, {"description": _mock_definition(code, segments, children)})
+
+
+#: Function words the extractive stand-in never reports. Short and English-only on
+#: purpose: this is a placeholder generator, not the lexical validation of
+#: `gaf.analysis.lexical`, which has scikit-learn's list behind it.
+MOCK_DEFINER_STOPWORDS: frozenset[str] = frozenset(
+    (
+    "a", "about", "after", "all", "also", "am", "an", "and", "any", "are", "as", "at",
+    "be", "because", "been", "before", "being", "but", "by", "can", "could", "did", "do",
+    "does", "doing", "done", "down", "each", "even", "every", "for", "from", "further",
+    "had", "has", "have", "having", "he", "her", "here", "hers", "him", "his", "how", "i",
+    "if", "in", "into", "is", "it", "its", "itself", "just", "me", "more", "most", "my",
+    "no", "nor", "not", "now", "of", "off", "on", "once", "only", "or", "other", "our",
+    "out", "over", "own", "same", "she", "should", "so", "some", "such", "than", "that",
+    "the", "their", "them", "then", "there", "these", "they", "this", "those", "through",
+    "to", "too", "under", "until", "up", "very", "was", "we", "were", "what", "when",
+    "where", "which", "while", "who", "whom", "why", "will", "with", "would", "you",
+    "your"
+    )
+)
+
+#: How many words the stand-in reports. Short enough to read at a glance, and short
+#: enough that the description is visibly a placeholder rather than prose.
+MAX_MOCK_DEFINER_WORDS = 5
+
+
+def _content_words(texts: Sequence[str]) -> list[tuple[str, int]]:
+    """Content words across `texts`, most frequent first, ties broken alphabetically."""
+    counts: dict[str, int] = {}
+    for text in texts:
+        for token in _WORD_TOKEN_RE.findall(normalise(text).casefold()):
+            if len(token) < 3 or token in MOCK_DEFINER_STOPWORDS:
+                continue
+            counts[token] = counts.get(token, 0) + 1
+    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+
+
+def _child_entries(children: Sequence[str]) -> list[tuple[str, int]]:
+    """``name (n=3) - gloss`` bullets, as ``(name, count)``, most populous first."""
+    entries: list[tuple[str, int]] = []
+    for bullet in children:
+        name, _, rest = bullet.partition(" (n=")
+        digits = _INT_RE.search(rest)
+        entries.append((name.strip(), int(digits.group(0)) if digits else 0))
+    return sorted(entries, key=lambda item: (-item[1], item[0]))
+
+
+def _listing(pairs: Sequence[tuple[str, int]]) -> str:
+    """``"a (3), b (2)"`` — a count between every pair of words, which is the guarantee."""
+    return ", ".join(f"{name} ({count})" for name, count in pairs)
+
+
+_MOCK_DEFINER_TAIL = "Written offline from the codebook itself; a stand-in, not a definition."
+
+
+def _mock_definition(code: str, segments: Sequence[str], children: Sequence[str]) -> str:
+    """Two sentences: what was counted, and a warning that this is not a definition."""
+    if children:
+        entries = _child_entries(children)[:MAX_MOCK_DEFINER_WORDS]
+        head = f"{code} groups {len(children)} subcodes: {_listing(entries)}."
+    elif segments:
+        words = _content_words(segments)[:MAX_MOCK_DEFINER_WORDS]
+        listing = _listing(words) if words else "no word occurring more than once"
+        head = f"{code} collects {len(segments)} segments whose commonest words are {listing}."
+    else:
+        head = f"{code} has no text of its own to describe."
+    return f"{head} {_MOCK_DEFINER_TAIL}"

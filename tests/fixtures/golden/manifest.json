@@ -54,9 +54,9 @@
     }
   },
   "prompts": {
-    "coder/coder-v1": "cce676f3d993df78",
+    "coder/coder-v1": "98090a67c8bab18e",
     "judge/judge-v1": "e631c43de48e5226",
-    "refactorer/refactorer-v1": "8c39dcc1f078ff63"
+    "refactorer/refactorer-v1": "74cf2a80c901999f"
   },
   "regenerate_with": "uv run python -m tests.test_golden --regenerate",
   "response_ids": [
