@@ -48,7 +48,9 @@ only path under `data/` that is not gitignored. `.gitignore` also blocks `*.xlsx
 outright, for the same reason.
 
 `tests/test_golden.py::test_no_tracked_file_contains_real_respondent_text` scans every
-tracked file for a 30-character run shared with a real response, reading the real
+tracked file for a 20-character run shared with a real response — the number is loaded
+from `scripts/export_results.py`, not copied, so the two guards cannot drift
+(ADR-0047) — reading the real
 corpus from `../Grounded AI Futures/data/` on the machine that has it. It **skips
 silently** when that file is absent — which is the normal case on CI and on any
 machine but the researcher's own — so it will not tell you anything is wrong unless

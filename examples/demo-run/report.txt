@@ -65,8 +65,7 @@ CODING — what the two coders proposed and what survived
   responses coded       14
   duplicate responses   0
   segments prepared     40
-  slow loop             DUE — health: new codes this batch 14 > 8
-                        run `gaf checkpoint --run <dir> --interactive` to review the proposal
+  slow loop             not due (none)
 
   candidates proposed   82  (coder_a 39, coder_b 43)
   candidates survived   81  (coder_a 39, coder_b 42)
@@ -91,7 +90,7 @@ MODEL CALLS
   by task               code 28, judge_fit 62
   cache hits            90
   fail-safe replies     0
-  tokens                69435 in / 7612 out
+  tokens                69295 in / 7612 out
   cost (provider)       $0.0000
   latency (provider)    0.0 ms
 
@@ -146,6 +145,36 @@ THEORETICAL SATURATION
 
   No batch was empty of new codes: the curve has not flattened, so theoretical
   saturation is not yet evidenced.
+
+DECISION MATRIX — what each loop decided, and where
+---------------------------------------------------
+
+  The handover — 'is the slow loop due' — is evaluated at every batch boundary
+  and never acted on by the fast loop, which does not block and does not
+  restructure. One row per batch; the verdict is the trigger that won under
+  the precedence health > spike > floor > cadence.
+
+  batch  responses  new codes  near-dup  spike  verdict         reason
+  -----  ---------  ---------  --------  -----  --------------  ----------------------------------------------
+      1         10         12         0  -      checkpoint_due  new codes this batch 12 > 8; the spike rule h…
+      2         14          2         0  -      continue        the spike rule has no baseline yet: a ratio n…
+
+  Why each batch came due, in full:
+    batch 1:
+      new codes this batch 12 > 8; the spike rule has no baseline yet: a ratio
+      needs 3 coded batches behind it, so batch 1 is judged by the absolute
+      ceiling alone
+
+  Code-growth spikes:
+    None. No batch admitted codes far out of step with the ones before it.
+
+  The spike rule sits beside the absolute ceiling, not in place of it: an
+  absolute ceiling cannot tell a first batch, where every code is new, from a
+  late batch where the same count means the codebook has stopped converging.
+  Its thresholds are uncalibrated (ADR-0033).
+
+  The full static matrix — every decision either loop can take, with this
+  run's thresholds — is written to decision_matrix.md beside this report.
 
 
 CHECKS
