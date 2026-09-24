@@ -1,0 +1,839 @@
+{
+  "batches": [
+    {
+      "batch": 1,
+      "cumulative_codes": 12,
+      "handover": {
+        "batch": 1,
+        "fired_rules": [
+          "handover.new_codes"
+        ],
+        "reason": "new codes this batch 12 > 8; the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 1 is judged by the absolute ceiling alone",
+        "verdict": "checkpoint_due"
+      },
+      "judge_consultations": 0,
+      "merges": 18,
+      "n_new_codes": 12,
+      "n_responses": 10,
+      "new_codes": [
+        "future-imagined_scenario",
+        "applications-data_driven_systems",
+        "applications-healthcare",
+        "adoption-social_change",
+        "applications-education",
+        "negative_impacts-job_loss",
+        "applications-industry_and_transport",
+        "applications-personalisation",
+        "positive_impacts-access",
+        "positive_impacts-problem_solving",
+        "negative_impacts-dependence",
+        "applications-automation"
+      ],
+      "responses": [
+        203,
+        207,
+        212,
+        217,
+        218,
+        221,
+        226,
+        231,
+        234,
+        239
+      ],
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 2,
+      "cumulative_codes": 14,
+      "handover": {
+        "batch": 2,
+        "fired_rules": [],
+        "reason": "the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 2 is judged by the absolute ceiling alone",
+        "verdict": "continue"
+      },
+      "judge_consultations": 0,
+      "merges": 11,
+      "n_new_codes": 2,
+      "n_responses": 4,
+      "new_codes": [
+        "positive_impacts-quality_of_life",
+        "future-uncertainty"
+      ],
+      "responses": [
+        244,
+        245,
+        253,
+        258
+      ],
+      "snapshot_id": "snap-4041159865476169"
+    }
+  ],
+  "biographies": {
+    "code-0154457d5dcd5ab4": {
+      "born": {
+        "batch": 2,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 245,
+        "snapshot_id": "snap-4041159865476169"
+      },
+      "code_id": "code-0154457d5dcd5ab4",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "245"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "258"
+        }
+      ],
+      "family": "positive_impacts",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "positive_impacts-quality_of_life",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-04e71252b9d51c65": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 212,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-04e71252b9d51c65",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "212"
+        }
+      ],
+      "family": "applications",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "applications-personalisation",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-250a1e9e823839be": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 203,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-250a1e9e823839be",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "203"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "245"
+        }
+      ],
+      "family": "applications",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "applications-healthcare",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-2b8757c069db2d06": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 207,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-2b8757c069db2d06",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "207"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "226"
+        }
+      ],
+      "family": "applications",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "applications-education",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-36970a56237694b9": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 207,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-36970a56237694b9",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "207"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "239"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "253"
+        }
+      ],
+      "family": "negative_impacts",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "negative_impacts-job_loss",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-38b20c3776316706": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 239,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-38b20c3776316706",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "239"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "244"
+        }
+      ],
+      "family": "applications",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "applications-automation",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-46697fdf41a8a235": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 212,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-46697fdf41a8a235",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "212"
+        }
+      ],
+      "family": "positive_impacts",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "positive_impacts-access",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-4ba5131c9424da17": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 203,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-4ba5131c9424da17",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "203"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "207"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "212"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 5,
+          "ref": "217"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 7,
+          "ref": "218"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 12,
+          "ref": "221"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 14,
+          "ref": "234"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 17,
+          "ref": "245"
+        }
+      ],
+      "family": "adoption",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "adoption-social_change",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-501aa6af5eefaa00": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 217,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-501aa6af5eefaa00",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "217"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "244"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "258"
+        }
+      ],
+      "family": "positive_impacts",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "positive_impacts-problem_solving",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-8688cf35c2ec128a": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 212,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-8688cf35c2ec128a",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "212"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "217"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "234"
+        }
+      ],
+      "family": "applications",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "applications-industry_and_transport",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-959b63a61fcb9a1d": {
+      "born": {
+        "batch": 2,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 258,
+        "snapshot_id": "snap-4041159865476169"
+      },
+      "code_id": "code-959b63a61fcb9a1d",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "258"
+        }
+      ],
+      "family": "future",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "future-uncertainty",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-cae8afe7b151eece": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 218,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-cae8afe7b151eece",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "218"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "221"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 4,
+          "ref": "253"
+        }
+      ],
+      "family": "negative_impacts",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "negative_impacts-dependence",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-d6c7550fb62740dd": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 203,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-d6c7550fb62740dd",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "203"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "207"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 4,
+          "ref": "212"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 6,
+          "ref": "217"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 7,
+          "ref": "218"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 12,
+          "ref": "221"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 13,
+          "ref": "226"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 14,
+          "ref": "244"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 15,
+          "ref": "245"
+        }
+      ],
+      "family": "future",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "future-imagined_scenario",
+      "reparenting": [],
+      "successors": []
+    },
+    "code-fd80110313bb11f2": {
+      "born": {
+        "batch": 1,
+        "checkpoint_id": null,
+        "coders": [
+          "coder_a",
+          "coder_b"
+        ],
+        "origin": "coded",
+        "predecessor": null,
+        "response_id": 203,
+        "snapshot_id": "snap-8c8e1bb384bd3da4"
+      },
+      "code_id": "code-fd80110313bb11f2",
+      "evidence_over_time": [
+        {
+          "kind": "response",
+          "n_evidence": 1,
+          "ref": "203"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 2,
+          "ref": "218"
+        },
+        {
+          "kind": "response",
+          "n_evidence": 3,
+          "ref": "258"
+        }
+      ],
+      "family": "applications",
+      "fate": "alive",
+      "fate_kind": "alive",
+      "name": "applications-data_driven_systems",
+      "reparenting": [],
+      "successors": []
+    }
+  },
+  "checkpoints": [],
+  "run_id": "demo",
+  "snapshot_diffs": [
+    {
+      "added": [
+        "adoption-social_change",
+        "applications-automation",
+        "applications-data_driven_systems",
+        "applications-education",
+        "applications-healthcare",
+        "applications-industry_and_transport",
+        "applications-personalisation",
+        "future-imagined_scenario",
+        "negative_impacts-dependence",
+        "negative_impacts-job_loss",
+        "positive_impacts-access",
+        "positive_impacts-problem_solving"
+      ],
+      "from_snapshot": "snap-8c8e1bb384bd3da4",
+      "matching": "code id, then this run's own recorded rename operations",
+      "reason": "batch",
+      "removed": [],
+      "renamed": [],
+      "to_snapshot": "snap-4041159865476169"
+    },
+    {
+      "added": [
+        "future-uncertainty",
+        "positive_impacts-quality_of_life"
+      ],
+      "from_snapshot": "snap-4041159865476169",
+      "matching": "code id, then this run's own recorded rename operations",
+      "reason": "batch",
+      "removed": [],
+      "renamed": [],
+      "to_snapshot": "snap-3281fbd1f36b27ec"
+    }
+  ],
+  "steps": [
+    {
+      "batch": 1,
+      "codes_created": [
+        "future-imagined_scenario",
+        "applications-data_driven_systems",
+        "applications-healthcare",
+        "adoption-social_change"
+      ],
+      "codes_merged": [],
+      "duplicate_of": null,
+      "n_assignments": 5,
+      "response_id": 203,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [
+        "applications-education",
+        "negative_impacts-job_loss"
+      ],
+      "codes_merged": [
+        "future-imagined_scenario",
+        "adoption-social_change"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 4,
+      "response_id": 207,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [
+        "applications-industry_and_transport",
+        "applications-personalisation",
+        "positive_impacts-access"
+      ],
+      "codes_merged": [
+        "future-imagined_scenario",
+        "adoption-social_change"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 5,
+      "response_id": 212,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [
+        "positive_impacts-problem_solving"
+      ],
+      "codes_merged": [
+        "adoption-social_change",
+        "applications-industry_and_transport",
+        "future-imagined_scenario"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 6,
+      "response_id": 217,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [
+        "negative_impacts-dependence"
+      ],
+      "codes_merged": [
+        "adoption-social_change",
+        "applications-data_driven_systems",
+        "future-imagined_scenario"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 5,
+      "response_id": 218,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [],
+      "codes_merged": [
+        "future-imagined_scenario",
+        "adoption-social_change",
+        "negative_impacts-dependence"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 11,
+      "response_id": 221,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [],
+      "codes_merged": [
+        "applications-education",
+        "future-imagined_scenario"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 3,
+      "response_id": 226,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [],
+      "codes_merged": [],
+      "duplicate_of": null,
+      "n_assignments": 0,
+      "response_id": 231,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [],
+      "codes_merged": [
+        "adoption-social_change",
+        "applications-industry_and_transport"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 3,
+      "response_id": 234,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 1,
+      "codes_created": [
+        "applications-automation"
+      ],
+      "codes_merged": [
+        "negative_impacts-job_loss"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 3,
+      "response_id": 239,
+      "snapshot_id": "snap-8c8e1bb384bd3da4"
+    },
+    {
+      "batch": 2,
+      "codes_created": [],
+      "codes_merged": [
+        "applications-automation",
+        "future-imagined_scenario",
+        "positive_impacts-problem_solving"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 3,
+      "response_id": 244,
+      "snapshot_id": "snap-4041159865476169"
+    },
+    {
+      "batch": 2,
+      "codes_created": [
+        "positive_impacts-quality_of_life"
+      ],
+      "codes_merged": [
+        "adoption-social_change",
+        "applications-healthcare",
+        "future-imagined_scenario"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 6,
+      "response_id": 245,
+      "snapshot_id": "snap-4041159865476169"
+    },
+    {
+      "batch": 2,
+      "codes_created": [],
+      "codes_merged": [
+        "negative_impacts-dependence",
+        "negative_impacts-job_loss"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 3,
+      "response_id": 253,
+      "snapshot_id": "snap-4041159865476169"
+    },
+    {
+      "batch": 2,
+      "codes_created": [
+        "future-uncertainty"
+      ],
+      "codes_merged": [
+        "applications-data_driven_systems",
+        "positive_impacts-problem_solving",
+        "positive_impacts-quality_of_life"
+      ],
+      "duplicate_of": null,
+      "n_assignments": 4,
+      "response_id": 258,
+      "snapshot_id": "snap-4041159865476169"
+    }
+  ]
+}

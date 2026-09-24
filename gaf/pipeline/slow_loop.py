@@ -88,6 +88,7 @@ from gaf.agents.refactorer import (
     usage_from_codebook,
 )
 from gaf.checks.contracts import CheckReport, Severity
+from gaf.checks.growth import GrowthCurve, Spike, spike_at
 from gaf.checks.health import (
     CheckpointSignals,
     HealthMetrics,
@@ -106,6 +107,7 @@ from gaf.models import (
     Operation,
     family_of,
 )
+from gaf.pipeline.decision_matrix import first_trigger
 from gaf.pipeline.router import merge_evidence
 from gaf.store.blackboard import Blackboard
 from gaf.store.snapshot import Snapshot
@@ -166,7 +168,11 @@ VERDICTS: tuple[str, ...] = (ACCEPT, REJECT, EDIT)
 
 #: Why a checkpoint fired. Written to `checkpoints.trigger`, which is free text; these
 #: are the values this module mints, and "manual" is the caller-supplied default.
-TRIGGERS: tuple[str, ...] = ("health", "floor", "cadence", "manual", "none")
+#:
+#: Order is the precedence `gaf.pipeline.decision_matrix.TRIGGER_PRECEDENCE` applies
+#: when several fire at once — health, spike, floor, cadence — followed by the two that
+#: no rule mints. "spike" was added by ADR-0033.
+TRIGGERS: tuple[str, ...] = ("health", "spike", "floor", "cadence", "manual", "none")
 
 
 class OperationError(ValueError):
@@ -209,6 +215,10 @@ class CheckpointTrigger:
     reason: str
     signals: CheckpointSignals
     metrics: HealthMetrics
+    #: The spike that fired the `spike` trigger, when one did. Carried rather than
+    #: re-derived for the same reason `reason` is: the growth curve moves on, and "this
+    #: batch was 9x the recent median" has to survive as a recorded fact (ADR-0033).
+    spike: Spike | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -217,6 +227,7 @@ class CheckpointTrigger:
             "reason": self.reason,
             "signals": self.signals.to_json(),
             "health": self.metrics.to_json(),
+            "spike": self.spike.to_json() if self.spike is not None else None,
         }
 
 
@@ -228,17 +239,35 @@ def should_checkpoint(
     responses_coded: int,
     responses_since_checkpoint: int,
     previous: Codebook | None = None,
+    curve: GrowthCurve | None = None,
 ) -> CheckpointTrigger:
     """Report whether a checkpoint fires, which trigger fired it, and why.
 
-    Delegates every metric to `gaf.checks.health` — this function decides, it does not
-    measure. Brief §16.7's chosen default is `CheckpointPolicy.mode == "event_driven"`
-    with a hard floor of every `hard_floor_responses` (50) responses:
+    Delegates every metric to `gaf.checks.health` and `gaf.checks.growth` — this
+    function decides, it does not measure. Brief §16.7's chosen default is
+    `CheckpointPolicy.mode == "event_driven"` with a hard floor of every
+    `hard_floor_responses` (50) responses. Four triggers, and when more than one is
+    exceeded the **precedence is health, spike, floor, cadence**, applied by
+    `gaf.pipeline.decision_matrix.first_trigger` — the only code that implements that order,
+    shared with the fast loop's per-batch `evaluate_handover` so the two can never name
+    a different trigger for the same state:
 
     * **health** — near-duplicate pairs or new-codes-per-batch exceed the policy *and*
-      enough responses have passed since the last checkpoint;
-    * **floor** — the hard floor is reached, whatever the codebook looks like, so a
-      quiet codebook still gets a human look;
+      enough responses have passed since the last checkpoint. First because a codebook
+      already carrying near-duplicates is the most specific thing that can be wrong
+      with it;
+    * **spike** — this batch admitted at least `spike_min_new_codes` codes and at least
+      `spike_factor` times the median of the previous `spike_window` batches, and
+      spacing is satisfied. Second because it is the newer and uncalibrated rule and
+      must not mask the one that has been in the build since Wave 3. Requires `curve`:
+      a spike is a fact about a *sequence* of batches, so a caller with only one
+      codebook in hand cannot raise it, and without a curve this function behaves
+      exactly as it did before ADR-0033;
+    * **floor** — `responses_since_checkpoint` has reached the hard floor, whatever
+      the codebook looks like, so a quiet codebook still gets a human look. Measured
+      since the last checkpoint rather than from the start of the run: measured from
+      the start it latched on permanently and reported a checkpoint due at every later
+      batch (R1 I1). Not held by spacing;
     * **cadence** — `mode == "fixed"`: `responses_coded` is one of
       `CheckpointPolicy.fixed_cadence` (Chan's cadence: first 10, then every 10).
 
@@ -247,27 +276,29 @@ def should_checkpoint(
     """
     policy = config.checkpoints
     metrics = codebook_health(codebook, embedder, config.rules, previous=previous)
+    spike = spike_at(curve, policy)
     signals = checkpoint_signals(
         metrics,
         policy,
         responses_coded=responses_coded,
         responses_since_checkpoint=responses_since_checkpoint,
+        spike=spike,
     )
+    event_driven = policy.mode == "event_driven"
     event = (
-        policy.mode == "event_driven"
+        event_driven
         and signals.spacing_satisfied
         and (signals.near_duplicates_exceeded or signals.new_codes_exceeded)
     )
+    spiked = event_driven and signals.spacing_satisfied and signals.spike_detected
     cadence = policy.mode == "fixed" and responses_coded in policy.fixed_cadence
 
-    if event:
-        trigger = "health"
-    elif signals.hard_floor_reached:
-        trigger = "floor"
-    elif cadence:
-        trigger = "cadence"
-    else:
-        trigger = "none"
+    trigger = first_trigger(
+        health=event,
+        spike=spiked,
+        floor=signals.hard_floor_reached,
+        cadence=cadence,
+    )
 
     reasons = list(signals.reasons)
     if cadence and trigger == "cadence":
@@ -286,6 +317,7 @@ def should_checkpoint(
         reason="; ".join(reasons),
         signals=signals,
         metrics=metrics,
+        spike=spike,
     )
 
 

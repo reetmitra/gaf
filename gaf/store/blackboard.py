@@ -10,7 +10,7 @@ Three properties this module is responsible for holding up:
 * **Deterministic ordering on every read.** Every query below carries an `ORDER BY`
   over a total, stable key. A read that returned rows in whatever order the b-tree
   offered would silently break byte-identical output downstream, and would do so
-  intermittently, which is the worst kind of broken.
+  intermittently, and intermittent breakage is the worst kind.
 * **Content-addressed writes.** Ids come from `gaf.ids`, never from a counter, with
   the single exception of `audit.event_id`, which the database assigns because the
   log's ordering *is* its insertion order.
@@ -936,12 +936,29 @@ class Blackboard:
         created_at: str | None = None,
     ) -> CheckpointRecord:
         """Record a slow-loop proposal, before the human gate sees it."""
-        checkpoint_id = mint_checkpoint_id(
-            run_id=run_id,
-            at_response_count=at_response_count,
-            trigger=trigger,
-            base_snapshot_id=base_snapshot_id,
-        )
+        # Two checkpoints can tie on all four identifying fields and still be two
+        # decisions -- the documented path is `gaf checkpoint` (reject-all, writes no
+        # snapshot, codes nothing) followed by `gaf checkpoint --interactive`. Under a
+        # shared id the second row collided with the first and was silently discarded
+        # by ``ON CONFLICT DO NOTHING``, so the rejection disappeared from the store
+        # and from every artefact read out of it (R1 C7). The ordinal is the number of
+        # rows already holding that id's recipe, so it is deterministic, and it is 0 --
+        # and the id therefore unchanged -- whenever there is no collision.
+        ordinal = 0
+        while True:
+            checkpoint_id = mint_checkpoint_id(
+                run_id=run_id,
+                at_response_count=at_response_count,
+                trigger=trigger,
+                base_snapshot_id=base_snapshot_id,
+                ordinal=ordinal,
+            )
+            taken = self._conn.execute(
+                "SELECT 1 FROM checkpoints WHERE checkpoint_id = ?", (checkpoint_id,)
+            ).fetchone()
+            if taken is None:
+                break
+            ordinal += 1
         stamp = created_at or utc_now_iso()
         payload = dict(proposal)
         self._conn.execute(

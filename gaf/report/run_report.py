@@ -34,25 +34,31 @@ from __future__ import annotations
 
 import json
 import textwrap
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Any
 
 from gaf.analysis.hca import SaturationCurve, saturation_curve
 from gaf.analysis.matrix import build_matrix
 from gaf.checks.contracts import CHECK_IDS, CheckReport
-from gaf.config import AnalysisConfig, RunConfig
+from gaf.checks.growth import GrowthCurve, code_growth, detect_spikes
+from gaf.config import AnalysisConfig, CheckpointPolicy, CodingRules, RunConfig
 from gaf.models import Assignment, Codebook, Response
+from gaf.pipeline.decision_matrix import render_matrix_markdown
 from gaf.pipeline.fast_loop import FastLoopResult, RunStats
 
 __all__ = [
     "CHECK_ERROR_MEANS",
     "CHECK_NOTES",
+    "DECISION_MATRIX_NAME",
     "RUN_ERROR_MEANS",
     "RUN_JSON_NAME",
     "RUN_SCHEMA",
     "RunArtefact",
     "render_checks_section",
     "render_run_report",
+    "write_decision_matrix",
 ]
 
 #: Version tag written into ``run.json`` so a later reader can refuse an older shape.
@@ -60,6 +66,11 @@ RUN_SCHEMA = "gaf.run/1"
 
 #: The file the CLI writes and ``gaf report`` reads back.
 RUN_JSON_NAME = "run.json"
+
+#: The static decision matrix, written beside the run report. It is a page and a half
+#: of table, which belongs in a file a reader can open rather than in the middle of a
+#: report they are reading for this run's numbers.
+DECISION_MATRIX_NAME = "decision_matrix.md"
 
 #: One line per check id, so the CHECKS table explains itself to a reader who has not
 #: read the source. Keys are exactly :data:`gaf.checks.contracts.CHECK_IDS`.
@@ -98,6 +109,11 @@ RUN_ERROR_MEANS = (
 
 _WIDTH = 78
 _INDENT = "  "
+
+#: How much of a handover reason fits in the decision-matrix table before the report
+#: stops being 78 columns wide. The full text is printed below the table for the
+#: batches that came due, and `run.json` carries every one of them verbatim.
+_REASON_WIDTH = 46
 
 #: How many ERROR findings are printed in full before the tail is summarised.
 _MAX_LISTED_ERRORS = 25
@@ -193,11 +209,67 @@ class RunArtefact:
 
     def analysis_config(self) -> AnalysisConfig:
         """The analysis settings this run used, or the defaults when unrecorded."""
-        raw = self.config.get("analysis")
-        if not isinstance(raw, dict):
-            return AnalysisConfig()
-        known = set(AnalysisConfig.__dataclass_fields__)
-        return AnalysisConfig(**{k: v for k, v in raw.items() if k in known})
+        return _sub_config(self.config.get("analysis"), AnalysisConfig)
+
+    def checkpoint_policy(self) -> CheckpointPolicy:
+        """The checkpoint policy this run used, or the defaults when unrecorded."""
+        raw = self.config.get("checkpoints")
+        if isinstance(raw, dict) and isinstance(raw.get("fixed_cadence"), list):
+            raw = {**raw, "fixed_cadence": tuple(raw["fixed_cadence"])}
+        return _sub_config(raw, CheckpointPolicy)
+
+    def run_config(self) -> RunConfig:
+        """Enough of the run's configuration for the decision matrix's conditions.
+
+        Only the parts a rendered condition names — the coding rules, the checkpoint
+        policy, the batch size and the retrieval width. The full inverse of
+        `RunConfig.to_json` lives in the CLI, where the store's byte-for-byte config
+        comparison needs it; the report has no business importing the CLI, and a matrix
+        condition has no business naming a model binding.
+        """
+        return RunConfig(
+            run_id=self.stats.run_id,
+            offline=self.stats.offline,
+            rules=_sub_config(self.config.get("rules"), CodingRules),
+            checkpoints=self.checkpoint_policy(),
+            analysis=self.analysis_config(),
+            batch_size=int(self.config.get("batch_size") or RunConfig().batch_size),
+            retrieval_top_k=int(
+                self.config.get("retrieval_top_k") or RunConfig().retrieval_top_k
+            ),
+        )
+
+    def decision_trace(self) -> list[dict[str, Any]]:
+        """The per-batch handover evaluations this run recorded, in batch order."""
+        return [dict(row) for row in self.stats.decision_trace]
+
+    def growth(self) -> GrowthCurve:
+        """The code-growth curve over every response this run coded.
+
+        Built in the run's own **processing order** — the order the outcomes are in,
+        which is `(source, response id)` and not ascending id — because a growth curve
+        cut on a different order is a curve of a run that did not happen.
+        """
+        order = [int(o["response_id"]) for o in self.outcomes if "response_id" in o]
+        return code_growth(
+            self.assignments,
+            batch_size=int(self.config.get("batch_size") or RunConfig().batch_size),
+            order=order or None,
+            response_ids=order or None,
+        )
+
+    def spikes(self) -> list[dict[str, Any]]:
+        """The spikes this run recorded, or — for a run.json written before the trace
+        existed — the spikes its growth curve shows now.
+
+        The trace is preferred because it is what the run *decided on*: the spike rule
+        may have been re-tuned since, and a report that silently re-derived the spikes
+        under today's policy would misreport why the gate came due.
+        """
+        trace = self.decision_trace()
+        if trace:
+            return [dict(row["spike"]) for row in trace if row.get("spike")]
+        return [spike.to_json() for spike in detect_spikes(self.growth(), self.checkpoint_policy())]
 
     def saturation(self) -> SaturationCurve:
         """The saturation curve over every response this run coded.
@@ -233,6 +305,20 @@ class RunArtefact:
 # --------------------------------------------------------------------------- #
 
 
+def _sub_config(raw: Any, factory: Any) -> Any:
+    """One sub-config from its JSON echo, unknown keys dropped, defaults otherwise.
+
+    Unknown keys are dropped rather than raising so that a `run.json` written by a
+    build that has since gained or lost a field still renders: a report that refused to
+    open an older run would make the run directory unreadable by the only tool that
+    reads it.
+    """
+    if not isinstance(raw, dict):
+        return factory()
+    known = set(factory.__dataclass_fields__)
+    return factory(**{k: v for k, v in raw.items() if k in known})
+
+
 def _heading(title: str) -> list[str]:
     return ["", title, "-" * len(title)]
 
@@ -245,6 +331,12 @@ def _paragraph(text: str, *, indent: str = _INDENT) -> list[str]:
     return textwrap.wrap(
         text, width=_WIDTH, initial_indent=indent, subsequent_indent=indent
     ) or [indent.rstrip()]
+
+
+def _clip(text: str, width: int) -> str:
+    """One line, at most `width` characters, with an ellipsis where it was cut."""
+    flat = " ".join(text.split())
+    return flat if len(flat) <= width else flat[: width - 1].rstrip() + "…"
 
 
 def _counts(mapping: dict[str, int]) -> str:
@@ -406,11 +498,30 @@ def _header(stats: RunStats) -> list[str]:
     ]
 
 
-def _caveats(stats: RunStats) -> list[str]:
+def _seeded_caveat(seeded_from: Mapping[str, Any]) -> str:
+    """What a seeded run costs, in the plainest words available (ADR-0035)."""
+    return (
+        f"This run was SEEDED from an existing codebook ({seeded_from.get('codes', 0)} "
+        f"code(s), content hash {seeded_from.get('content_hash', '?')}). It coded into "
+        "an organisation somebody had already built, so its agreement with the coding "
+        "that produced that seed is NOT independent evidence about either of them: the "
+        "machine was shown the shape of the answer before it started. A cold run — the "
+        "same command with no --seed-codebook — is the validation path, and the "
+        "agreement figures that belong in a methods appendix come from one of those. "
+        "The seed's own evidence was held out of this run, so every number below "
+        "describes this run's coding and no other."
+    )
+
+
+def _caveats(stats: RunStats, provenance: Mapping[str, Any] | None = None) -> list[str]:
     """Printed above every number, because ADR-0019 says a reader must meet it first."""
+    recorded = list(stats.caveats)
+    seeded_from = (provenance or {}).get("seeded_from")
+    if isinstance(seeded_from, Mapping):
+        recorded.insert(0, _seeded_caveat(seeded_from))
     lines = _heading("CAVEATS — read these before the numbers")
     lines.append("")
-    if not stats.caveats:
+    if not recorded:
         lines.extend(
             _paragraph(
                 "None recorded for this run. That is a claim about the run's inputs, "
@@ -418,16 +529,17 @@ def _caveats(stats: RunStats) -> list[str]:
             )
         )
         return lines
-    for caveat in stats.caveats:
+    for caveat in recorded:
         lines.extend(_paragraph(f"! {caveat}"))
         lines.append("")
-    lines.extend(
-        _paragraph(
-            "In practice: treat the M3 and M2 rows of the CHECKS table as diagnostics "
-            "of the stand-in embedder, not as findings about the codebook. The judge "
-            "call counts below are dominated by the same effect (ADR-0022)."
+    if stats.caveats:
+        lines.extend(
+            _paragraph(
+                "In practice: treat the M3 and M2 rows of the CHECKS table as diagnostics "
+                "of the stand-in embedder, not as findings about the codebook. The judge "
+                "call counts below are dominated by the same effect (ADR-0022)."
+            )
         )
-    )
     return lines
 
 
@@ -450,6 +562,31 @@ def _provenance(artefact: RunArtefact) -> list[str]:
             lines.append(_field(label, provenance[key]))
     lines.append(_field("responses ingested", provenance.get("n_responses", stats.n_responses)))
     lines.append(_field("embedding space", stats.space_id))
+    seeded_from = provenance.get("seeded_from")
+    if isinstance(seeded_from, Mapping):
+        lines.append("")
+        lines.append(_field("seeded from", seeded_from.get("path", "")))
+        lines.append(_field("seed hash", seeded_from.get("content_hash", "")))
+        lines.append(
+            _field(
+                "seed codes",
+                f"{seeded_from.get('codes', 0)} in {seeded_from.get('families', 0)} "
+                f"famil(ies), {seeded_from.get('described', 0)} described",
+            )
+        )
+        lines.append(
+            _field("seed evidence", f"{seeded_from.get('evidence_held_out', 0)} row(s) held out")
+        )
+        sources = seeded_from.get("sources") or []
+        if sources:
+            lines.append(_field("seed sources", ", ".join(str(s) for s in sources)))
+    skipped_from = provenance.get("skipped_from")
+    if isinstance(skipped_from, Mapping):
+        lines.append("")
+        lines.append(_field("resumed after", skipped_from.get("run", "")))
+        lines.append(
+            _field("responses skipped", f"{skipped_from.get('skipped', 0)} already coded there")
+        )
     lines.append("")
     lines.append(
         f"{_INDENT}Snapshots frozen ({len(stats.snapshot_ids)}) — coders read these, "
@@ -685,6 +822,133 @@ def _saturation(artefact: RunArtefact) -> list[str]:
     return lines
 
 
+def _decision_matrix(artefact: RunArtefact) -> list[str]:
+    """The handover trace as a table, and the spikes the growth curve carries.
+
+    This is the *run's* decisions, one row per batch boundary. The static matrix — every
+    decision the system can take, under this run's thresholds — is a separate file,
+    written by `write_decision_matrix`, because it says nothing about this run and a
+    reader looking for it should not have to scroll past it every time they do not.
+    """
+    stats = artefact.stats
+    lines = _heading("DECISION MATRIX — what each loop decided, and where")
+    lines.append("")
+    lines.extend(
+        _paragraph(
+            "The handover — 'is the slow loop due' — is evaluated at every batch "
+            "boundary and never acted on by the fast loop, which does not block and "
+            "does not restructure. One row per batch; the verdict is the trigger that "
+            "won under the precedence health > spike > floor > cadence."
+        )
+    )
+    lines.append("")
+
+    trace = artefact.decision_trace()
+    if not trace:
+        lines.append(f"{_INDENT}No batch boundary was evaluated — the run coded no responses.")
+        return lines
+
+    rows = [
+        [
+            str(row.get("batch", "")),
+            str(row.get("responses_coded", "")),
+            str(row.get("new_codes", "")),
+            str(row.get("near_duplicate_pairs", "")),
+            "yes" if row.get("spike") else "-",
+            str(row.get("verdict", "")),
+            _clip(str(row.get("reason", "")), _REASON_WIDTH),
+        ]
+        for row in trace
+    ]
+    lines.extend(
+        _table(
+            [
+                "batch",
+                "responses",
+                "new codes",
+                "near-dup",
+                "spike",
+                "verdict",
+                "reason",
+            ],
+            rows,
+            align_right={0, 1, 2, 3},
+        )
+    )
+    lines.append("")
+
+    # The reasons are clipped in the table so the report keeps its width. The ones that
+    # actually came due are printed in full here, because "why did the gate come due at
+    # batch 4" is the question this section exists to answer; run.json carries every
+    # reason verbatim for the rest.
+    due = [row for row in trace if row.get("verdict") == "checkpoint_due"]
+    if due:
+        lines.append(f"{_INDENT}Why each batch came due, in full:")
+        for row in due:
+            lines.append(f"{_INDENT * 2}batch {row.get('batch')}:")
+            lines.extend(_paragraph(str(row.get("reason", "")), indent=_INDENT * 3))
+            held = [str(name) for name in row.get("held") or []]
+            if held:
+                lines.append(f"{_INDENT * 3}held: {', '.join(held)}")
+        lines.append("")
+
+    if stats.halted_at_batch is not None:
+        lines.append(
+            _field(
+                "halted",
+                f"after batch {stats.halted_at_batch}; {stats.responses_uncoded} "
+                "response(s) left uncoded",
+            )
+        )
+        lines.append(_field("", "the run still closed normally: checks, final snapshot, run_completed"))
+        lines.append("")
+
+    spikes = artefact.spikes()
+    lines.append(f"{_INDENT}Code-growth spikes:")
+    if not spikes:
+        lines.append(f"{_INDENT * 2}None. No batch admitted codes far out of step with the ones before it.")
+    else:
+        for spike in spikes:
+            ratio = spike.get("ratio")
+            shape = f"{ratio}x" if ratio is not None else "no baseline"
+            lines.append(
+                f"{_INDENT * 2}batch {spike.get('batch')}: {spike.get('new_codes')} new "
+                f"code(s), {shape}, rule `{spike.get('rule')}`"
+            )
+            lines.extend(_paragraph(str(spike.get("reason", "")), indent=_INDENT * 3))
+    lines.append("")
+    lines.extend(
+        _paragraph(
+            "The spike rule sits beside the absolute ceiling, not in place of it: an "
+            "absolute ceiling cannot tell a first batch, where every code is new, from "
+            "a late batch where the same count means the codebook has stopped "
+            "converging. Its thresholds are uncalibrated (ADR-0033)."
+        )
+    )
+    lines.append("")
+    lines.extend(
+        _paragraph(
+            f"The full static matrix — every decision either loop can take, with this "
+            f"run's thresholds — is written to {DECISION_MATRIX_NAME} beside this report."
+        )
+    )
+    return lines
+
+
+def write_decision_matrix(run_dir: Path, artefact: RunArtefact) -> Path:
+    """Write the static decision matrix beside a run report; return the path.
+
+    Exposed here rather than inlined into `gaf report` so that the renderer and the
+    filename live with the rest of the report layer and the CLI only has to call it.
+    Deterministic and self-contained: the same run directory and the same artefact
+    write the same bytes, with no wall clock and no run id in the file.
+    """
+    run_dir.mkdir(parents=True, exist_ok=True)
+    path = run_dir / DECISION_MATRIX_NAME
+    path.write_text(render_matrix_markdown(artefact.run_config()), encoding="utf-8")
+    return path
+
+
 # --------------------------------------------------------------------------- #
 # The report
 # --------------------------------------------------------------------------- #
@@ -695,13 +959,14 @@ def render_run_report(artefact: RunArtefact) -> str:
     stats = artefact.stats
     lines: list[str] = []
     lines.extend(_header(stats))
-    lines.extend(_caveats(stats))
+    lines.extend(_caveats(stats, artefact.provenance))
     lines.extend(_provenance(artefact))
     lines.extend(_configuration(artefact))
     lines.extend(_coding(stats))
     lines.extend(_model_calls(stats))
     lines.extend(_codebook_section(artefact))
     lines.extend(_saturation(artefact))
+    lines.extend(_decision_matrix(artefact))
     lines.append("")
     lines.append(
         render_checks_section(

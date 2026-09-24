@@ -30,12 +30,51 @@
     "Offline run: M3's code-to-evidence fit does not discriminate in the lexical fallback space (median fit 0.000) and M2's grey zone is empty, so the fit and routing statistics are artefacts of the stand-in embedder rather than findings about the coding. See ADR-0019."
   ],
   "checkpoint_due": {
-    "fires": true,
-    "reason": "new codes this batch 14 > 8",
-    "trigger": "health"
+    "batch": 2,
+    "batches_due": [
+      1
+    ],
+    "fires": false,
+    "reason": "the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 2 is judged by the absolute ceiling alone",
+    "trigger": "none",
+    "verdict": "continue"
   },
   "codes_created": 14,
   "codes_final": 14,
+  "decision_trace": [
+    {
+      "batch": 1,
+      "cumulative_codes": 12,
+      "fired": [
+        "handover.new_codes"
+      ],
+      "held": [],
+      "near_duplicate_pairs": 0,
+      "new_codes": 12,
+      "reason": "new codes this batch 12 > 8; the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 1 is judged by the absolute ceiling alone",
+      "responses_coded": 10,
+      "responses_in_batch": 10,
+      "responses_since_checkpoint": 10,
+      "spike": null,
+      "trigger": "health",
+      "verdict": "checkpoint_due"
+    },
+    {
+      "batch": 2,
+      "cumulative_codes": 14,
+      "fired": [],
+      "held": [],
+      "near_duplicate_pairs": 0,
+      "new_codes": 2,
+      "reason": "the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 2 is judged by the absolute ceiling alone",
+      "responses_coded": 14,
+      "responses_in_batch": 4,
+      "responses_since_checkpoint": 14,
+      "spike": null,
+      "trigger": "none",
+      "verdict": "continue"
+    }
+  ],
   "escalations": 62,
   "families_final": 5,
   "findings": {
@@ -56,6 +95,7 @@
       "INFO": 1
     }
   },
+  "halted_at_batch": null,
   "judge_calls": {
     "judge_fit": 62
   },
@@ -68,7 +108,7 @@
     "calls": 90,
     "cost_usd": 0.0,
     "fail_safes": 0,
-    "input_tokens": 69435,
+    "input_tokens": 69295,
     "latency_ms_total": 0.0,
     "output_tokens": 7612
   },
@@ -76,12 +116,15 @@
   "n_responses": 14,
   "n_segments": 40,
   "offline": true,
+  "responses_since_checkpoint": 14,
+  "responses_uncoded": 0,
   "routes": {
     "CREATE": 14,
     "JUDGE": 0,
     "MERGE": 29
   },
   "run_id": "demo",
+  "seeded_from": null,
   "severities": {
     "ERROR": 3,
     "INFO": 141,

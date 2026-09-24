@@ -128,8 +128,10 @@ the deliverable.
 
 ### 3.4 Slow loop, per checkpoint
 
-Checkpoints are event-driven on codebook health, with a hard floor of every 50
-responses. At a checkpoint a frontier model sees the whole codebook with usage
+Checkpoints are event-driven on codebook health, with a hard floor of 50 responses
+**since the last checkpoint** — counted from the last time a human looked, not from the
+start of the run, and carried forward across a resumed run that took no checkpoint
+(ADR-0040). At a checkpoint a frontier model sees the whole codebook with usage
 statistics and proposes an **edit script** over a deliberately wide operation set:
 create, merge, **split**, **re-parent**, rename, no-op.
 
@@ -160,6 +162,133 @@ within each cluster, which is what the clusters are interpreted from.
 
 Respondent metadata is joined **here and only here** — never during coding, so that a
 coder cannot condition on who the respondent is.
+
+### 3.6 Further readings of the same matrix: patterns, affinity, the crosswalk
+
+The occurrence matrix the cluster analysis reads supports three further, equally
+deterministic readings. **Pattern mapping** reports which responses share which
+combinations of codes: a signature of families touched per response, groups of
+responses sharing an identical signature, and the pairs and triples of codes that
+co-occur more than chance predicts. **Affinity** groups leaf codes that behave alike —
+by a blend of how similar their names and descriptions are and how often they co-occur
+across responses — deliberately *across* families rather than within one, because the
+case worth surfacing is a leaf that belongs with another leaf filed under a different
+heading. **The crosswalk** maps one codebook's leaves onto a second codebook's, in the
+same embedding space and the same two-threshold band the fast loop already uses for
+M2, and reports both the one-to-one optimal assignment and the unconstrained nearest
+neighbour, because the finding worth having — several machine codes converging on one
+human code — shows up only in the second.
+
+**None of the three ever edits a codebook.** They are readings of a matrix and a
+codebook that already exist, exactly as the cluster analysis is one, and restructuring
+remains where §3.4 puts it: behind the human gate, at a checkpoint. A pattern group, an
+affinity group and a crosswalk mapping are candidates for a person to act on, not edits
+the pipeline makes on its own.
+
+### 3.7 The inductive codebook, and the division of labour in building it
+
+A researcher who tags text with codes, by hand, over a sample of responses, has already
+done inductive coding in the grounded-theory sense: naming what a segment of text is
+about. What remains is bookkeeping — building the two-level hierarchy his naming
+convention implies, counting recurrence, consolidating trivial spelling variants while
+flagging the rest, choosing representative examples, and writing a one-to-three
+sentence description for every code.
+
+Every part of that bookkeeping is arithmetic over the pairings, and arithmetic is
+Python: splitting a label on its first hyphen into family and sub-code, counting
+recurrence, matching a spelling variant against the family it already belongs to,
+choosing distinct segments by a stated rule. **Writing a code's description is the one
+part that is not arithmetic**, and it is the one thing delegated to a model — the
+Definer, a fourth LLM role that sits outside both loops
+(`docs/ARCHITECTURE.md`). It runs once, over a
+coding a person has already finished; it never sees a response being coded, and its
+reply has exactly one field, so it cannot rename, merge, split or invent a code even by
+accident. Four deterministic guards check every reply, and all four refuse: an
+empty description, one over three sentences, one that copies one of the code's own
+segments verbatim, and one that reproduces eight or more consecutive words of a
+respondent's text. The last two are the same judgment made twice — at eight words a
+description is no longer a description, it is a quotation, and a whole segment is a
+quotation at any length (ADR-0042).
+
+The division of labour this makes explicit is the one the pipeline draws everywhere
+else: **a person decides what a segment of text means; the machine counts, organises
+and checks.** A description the researcher wrote by hand is never overwritten by the
+Definer, under any flag, and every description an artefact carries is labelled with
+where it came from.
+
+### 3.8 The handover between the loops, and the spike criterion
+
+Which decision belongs to the fast loop and which to the slow loop is stated in one
+place, as data rather than as a diagram someone has to keep in sync by hand: every row
+of the decision matrix names its condition, who decides it, and the function that
+implements it, and a test resolves every one against the code that is actually running.
+
+One question the matrix answers is *when the slow loop should wake up*. Codebook health
+— near-duplicate codes, the number of new codes admitted — is measured **at every batch
+boundary**, not only at the end of a run, and part of that measurement is a **spike
+rule**: a batch spikes when it admits at least a stated floor of new codes *and* at
+least a stated multiple of the median admitted by the batches just before it. An
+absolute ceiling alone cannot tell a first batch, where every code is necessarily new,
+from a late one, where the same count means the codebook has stopped converging and
+started accreting parallel concepts — the failure the predecessor study's narrower
+operation set produced (§3.4). The ratio rule answers the second question; an absolute
+ceiling, kept beside it rather than replaced, answers the first, because a ratio has
+nothing to compare against until several batches exist.
+
+**Each rule speaks where it can, and only there.** The two are recorded as separate
+rows of the matrix — `handover.new_codes` for the absolute ceiling, `handover.spike`
+for the ratio — and a batch too early to have a baseline is answered by the absolute
+row alone. The spike row used to fall back to the same ceiling there, so both fired on
+one condition and the batch's reason stated one fact twice; it now reports that it has
+no baseline yet and stands aside (ADR-0040).
+
+**In practice, a first batch almost always crosses the absolute ceiling.** With no
+predecessor to compare against, everything a first batch admits counts as new, and a
+batch of ten responses over an inductively coded survey routinely admits more new codes
+than a fixed ceiling of eight: twelve, on this project's own synthetic demonstration
+corpus; fifteen, on the full 200-response corpus. A cold run halted at the first
+checkpoint the matrix calls due therefore halts after its first batch as a matter of
+design, not as a coincidence of these two corpora — which lands close to the
+predecessor pipeline's own cadence of an early checkpoint at ten responses. It halts
+under trigger `health`, on `handover.new_codes`; the *spike* count for such a run is
+zero, and a reader comparing the two should not read the absence of a spike as a quiet
+first batch.
+
+**These thresholds are as provisional as τ_fit.** The floor, the window and the
+multiplier the ratio rule uses were set by argument, not against a human's judgment of
+where a codebook actually started accreting parallel concepts, and should move through
+a calibration report rather than by hand (§5).
+
+### 3.9 Seeding, and what it costs in independence
+
+A run can start from an existing codebook instead of from nothing — a researcher's own
+organisation of his codes, for instance — so that retrieval finds its families, the
+coder sees its hierarchy, and the routing band folds new evidence into it rather than
+accreting parallel concepts beside it. The seed's own evidence is held out of the run
+that reads it: only its structure travels — names, families, descriptions — because
+carrying a previous coding's occurrences into a new run's counts would count that
+coding twice, once where it was produced and once in the run seeded from it.
+
+**A seeded run is a production tool, not a validation one, and the difference matters
+for what may be claimed about it.** The concurrent validation this pipeline rests on
+(§6) compares a human coding against a machine coding that never saw it. A run seeded
+from the codebook that coding produced has seen the shape of the answer before it
+started, and its agreement with that coding is not independent evidence about either.
+Measured on the real corpus: a seeded run and a cold run over the same 200 responses
+produce the same number of assignment rows, but the two codings visibly differ — the
+seeded run creates fewer new codes, because several concepts that would otherwise have
+been proposed separately merge into codes the seed already had. That is the mechanism
+working as intended, and it is also precisely why the two runs cannot be compared as if
+they measured the same thing. **Cold runs remain the validation path**; a seeded run is
+what a researcher runs to extend his own coding across the rest of a corpus, and any
+report built from one should say so before it says anything else.
+
+A handover, once opened, is resumed rather than repeated: a halted run's remaining
+responses are coded by seeding the codebook the gate left behind and naming the halted
+run so that every response it already coded is skipped, never recoded. Measured on the
+real corpus, the two halves together reproduce, row for row, the assignments a single
+uninterrupted run over the same corpus produces — resuming through the handover costs
+nothing.
 
 ---
 
@@ -195,8 +324,13 @@ test suite and continuous integration use.
 a lexical fallback embedder and have not been calibrated against human judgment. A
 calibration module exists and produces, from a human-coded golden set, a precision/recall
 curve for each threshold together with a recommendation; it reports and never silently
-changes a constant. **These values should be described as provisional in any write-up
-until that calibration has been run against the investigator's own hand-codings.**
+changes a constant. **These values remain provisional, and the calibration that
+was to settle them has already been run against the investigator's own coding and could
+not settle them**: τ_fit's F1 maximum is flat from 0.45 to 1.00, so that golden set
+barely discriminates it, and τ_high and τ_low each rest on 18 units, which is too few to
+move a threshold on. Treat those curves as a shape, not a measurement, and describe the
+three values as provisional in any write-up until a calibration with enough units behind
+it says otherwise (`results/india-process-1-20/07-calibration.md`).
 
 One finding from the offline runs bears directly on this and should be reported rather
 than buried. M1, M2 and M4 compare a code to a code — two short strings of similar
@@ -268,6 +402,20 @@ overlap is a finding to report, not a failed test**, and the module never fails 
 - Human corrections are held out of the coder prompt by default. Recycling them as
   few-shot examples is supported but would make the golden set no longer independent of
   the system it evaluates.
+- **The spike rule's floor, window and multiplier, and affinity's blend weight and
+  cut, are as provisional as τ_fit** (§3.8, §3.6). None has been checked against a
+  human's judgment of where a codebook actually started accreting parallel concepts or
+  which codes actually belong together; all should move through a calibration report,
+  not by hand.
+- **A seeded run is not independent evidence** (§3.9). Its agreement with the coding
+  that produced its seed is circular, because the seed showed it the shape of the
+  answer before it started. Only a cold run belongs in the concurrent-validation
+  figures of §6.
+- **The researcher's own imported code descriptions are not blanket-shareable.** They
+  are grounded in his coded segments and can echo their phrasing: on the real
+  codebook, 5 of his 131 imported definitions share a run of thirty characters or more
+  with a real response. A document built to withhold examples does not, by itself,
+  withhold a description — only a per-item check does.
 
 ---
 

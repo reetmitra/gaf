@@ -1,0 +1,43 @@
+flowchart LR
+  ROOT(["Codebook"]):::root
+  P1["adoption<br/>n=8"]:::parent
+  ROOT --> P1
+  P1L1["social_change<br/>n=8"]:::leaf
+  P1 --> P1L1
+  P2["applications<br/>n=13"]:::parent
+  ROOT --> P2
+  P2L1["automation<br/>n=2"]:::leaf
+  P2 --> P2L1
+  P2L2["data_driven_systems<br/>n=3"]:::leaf
+  P2 --> P2L2
+  P2L3["education<br/>n=2"]:::leaf
+  P2 --> P2L3
+  P2L4["healthcare<br/>n=2"]:::leaf
+  P2 --> P2L4
+  P2L5["industry_and_transport<br/>n=3"]:::leaf
+  P2 --> P2L5
+  P2L6["personalisation<br/>n=1"]:::leaf
+  P2 --> P2L6
+  P3["future<br/>n=10"]:::parent
+  ROOT --> P3
+  P3L1["imagined_scenario<br/>n=9"]:::leaf
+  P3 --> P3L1
+  P3L2["uncertainty<br/>n=1"]:::leaf
+  P3 --> P3L2
+  P4["negative_impacts<br/>n=6"]:::parent
+  ROOT --> P4
+  P4L1["dependence<br/>n=3"]:::leaf
+  P4 --> P4L1
+  P4L2["job_loss<br/>n=3"]:::leaf
+  P4 --> P4L2
+  P5["positive_impacts<br/>n=6"]:::parent
+  ROOT --> P5
+  P5L1["access<br/>n=1"]:::leaf
+  P5 --> P5L1
+  P5L2["problem_solving<br/>n=3"]:::leaf
+  P5 --> P5L2
+  P5L3["quality_of_life<br/>n=2"]:::leaf
+  P5 --> P5L3
+  classDef root fill:#1b1b1b,color:#ffffff,stroke:#1b1b1b
+  classDef parent fill:#29506d,color:#ffffff,stroke:#29506d
+  classDef leaf fill:#f2efe9,color:#1b1b1b,stroke:#d8d5cf

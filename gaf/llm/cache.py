@@ -44,7 +44,7 @@ CACHE_SCHEMA_VERSION = "1"
 
 
 def cache_key(request: LLMRequest, spec: ModelSpec) -> str:
-    """The content address of one question asked of one model.
+    """The content address of a single request put to a single model.
 
     Hex blake2b over the frozen `cache_key_parts()` plus the provider, the model and the
     schema version. Parts are joined with a unit separator that cannot occur in a prompt

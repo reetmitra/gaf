@@ -5,6 +5,11 @@ snapshot, structural then semantic checks, a deterministic router, integration.
 Slow loop, per checkpoint: health metrics, a refactor proposal as an edit script, a
 human gate, a new snapshot.
 
+Between them, at every batch boundary, one deterministic question that belongs to
+neither: is the slow loop due? `decision_matrix` answers it, and states every decision
+both loops take as data rather than prose, so the account a methods appendix prints is
+generated from the code that takes them (ADR-0033).
+
 If this cannot be printed in a methods appendix on one page, it is wrong.
 
 Validation principle: **interpretive depth** — the human gate sits at the level of
@@ -15,6 +20,19 @@ harmful (see `docs/METHODS.md`).
 
 from __future__ import annotations
 
+from gaf.pipeline.decision_matrix import (
+    CHECKPOINT_DUE,
+    CONTINUE,
+    DECISION_MATRIX,
+    HANDOVER_RULES,
+    DecisionRule,
+    HandoverEvaluation,
+    evaluate_handover,
+    first_trigger,
+    matrix_to_json,
+    render_matrix_markdown,
+    resolve_source,
+)
 from gaf.pipeline.fast_loop import (
     FastLoopResult,
     LoopComponents,
@@ -48,16 +66,22 @@ from gaf.pipeline.slow_loop import (
 
 __all__ = [
     "ACCEPT",
+    "CHECKPOINT_DUE",
     "CHECK_ID",
+    "CONTINUE",
+    "DECISION_MATRIX",
     "EDIT",
+    "HANDOVER_RULES",
     "ORIGINS",
     "REJECT",
     "AcceptanceResult",
     "ConsoleGate",
+    "DecisionRule",
     "EvidenceLossError",
     "FastLoopResult",
     "Gate",
     "GateDecision",
+    "HandoverEvaluation",
     "IntegrationDecision",
     "LoopComponents",
     "PreparedResponse",
@@ -68,10 +92,15 @@ __all__ = [
     "apply_operations",
     "batches",
     "build_diff",
+    "evaluate_handover",
     "evidence_pairs",
+    "first_trigger",
+    "matrix_to_json",
     "merge_evidence",
     "offline_components",
     "render_diff",
+    "render_matrix_markdown",
+    "resolve_source",
     "run_checkpoint",
     "run_fast_loop",
     "should_checkpoint",

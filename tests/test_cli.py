@@ -881,6 +881,18 @@ def test_live_components_requires_two_different_coder_providers():
     assert "different providers" in str(excinfo.value)
 
 
+def test_a_live_registry_config_survives_the_json_round_trip_byte_for_byte():
+    """`Blackboard.register_run` compares the stored config JSON verbatim before it lets
+    a run id continue, so the reader must return every field the writer emitted —
+    `priced_on` included, which is new in ADR-0048 and reaches the JSON only on a spec
+    that carries a price date."""
+    from gaf.cli._common import _run_config_from_json
+
+    echo = RunConfig(offline=False, models=DEFAULT_LIVE_REGISTRY).to_json()
+    assert echo["models"]["coder_b"]["priced_on"] == "2026-09-23"
+    assert _run_config_from_json(echo).to_json() == echo
+
+
 def test_live_components_names_the_extra_or_the_key_it_needs(monkeypatch):
     """No SDK and no key: the error must say which, and must never reach the network."""
     for variable in ("OPENAI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
@@ -1075,3 +1087,292 @@ def test_a_codebook_referencing_a_response_outside_the_corpus_is_an_error(
     # Reported by S6, not raised by the CLI: a finding never becomes a crash.
     assert "responses not in the corpus" in out
     assert "S6" in out
+
+
+# --------------------------------------------------------------------------- #
+# 13. The handover flags are off by default, and change nothing when they are
+# --------------------------------------------------------------------------- #
+#
+# `gaf codebook` and the three flags `gaf run` gained for the handover (T5, ADR-0034
+# and ADR-0035) have their own gate in `tests/test_cli_codebook.py`. What belongs here
+# is the claim those tests cannot make: that a plain run, the one every other test in
+# this file and the golden set exercise, is untouched by their existence.
+
+
+def test_the_codebook_command_is_on_the_cli_surface():
+    parser = build_parser()
+    commands = next(
+        action.choices
+        for action in parser._actions
+        if isinstance(getattr(action, "choices", None), dict)
+    )
+    assert "codebook" in commands
+    assert set(commands["codebook"]._subparsers._group_actions[0].choices) == {  # type: ignore[union-attr]
+        "organise",
+        "define",
+    }
+
+
+def test_a_plain_run_records_no_seed_no_halt_and_no_skip(demo: Path, demo_artefact: RunArtefact):
+    """The three flags default to off, and an unflagged run says so in its own record."""
+    stats = json.loads((demo / "stats.json").read_text(encoding="utf-8"))
+    assert stats["halted_at_batch"] is None
+    assert stats["responses_uncoded"] == 0
+    assert stats["seeded_from"] is None, "the key is always there; a cold run's is null"
+    assert stats["responses_since_checkpoint"] == stats["n_responses"], (
+        "no checkpoint was taken, so every response is still owed a human look"
+    )
+    assert "seeded_from" not in demo_artefact.provenance
+    assert "skipped_from" not in demo_artefact.provenance
+    report = (demo / "report.txt").read_text(encoding="utf-8")
+    assert "SEEDED" not in report
+    assert "HALTED" not in report
+
+
+def test_passing_the_new_flags_nowhere_is_the_same_run(tmp_path: Path, corpus_json: Path):
+    """Byte-for-byte: adding the flags to the parser did not move the default path."""
+    outputs = []
+    for label in ("before", "after"):
+        out = tmp_path / label
+        assert run_cli(
+            "run", "--corpus", str(corpus_json), "--run-id", "same", "--out", str(out)
+        ) == EXIT_OK
+        outputs.append((out / "codebook.json").read_bytes())
+    assert outputs[0] == outputs[1]
+
+
+# --------------------------------------------------------------------------- #
+# R1 audit findings — `gaf analyse`
+# --------------------------------------------------------------------------- #
+
+
+def test_analyse_with_run_cuts_the_growth_curve_the_way_the_run_did(
+    demo: Path, demo_artefact: RunArtefact, corpus_json: Path, tmp_path: Path
+):
+    """R1 C2. Without the run's own order a response coded to nothing is not in the
+    curve at all, so every batch after it is re-cut and the rate column is wrong."""
+    coded = [int(o["response_id"]) for o in demo_artefact.outcomes if "response_id" in o]
+    assigned = {row.response_id for row in demo_artefact.assignments}
+    uncoded = [rid for rid in coded if rid not in assigned]
+    assert uncoded, "the fixture must really hold a response that produced no row"
+
+    with_run = tmp_path / "with-run"
+    assert run_cli(
+        "analyse",
+        "--assignments", str(demo / "assignments.json"),
+        "--data", str(corpus_json),
+        "--run", str(demo / RUN_JSON_NAME),
+        "--out", str(with_run),
+    ) == EXIT_OK
+    payload = json.loads((with_run / "growth.json").read_text(encoding="utf-8"))
+    expected = demo_artefact.growth().to_json()
+    assert payload["points"] == expected["points"]
+    assert payload["batch_size"] == expected["batch_size"]
+    assert sum(p["responses_in_batch"] for p in payload["points"]) == len(coded)
+
+    without = tmp_path / "without-run"
+    assert run_cli(
+        "analyse",
+        "--assignments", str(demo / "assignments.json"),
+        "--data", str(corpus_json),
+        "--out", str(without),
+    ) == EXIT_OK
+    bare = json.loads((without / "growth.json").read_text(encoding="utf-8"))
+    assert sum(p["responses_in_batch"] for p in bare["points"]) == len(assigned)
+    assert bare["points"] != expected["points"], (
+        "the fixture must really differ, or this test proves nothing"
+    )
+    assert "did not read the run" in (without / "growth.md").read_text(encoding="utf-8")
+
+
+def test_analyse_takes_the_batch_size_from_the_run_not_from_the_analysis_config(
+    corpus_json: Path, tmp_path: Path
+):
+    """R1 C2, compounding: one run, two growth curves, two spike verdicts."""
+    run_dir = tmp_path / "small-batches"
+    assert run_cli(
+        "run",
+        "--corpus", str(corpus_json),
+        "--run-id", "small-batches",
+        "--batch-size", "4",
+        "--out", str(run_dir),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    out = tmp_path / "an"
+    assert run_cli(
+        "analyse",
+        "--assignments", str(run_dir / "assignments.json"),
+        "--data", str(corpus_json),
+        "--run", str(run_dir / RUN_JSON_NAME),
+        "--out", str(out),
+    ) == EXIT_OK
+    payload = json.loads((out / "growth.json").read_text(encoding="utf-8"))
+    assert payload["batch_size"] == 4
+    assert [p["batch"] for p in payload["points"]] == [1, 2, 3, 4]
+
+
+def test_analyse_maps_patterns_over_the_unfiltered_matrix(
+    demo: Path, corpus_json: Path, tmp_path: Path
+):
+    """R1 I4. A pattern view must not silently lose the rare codes it is for."""
+    out = tmp_path / "patterns"
+    assert run_cli(
+        "analyse",
+        "--assignments", str(demo / "assignments.json"),
+        "--data", str(corpus_json),
+        "--min-frequency", "2",
+        "--out", str(out),
+    ) == EXIT_OK
+    patterns = json.loads((out / "patterns.json").read_text(encoding="utf-8"))
+    matrix = json.loads((out / "occurrence_matrix.json").read_text(encoding="utf-8"))
+
+    assert patterns["filter"]["n_dropped"] == 0, "patterns never re-filter"
+    assert matrix["filter"]["n_dropped"] > 0, "the clustering matrix did filter"
+    assert patterns["n_codes"] > len(matrix["code_names"]), (
+        "the fixture must really drop codes at min-frequency 2"
+    )
+    every = {name for row in patterns["responses"] for name in row["code_set"]}
+    assert every - set(matrix["code_names"]), "a code the clustering dropped is still a pattern"
+
+
+def _partial_corpus(tmp_path: Path, n: int) -> Path:
+    """The first `n` responses of the synthetic corpus, so a resume has work left."""
+    path = tmp_path / f"corpus-first-{n}.json"
+    write_corpus_json(synthetic_corpus()[:n], path)
+    return path
+
+
+def test_a_resumed_run_carries_the_responses_since_the_last_checkpoint_forward(
+    corpus_json: Path, tmp_path: Path, capsys
+):
+    """R1 I1. A run resumed with no checkpoint taken is still owed a human look."""
+    first = tmp_path / "first"
+    assert run_cli(
+        "run",
+        "--corpus", str(_partial_corpus(tmp_path, 6)),
+        "--run-id", "first-pass",
+        "--batch-size", "3",
+        "--out", str(first),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    first_stats = json.loads((first / "stats.json").read_text(encoding="utf-8"))
+    assert first_stats["n_responses"] == 6
+    assert first_stats["responses_since_checkpoint"] == 6
+
+    second = tmp_path / "second"
+    assert run_cli(
+        "run",
+        "--corpus", str(corpus_json),
+        "--run-id", "resumed",
+        "--batch-size", "3",
+        "--seed-codebook", str(first / "codebook.json"),
+        "--skip-coded", str(first),
+        "--out", str(second),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    text = capsys.readouterr().out
+    assert "no checkpoint was taken" in text
+    assert "carried forward: 6" in text
+
+    stats = json.loads((second / "stats.json").read_text(encoding="utf-8"))
+    assert stats["n_responses"] == 8
+    assert stats["responses_since_checkpoint"] == 14, "the whole coding, not this process"
+    trace = stats["decision_trace"]
+    assert trace[0]["responses_since_checkpoint"] == 9
+    assert trace[0]["responses_coded"] == 3
+    artefact = json.loads((second / RUN_JSON_NAME).read_text(encoding="utf-8"))
+    skipped = artefact["provenance"]["skipped_from"]
+    assert skipped["responses_since_checkpoint"] == 6
+    assert "no checkpoint was taken" in skipped["responses_since_checkpoint_basis"]
+
+
+def test_a_resumed_run_starts_again_from_a_checkpoint_that_was_taken(
+    corpus_json: Path, tmp_path: Path, capsys
+):
+    """R1 I1. Opening the gate is what clears the floor."""
+    first = tmp_path / "coded"
+    assert run_cli(
+        "run",
+        "--corpus", str(_partial_corpus(tmp_path, 6)),
+        "--run-id", "coded-first",
+        "--batch-size", "3",
+        "--out", str(first),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    assert run_cli("checkpoint", "--run", str(first)) == EXIT_OK
+
+    second = tmp_path / "after-gate"
+    assert run_cli(
+        "run",
+        "--corpus", str(corpus_json),
+        "--run-id", "after-gate",
+        "--batch-size", "3",
+        "--seed-codebook", str(first / "codebook.json"),
+        "--skip-coded", str(first),
+        "--out", str(second),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    text = capsys.readouterr().out
+    assert "a checkpoint was taken" in text
+    assert "carried forward: 0" in text
+
+    stats = json.loads((second / "stats.json").read_text(encoding="utf-8"))
+    assert stats["responses_since_checkpoint"] == stats["n_responses"] == 8
+    assert stats["seeded_from"] is not None and stats["seeded_from"]["codes"] > 0
+
+
+def test_a_resumed_run_says_so_when_it_cannot_know(corpus_json: Path, tmp_path: Path, capsys):
+    """R1 I1. No store, no answer — and the command does not pretend to have one."""
+    first = tmp_path / "no-store"
+    assert run_cli(
+        "run",
+        "--corpus", str(_partial_corpus(tmp_path, 6)),
+        "--run-id", "no-store",
+        "--batch-size", "3",
+        "--out", str(first),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    (first / "gaf.sqlite").unlink()
+
+    second = tmp_path / "blind"
+    assert run_cli(
+        "run",
+        "--corpus", str(corpus_json),
+        "--run-id", "blind",
+        "--batch-size", "3",
+        "--skip-coded", str(first),
+        "--out", str(second),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    assert "cannot be established" in capsys.readouterr().out
+    stats = json.loads((second / "stats.json").read_text(encoding="utf-8"))
+    assert stats["responses_since_checkpoint"] == 6 + stats["n_responses"]
+
+
+def test_the_run_started_event_carries_the_seed_and_the_carried_count(
+    corpus_json: Path, tmp_path: Path
+):
+    """R1 N7b. The seed belongs with the run's own record, not only beside it."""
+    out = tmp_path / "seeded"
+    seed = tmp_path / "seed.json"
+    write_codebook(seed, toy_codebook())
+    assert run_cli(
+        "run",
+        "--corpus", str(corpus_json),
+        "--run-id", "seeded",
+        "--seed-codebook", str(seed),
+        "--out", str(out),
+        "--cache-dir", str(tmp_path / "cache"),
+    ) == EXIT_OK
+    events = [
+        json.loads(line)
+        for line in (out / "audit.jsonl").read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    started = next(e for e in events if e["event"] == "run_started")
+    assert started["payload"]["seeded_from"]["codes"] == len(toy_codebook())
+    assert started["payload"]["responses_since_checkpoint_at_start"] == 0
+    stats = json.loads((out / "stats.json").read_text(encoding="utf-8"))
+    assert stats["seeded_from"]["content_hash"] == (
+        started["payload"]["seeded_from"]["content_hash"]
+    )

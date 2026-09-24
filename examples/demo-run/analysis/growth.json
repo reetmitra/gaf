@@ -1,0 +1,42 @@
+{
+  "batch_size": 10,
+  "points": [
+    {
+      "batch": 1,
+      "cumulative_codes": 12,
+      "cumulative_responses": 10,
+      "new_code_names": [
+        "adoption-social_change",
+        "applications-automation",
+        "applications-data_driven_systems",
+        "applications-education",
+        "applications-healthcare",
+        "applications-industry_and_transport",
+        "applications-personalisation",
+        "future-imagined_scenario",
+        "negative_impacts-dependence",
+        "negative_impacts-job_loss",
+        "positive_impacts-access",
+        "positive_impacts-problem_solving"
+      ],
+      "new_codes": 12,
+      "new_codes_per_response": 1.2,
+      "responses_in_batch": 10
+    },
+    {
+      "batch": 2,
+      "cumulative_codes": 14,
+      "cumulative_responses": 14,
+      "new_code_names": [
+        "future-uncertainty",
+        "positive_impacts-quality_of_life"
+      ],
+      "new_codes": 2,
+      "new_codes_per_response": 0.5,
+      "responses_in_batch": 4
+    }
+  ],
+  "saturated_at_batch": null,
+  "source": "assignments",
+  "total_codes": 14
+}

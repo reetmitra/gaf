@@ -1,0 +1,1150 @@
+{
+  "code_cooccurrence": {
+    "counts": [
+      [
+        8,
+        0,
+        2,
+        1,
+        2,
+        3,
+        1,
+        7,
+        0,
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        3,
+        0,
+        1,
+        0,
+        0,
+        2,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        3,
+        0,
+        0,
+        0,
+        0,
+        3,
+        1,
+        2,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        7,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        9,
+        0,
+        2,
+        1,
+        1,
+        2,
+        1
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1
+      ],
+      [
+        2,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        3,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        3,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        2,
+        1,
+        0,
+        0,
+        0,
+        3,
+        1
+      ],
+      [
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        2
+      ]
+    ],
+    "jaccard": [
+      [
+        1.0,
+        0.0,
+        0.2222222222222222,
+        0.1111111111111111,
+        0.25,
+        0.375,
+        0.125,
+        0.7,
+        0.0,
+        0.2222222222222222,
+        0.1,
+        0.125,
+        0.1,
+        0.1111111111111111
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1,
+        0.0,
+        0.0,
+        0.25,
+        0.0,
+        0.25,
+        0.0
+      ],
+      [
+        0.2222222222222222,
+        0.0,
+        1.0,
+        0.0,
+        0.25,
+        0.0,
+        0.0,
+        0.2,
+        0.3333333333333333,
+        0.2,
+        0.0,
+        0.0,
+        0.2,
+        0.25
+      ],
+      [
+        0.1111111111111111,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2222222222222222,
+        0.0,
+        0.0,
+        0.25,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.25,
+        0.0,
+        0.25,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.2222222222222222,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.3333333333333333
+      ],
+      [
+        0.375,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.3333333333333333,
+        0.2,
+        0.0,
+        0.0,
+        0.0,
+        0.3333333333333333,
+        0.2,
+        0.0
+      ],
+      [
+        0.125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.3333333333333333,
+        1.0,
+        0.1111111111111111,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.7,
+        0.1,
+        0.2,
+        0.2222222222222222,
+        0.2222222222222222,
+        0.2,
+        0.1111111111111111,
+        1.0,
+        0.0,
+        0.2,
+        0.09090909090909091,
+        0.1111111111111111,
+        0.2,
+        0.1
+      ],
+      [
+        0.0,
+        0.0,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.3333333333333333,
+        0.5
+      ],
+      [
+        0.2222222222222222,
+        0.0,
+        0.2,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2,
+        0.0,
+        1.0,
+        0.2,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.1,
+        0.25,
+        0.0,
+        0.25,
+        0.0,
+        0.0,
+        0.0,
+        0.09090909090909091,
+        0.0,
+        0.2,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.3333333333333333,
+        1.0,
+        0.1111111111111111,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.1,
+        0.25,
+        0.2,
+        0.0,
+        0.0,
+        0.2,
+        0.0,
+        0.2,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.25
+      ],
+      [
+        0.1111111111111111,
+        0.0,
+        0.25,
+        0.0,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.1,
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.25,
+        1.0
+      ]
+    ],
+    "names": [
+      "adoption-social_change",
+      "applications-automation",
+      "applications-data_driven_systems",
+      "applications-education",
+      "applications-healthcare",
+      "applications-industry_and_transport",
+      "applications-personalisation",
+      "future-imagined_scenario",
+      "future-uncertainty",
+      "negative_impacts-dependence",
+      "negative_impacts-job_loss",
+      "positive_impacts-access",
+      "positive_impacts-problem_solving",
+      "positive_impacts-quality_of_life"
+    ]
+  },
+  "combinations": {
+    "min_support": 2,
+    "pairs": [
+      {
+        "codes": [
+          "adoption-social_change",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.361111111111111,
+        "share": 0.5,
+        "support": 7
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "applications-industry_and_transport"
+        ],
+        "lift": 1.7500000000000002,
+        "share": 0.21428571428571427,
+        "support": 3
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "applications-data_driven_systems"
+        ],
+        "lift": 1.1666666666666667,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "applications-healthcare"
+        ],
+        "lift": 1.75,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "negative_impacts-dependence"
+        ],
+        "lift": 1.1666666666666667,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "applications-data_driven_systems",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.037037037037037,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "applications-education",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.5555555555555554,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "applications-healthcare",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.5555555555555554,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "applications-industry_and_transport",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.037037037037037,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "future-imagined_scenario",
+          "negative_impacts-dependence"
+        ],
+        "lift": 1.037037037037037,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "future-imagined_scenario",
+          "positive_impacts-problem_solving"
+        ],
+        "lift": 1.037037037037037,
+        "share": 0.14285714285714285,
+        "support": 2
+      }
+    ],
+    "triple_bound": 20000,
+    "triple_bound_hit": false,
+    "triple_candidates_considered": 4,
+    "triple_candidates_total": 4,
+    "triples": [
+      {
+        "codes": [
+          "adoption-social_change",
+          "applications-data_driven_systems",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.8148148148148149,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "applications-healthcare",
+          "future-imagined_scenario"
+        ],
+        "lift": 2.722222222222222,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "applications-industry_and_transport",
+          "future-imagined_scenario"
+        ],
+        "lift": 1.8148148148148149,
+        "share": 0.14285714285714285,
+        "support": 2
+      },
+      {
+        "codes": [
+          "adoption-social_change",
+          "future-imagined_scenario",
+          "negative_impacts-dependence"
+        ],
+        "lift": 1.8148148148148147,
+        "share": 0.14285714285714285,
+        "support": 2
+      }
+    ]
+  },
+  "family_cooccurrence": {
+    "counts": [
+      [
+        8,
+        7,
+        7,
+        3,
+        3
+      ],
+      [
+        7,
+        11,
+        9,
+        3,
+        5
+      ],
+      [
+        7,
+        9,
+        10,
+        3,
+        5
+      ],
+      [
+        3,
+        3,
+        3,
+        5,
+        0
+      ],
+      [
+        3,
+        5,
+        5,
+        0,
+        5
+      ]
+    ],
+    "jaccard": [
+      [
+        1.0,
+        0.5833333333333334,
+        0.6363636363636364,
+        0.3,
+        0.3
+      ],
+      [
+        0.5833333333333334,
+        1.0,
+        0.75,
+        0.23076923076923078,
+        0.45454545454545453
+      ],
+      [
+        0.6363636363636364,
+        0.75,
+        1.0,
+        0.25,
+        0.5
+      ],
+      [
+        0.3,
+        0.23076923076923078,
+        0.25,
+        1.0,
+        0.0
+      ],
+      [
+        0.3,
+        0.45454545454545453,
+        0.5,
+        0.0,
+        1.0
+      ]
+    ],
+    "names": [
+      "adoption",
+      "applications",
+      "future",
+      "negative_impacts",
+      "positive_impacts"
+    ]
+  },
+  "filter": {
+    "binding_rule": "absolute",
+    "dropped": [],
+    "fraction_threshold": null,
+    "kept": [
+      "adoption-social_change",
+      "applications-automation",
+      "applications-data_driven_systems",
+      "applications-education",
+      "applications-healthcare",
+      "applications-industry_and_transport",
+      "applications-personalisation",
+      "future-imagined_scenario",
+      "future-uncertainty",
+      "negative_impacts-dependence",
+      "negative_impacts-job_loss",
+      "positive_impacts-access",
+      "positive_impacts-problem_solving",
+      "positive_impacts-quality_of_life"
+    ],
+    "min_code_frequency": 1,
+    "min_code_frequency_fraction": null,
+    "n_dropped": 0,
+    "n_kept": 14,
+    "n_responses": 14,
+    "threshold": 1
+  },
+  "groups": [
+    {
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "response_ids": [
+        212,
+        217,
+        245
+      ],
+      "size": 3
+    },
+    {
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "negative_impacts"
+      ],
+      "response_ids": [
+        207,
+        218
+      ],
+      "size": 2
+    },
+    {
+      "family_signature": [
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "response_ids": [
+        244,
+        258
+      ],
+      "size": 2
+    }
+  ],
+  "min_support": 2,
+  "n_codes": 14,
+  "n_responses": 14,
+  "responses": [
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-data_driven_systems",
+        "applications-healthcare",
+        "future-imagined_scenario"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.6,
+          "response_id": 218
+        },
+        {
+          "jaccard": 0.6,
+          "response_id": 245
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 221
+        }
+      ],
+      "response_id": 203
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-education",
+        "future-imagined_scenario",
+        "negative_impacts-job_loss"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "negative_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.5,
+          "response_id": 226
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 221
+        },
+        {
+          "jaccard": 0.3333333333333333,
+          "response_id": 203
+        }
+      ],
+      "response_id": 207
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-industry_and_transport",
+        "applications-personalisation",
+        "future-imagined_scenario",
+        "positive_impacts-access"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.5,
+          "response_id": 217
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 234
+        },
+        {
+          "jaccard": 0.3333333333333333,
+          "response_id": 221
+        }
+      ],
+      "response_id": 212
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-industry_and_transport",
+        "future-imagined_scenario",
+        "positive_impacts-problem_solving"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.5,
+          "response_id": 212
+        },
+        {
+          "jaccard": 0.5,
+          "response_id": 234
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 221
+        }
+      ],
+      "response_id": 217
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-data_driven_systems",
+        "future-imagined_scenario",
+        "negative_impacts-dependence"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "negative_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.75,
+          "response_id": 221
+        },
+        {
+          "jaccard": 0.6,
+          "response_id": 203
+        },
+        {
+          "jaccard": 0.3333333333333333,
+          "response_id": 207
+        }
+      ],
+      "response_id": 218
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "future-imagined_scenario",
+        "negative_impacts-dependence"
+      ],
+      "family_signature": [
+        "adoption",
+        "future",
+        "negative_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.75,
+          "response_id": 218
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 203
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 207
+        }
+      ],
+      "response_id": 221
+    },
+    {
+      "code_set": [
+        "applications-education",
+        "future-imagined_scenario"
+      ],
+      "family_signature": [
+        "applications",
+        "future"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.5,
+          "response_id": 207
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 221
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 244
+        }
+      ],
+      "response_id": 226
+    },
+    {
+      "code_set": [],
+      "family_signature": [],
+      "nearest": [],
+      "response_id": 231
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-industry_and_transport"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.5,
+          "response_id": 217
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 212
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 221
+        }
+      ],
+      "response_id": 234
+    },
+    {
+      "code_set": [
+        "applications-automation",
+        "negative_impacts-job_loss"
+      ],
+      "family_signature": [
+        "applications",
+        "negative_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.3333333333333333,
+          "response_id": 253
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 244
+        },
+        {
+          "jaccard": 0.2,
+          "response_id": 207
+        }
+      ],
+      "response_id": 239
+    },
+    {
+      "code_set": [
+        "applications-automation",
+        "future-imagined_scenario",
+        "positive_impacts-problem_solving"
+      ],
+      "family_signature": [
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.4,
+          "response_id": 217
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 226
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 239
+        }
+      ],
+      "response_id": 244
+    },
+    {
+      "code_set": [
+        "adoption-social_change",
+        "applications-healthcare",
+        "future-imagined_scenario",
+        "positive_impacts-quality_of_life"
+      ],
+      "family_signature": [
+        "adoption",
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.6,
+          "response_id": 203
+        },
+        {
+          "jaccard": 0.4,
+          "response_id": 221
+        },
+        {
+          "jaccard": 0.3333333333333333,
+          "response_id": 207
+        }
+      ],
+      "response_id": 245
+    },
+    {
+      "code_set": [
+        "negative_impacts-dependence",
+        "negative_impacts-job_loss"
+      ],
+      "family_signature": [
+        "negative_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.3333333333333333,
+          "response_id": 239
+        },
+        {
+          "jaccard": 0.25,
+          "response_id": 221
+        },
+        {
+          "jaccard": 0.2,
+          "response_id": 207
+        }
+      ],
+      "response_id": 253
+    },
+    {
+      "code_set": [
+        "applications-data_driven_systems",
+        "future-uncertainty",
+        "positive_impacts-problem_solving",
+        "positive_impacts-quality_of_life"
+      ],
+      "family_signature": [
+        "applications",
+        "future",
+        "positive_impacts"
+      ],
+      "nearest": [
+        {
+          "jaccard": 0.16666666666666666,
+          "response_id": 244
+        },
+        {
+          "jaccard": 0.14285714285714285,
+          "response_id": 203
+        },
+        {
+          "jaccard": 0.14285714285714285,
+          "response_id": 217
+        }
+      ],
+      "response_id": 258
+    }
+  ],
+  "singleton_response_ids": [
+    203,
+    221,
+    226,
+    234,
+    239,
+    253
+  ],
+  "uncoded_response_ids": [
+    231
+  ]
+}

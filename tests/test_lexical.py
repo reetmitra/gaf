@@ -338,7 +338,7 @@ def test_the_review_sheet_quotes_real_excerpts_and_names_the_codes(
         assert f"**{row.word}" in excerpt.lower() or f"**{row.word.capitalize()}" in excerpt
     assert row.document_frequency >= 2
     # the toy codebook covers responses 3..50, the scored table starts at 1000, so the
-    # bridge column is empty here — the important thing is that the column exists
+    # bridge column is empty here — what matters is only that the column exists
     assert isinstance(row.codes, tuple)
 
 

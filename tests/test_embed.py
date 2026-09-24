@@ -121,7 +121,7 @@ def test_hashing_is_stable_and_not_salted() -> None:
 
 
 def test_tokenisation_drops_stopwords_and_folds_plurals() -> None:
-    tokens = lexical_tokens("The workers will lose their jobs and the machines are replacing them")
+    tokens = lexical_tokens("The machines are replacing whole jobs that workers will once have held")
     assert "the" not in tokens and "will" not in tokens and "are" not in tokens
     assert "job" in tokens and "worker" in tokens
     assert "replac" in tokens or "replace" in tokens

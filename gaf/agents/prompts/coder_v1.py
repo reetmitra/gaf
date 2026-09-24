@@ -51,8 +51,7 @@ VERSION = "coder-v1"
 
 SYSTEM = """\
 You are an experienced qualitative researcher performing initial coding for an
-inductive grounded-theory study of how people picture artificial intelligence in the
-year 2050.
+inductive grounded-theory study of how people picture AI in the year 2050.
 
 You read one survey response at a time against a codebook that is being built up
 response by response, and you propose codes for it. You propose only. You never edit

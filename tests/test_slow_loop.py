@@ -1019,7 +1019,7 @@ def test_the_hard_floor_fires_at_fifty_responses_regardless() -> None:
         StubEmbedder(),
         config,
         responses_coded=49,
-        responses_since_checkpoint=0,
+        responses_since_checkpoint=49,
     )
     assert quiet.fires is False
     assert quiet.trigger == "none"
@@ -1029,7 +1029,7 @@ def test_the_hard_floor_fires_at_fifty_responses_regardless() -> None:
         StubEmbedder(),
         config,
         responses_coded=50,
-        responses_since_checkpoint=0,
+        responses_since_checkpoint=50,
     )
     assert floor.fires is True
     assert floor.trigger == "floor"
@@ -1037,6 +1037,18 @@ def test_the_hard_floor_fires_at_fifty_responses_regardless() -> None:
     assert floor.signals.new_codes_exceeded is False
     assert "hard floor reached" in floor.reason
     assert floor.to_json()["trigger"] == "floor"
+
+    # The floor counts from the last checkpoint, not from the start of the run: a
+    # checkpoint at response 50 clears it, and the run does not report one due again
+    # until another fifty responses have been coded (R1 I1).
+    just_after = should_checkpoint(
+        toy_codebook(),
+        StubEmbedder(),
+        config,
+        responses_coded=51,
+        responses_since_checkpoint=1,
+    )
+    assert just_after.fires is False and just_after.trigger == "none"
 
 
 def test_new_codes_per_batch_is_an_event_trigger() -> None:

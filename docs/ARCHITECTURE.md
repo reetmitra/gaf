@@ -6,8 +6,9 @@
 > embedding space, a SQLite blackboard, routing rules. It may not live in the control
 > flow.**
 
-The reader-visible architecture is **two loops and three LLM roles**. If the control
-flow cannot be printed in a methods appendix on one page, it is wrong.
+The reader-visible architecture is **two loops, and four LLM roles — three of them
+inside the loops, one outside**. If the control flow cannot be printed in a methods
+appendix on one page, it is wrong.
 
 Concretely:
 
@@ -32,12 +33,22 @@ FAST LOOP — per response (cheap, parallel, stateless)
       (top-k codes retrieved by embedding + hierarchy skeleton from a frozen snapshot)
     → Coder A (mid-tier model, provider 1)  ┐
     → Coder B (mid-tier model, provider 2)  ┘  independent, same context
-    → STRUCTURAL checks  S1–S6   (deterministic; no embeddings, no LLM)
-    → SEMANTIC checks    M1–M4   (embedding-first; judge only in the grey zone)
+    → STRUCTURAL checks  S1–S5   (deterministic; no embeddings, no LLM)
+    → SEMANTIC checks    M1–M3   (embedding-first; judge only in the grey zone)
+      [S6 codebook invariants and M4 near-duplicate leaves run once, at run close]
     → agree? → accept   |   grey zone → Judge (frontier model, provider 3)
       (a dispute below τ_low is kept and flagged, not escalated — see below)
     → integrate into the codebook (auto-merge / auto-create / judge-decided)
     → write to the blackboard
+    → at every batch boundary: the DECISION MATRIX evaluates the handover — near
+      duplicates, new-code growth and the spike rule, the floor, the cadence — and
+      records a verdict on the audit log. It reports; it never blocks the fast loop.
+
+HANDOVER (the matrix's own column — taken by neither loop, decided between them)
+  a checkpoint comes due
+    → `gaf run --halt-on-checkpoint` stops the fast loop at that batch boundary
+    → the human gate below opens on `gaf checkpoint`
+    → `gaf run --seed-codebook ... --skip-coded ...` resumes without recoding anything
 
 SLOW LOOP — per checkpoint (rare, expensive, human-gated)
   blackboard
@@ -47,9 +58,20 @@ SLOW LOOP — per checkpoint (rare, expensive, human-gated)
     → HUMAN GATE — reviews the diff, accepts / rejects / edits per operation
     → apply → new snapshot → changelog
 
+DEFINER (outside both loops — runs once, over a coding a person has already finished)
+  code-text pairings, already organised into a two-level codebook (deterministic)
+    → per code: name, parent, sibling names, every one of its own segments
+    → Definer (frontier model, the same slot the Refactorer uses)
+        emits a 1–3 sentence description, grounded in that code's own text
+    → four deterministic guards: refuse an empty, over-long or quoted reply
+  never sees a response being coded; cannot rename, merge, split or create a code
+
 ANALYSIS TAIL (deterministic, no models)
   blackboard → binary occurrence matrix → low-frequency filter → Ward's HCA
     → agglomeration schedule → cluster means → cluster interpretation table
+  + pattern mapping (which responses share which code combinations)
+  + affinity (bottom-up thematic groups of leaf codes, across families)
+  + an optional crosswalk mapping this codebook onto a second one
   + respondent metadata joined ONLY here, never during coding
 
 VALIDATION (deterministic, no models)
@@ -57,8 +79,10 @@ VALIDATION (deterministic, no models)
   lexical validation: L1 vocabulary extraction under continuous vs binarised framings
 ```
 
-Two loops. Three LLM roles (Coder, Judge, Refactorer). One store. One deterministic
-tail. Anything in that diagram without a model name is plain Python.
+Two loops. Four LLM roles: Coder, Judge and Refactorer inside the two loops; the
+Definer, writing a code's description from a coding a person has already finished,
+outside both (ADR-0034). One store. One deterministic tail. Anything in that diagram
+without a model name is plain Python.
 
 ## Where the complexity actually lives
 
@@ -121,6 +145,27 @@ Here the fast loop **never restructures the codebook** — coders only propose, 
 edits happen only in the human-gated slow loop, and `Operation` includes `split` and
 `reparent` precisely because their absence is the documented cause of the failure.
 
+### 6. The decision matrix — where the handover between the loops is written down
+
+The PI asked, in one of his review notes, for a decision matrix between the fast loop
+and the slow loop: which decision is taken where, by whom, under what condition. Prose
+would have answered that once and then rotted the first time a threshold moved. Instead
+`gaf.pipeline.decision_matrix.DECISION_MATRIX` is data — a tuple of frozen rows, each
+naming its loop, who decides it (`deterministic`, `coder`, `judge`, `refactorer`,
+`human`), the condition rendered against the run's own thresholds, and the function
+that implements it. Tests resolve every named function and assert that every routing
+band, every checkpoint trigger and every structural operation is covered by some row,
+so the matrix cannot drift from the code it describes.
+
+"Is the slow loop due" is answered by neither loop — the fast loop only measures and
+reports, the slow loop needs a human at a terminal — so the matrix gives that question
+its own `loop` value, **handover**, evaluated at every batch boundary rather than only
+once at the end of a run. `gaf run --halt-on-checkpoint` stops the fast loop at the
+first batch boundary the matrix calls due; `gaf checkpoint` opens the human gate; a
+seeded, `--skip-coded` resume picks the coding back up without repeating any of it
+(ADR-0033, ADR-0035). The two loops of the diagram above are still two: the handover is
+where they meet, not a third one.
+
 ## Why the human gate is where it is
 
 The Vaccaro et al. (2024) meta-analysis finds that human–AI combinations average
@@ -147,7 +192,10 @@ saturation, core category, storyline*; and for the outputs, *codes, families,
 clusters, themes*.
 
 There is no `Function` enum, no framing functions, and the word "frame" does not
-appear in this project's output.
+appear in text this project writes. It does appear, six times, in
+`results/india-process-1-200/02-human-codebook.md` — every one inside a description the
+principal investigator wrote, imported by `--definitions` and passed through
+unrewritten, which is his data and which ADR-0032 deliberately exempts from this rule.
 
 ## Validation principles
 
@@ -171,15 +219,15 @@ qualitative analysis has to manage:
 | `gaf/textnorm.py` | the single normalisation function every span is defined against |
 | `gaf/ids.py` | content hashing, deterministic id minting |
 | `gaf/store/` | the blackboard: schema, snapshots, audit log |
-| `gaf/ingest/` | spreadsheet readers, corpus assembly, question attachment |
+| `gaf/ingest/` | spreadsheet/CSV readers, the tagged-pairing organiser, the definitions reader, corpus assembly, question attachment |
 | `gaf/llm/` | client protocol, three providers, deterministic mocks, disk cache |
 | `gaf/embed/` | the embedding service and the matcher (cosine, Hungarian, routing) |
-| `gaf/agents/` | the three LLM roles and their versioned prompt templates |
-| `gaf/checks/` | S1–S6, M1–M4, codebook health, threshold calibration |
-| `gaf/pipeline/` | prep, the fast loop, the router, the slow loop |
-| `gaf/analysis/` | occurrence matrix, Ward's HCA, agreement, lexical validation |
-| `gaf/report/` | run report and the HTML codebook explorer |
-| `gaf/cli.py` | the single entry point |
+| `gaf/agents/` | the four LLM roles — Coder, Judge, Refactorer in the loops, the Definer outside them — and their versioned prompt templates |
+| `gaf/checks/` | S1–S6, M1–M4, codebook health, threshold calibration, code growth and the spike rule |
+| `gaf/pipeline/` | prep, the fast loop, the router, the slow loop, the decision matrix |
+| `gaf/analysis/` | occurrence matrix, Ward's HCA, agreement, lexical validation, patterns, affinity, the crosswalk |
+| `gaf/report/` | the run report, the two HTML pages (the codebook explorer and the shareable views page), the timeline and the reorganisation trail |
+| `gaf/cli/` | one module per command, assembled by `parser.py` |
 
 ## Frozen contracts
 
@@ -193,3 +241,9 @@ request goes to the orchestrator, who amends and re-broadcasts.
 - `gaf/embed/protocol.py`
 - `gaf/store/schema.py`
 - `gaf/textnorm.py`
+
+Amended twice since Wave 0, both times additively and both times recorded: ADR-0015
+added `CodingRules.max_quote_words`; ADR-0033 added three fields to
+`CheckpointPolicy` (`spike_factor`, `spike_window`, `spike_min_new_codes`) for the
+growth-spike rule. Every existing `RunConfig`, stored config echo and golden fixture
+reads unchanged either time, which is the property an additive amendment has to keep.

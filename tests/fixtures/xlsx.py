@@ -36,9 +36,9 @@ CODED_HEADER_VARIANTS: tuple[tuple[str, str, str], ...] = (
 
 #: Non-contiguous ids, as in the real file (which starts at 9 and skips).
 SAMPLE_ROWS: tuple[tuple[int, str], ...] = (
-    (9, "AI will help people in many ways and reduce the effort needed for daily work."),
-    (10, "The world becomes more advanced because AI is used in every technical field."),
-    (12, "The way AI works is based on machine learning and it will keep improving."),
+    (9, "AI is likely to ease routine chores and reduce the effort needed for daily work."),
+    (10, "Everyday life grows steadily richer because AI is used in every technical field."),
+    (12, "AI leans on machine learning under the hood and it will keep improving."),
 )
 
 

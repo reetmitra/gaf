@@ -1,4 +1,4 @@
-"""`gaf ingest` — read a raw-response workbook into the canonical corpus JSON.
+"""`gaf ingest` — read a raw-response workbook or CSV into the canonical corpus JSON.
 
 Attaches the survey question, repairs encoding damage at the boundary, and writes a
 deterministic corpus JSON that every other command reads as `--data` or `--corpus`.
@@ -20,7 +20,7 @@ from gaf.config import QUESTION_VARIANTS, RunConfig
 from gaf.ingest.corpus import corpus_content_hash, load_corpus_with_report, write_corpus_json
 from gaf.ingest.xlsx import SpreadsheetFormatError
 
-#: What the survey's own file names say about the question that produced them. The
+#: What the survey's own file names say about which prompt version produced them. The
 #: State sample ("in 2050, what kind of roles") is v3; the Process sample ("from now to
 #: 2050, what impacts") is v2. The default variant is v2, which is a trap for a State
 #: file ingested without the flag: the State sample was once coded under the Process
@@ -65,6 +65,12 @@ def cmd_ingest(args: argparse.Namespace) -> int:
             + ", ".join(str(r) for r in report.repaired_response_ids)
             + "  (recorded on the response metadata, never applied silently)"
         )
+    if report.trimmed_disagreements:
+        _out(
+            "  Trimmed vs All      "
+            + ", ".join(str(r) for r in report.trimmed_disagreements)
+            + "  (the two columns disagree by more than whitespace; Trimmed used)"
+        )
     question = QUESTION_VARIANTS[args.question_variant]
     _out(f"  question            {args.question_variant}: {question[:60]}...")
     hint = variant_hint(source, args.question_variant)
@@ -77,13 +83,24 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 def add_ingest_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     ingest = sub.add_parser(
         "ingest",
-        help="read a raw-response workbook into the canonical corpus JSON",
+        help="read a raw-response workbook or CSV into the canonical corpus JSON",
         description=(
-            "Read a NarrativeState-style workbook, attach the survey question, repair "
-            "encoding damage at the boundary, and write a deterministic corpus JSON."
+            "Read a corpus in any shape the PI's files arrive in -- a headed workbook, "
+            "a numbered single-column workbook, or a numbered CSV -- attach the survey "
+            "question, repair encoding damage at the boundary, and write a deterministic "
+            "corpus JSON. The shape is detected, never declared."
         ),
     )
-    ingest.add_argument("--xlsx", required=True, help="the raw-response workbook")
+    # `--input` is the preferred spelling now that the argument is not always a
+    # workbook; `--xlsx` is kept working because it is in the runbook and in scripts.
+    ingest.add_argument(
+        "--input",
+        "--xlsx",
+        dest="xlsx",
+        required=True,
+        metavar="PATH",
+        help="the corpus file: a .xlsx/.xlsm workbook or a .csv (--xlsx is the old spelling)",
+    )
     ingest.add_argument(
         "--question-variant",
         choices=sorted(QUESTION_VARIANTS),

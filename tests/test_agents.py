@@ -195,7 +195,7 @@ def coder(role: str = "coder_a", **kwargs: Any) -> CoderAgent:
 
 
 def test_judge_agent_satisfies_the_judge_protocol():
-    """M1, M2 and M3 inject a `Judge`; this is the one implementation of it."""
+    """M1, M2 and M3 inject a `Judge`; this is the sole concrete one."""
     agent = JudgeAgent(MockJudgeClient())
     assert isinstance(agent, Judge)
 
@@ -893,7 +893,10 @@ def test_the_same_inputs_produce_the_same_parsed_result_twice(context, snapshot)
 
 
 def test_loader_resolves_every_role_to_its_latest_version():
-    assert sorted(LATEST) == ["coder", "judge", "refactorer"]
+    """All four, including the Definer, which runs outside both loops (R1 N7a)."""
+    from gaf.agents.prompts import definer_v1
+
+    assert sorted(LATEST) == ["coder", "definer", "judge", "refactorer"]
     for role, version in LATEST.items():
         template = get_template(role)
         assert template.role == role
@@ -902,6 +905,7 @@ def test_loader_resolves_every_role_to_its_latest_version():
         assert version in versions_for(role)
     assert [t.version for t in all_templates()] == [
         coder_v1.VERSION,
+        definer_v1.VERSION,
         judge_v1.VERSION,
         refactorer_v1.VERSION,
     ]

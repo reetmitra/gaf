@@ -182,10 +182,33 @@ def finding_id(
 
 
 def checkpoint_id(
-    *, run_id: str, at_response_count: int, trigger: str, base_snapshot_id: str
+    *,
+    run_id: str,
+    at_response_count: int,
+    trigger: str,
+    base_snapshot_id: str,
+    ordinal: int = 0,
 ) -> str:
-    """Id of one slow-loop checkpoint: where it fired, why, and from which snapshot."""
-    return mint("ckpt", run_id, at_response_count, trigger, base_snapshot_id)
+    """Id of one slow-loop checkpoint: where it fired, why, and from which snapshot.
+
+    `ordinal` is required for the same reason `llm_call_id` needs one: two checkpoints
+    can tie on every identifying field and still be two separate decisions. The
+    documented happy path produces exactly that — `gaf checkpoint` with the default
+    reject-all gate writes no snapshot and codes nothing, so re-running it
+    `--interactive` ties on the run, the response count, the trigger and the base
+    snapshot. Sharing an id made the second checkpoint's row collide with the first's
+    and vanish under ``ON CONFLICT DO NOTHING``, taking the rejection — which is a
+    decision, and has to be auditable — with it (R1 C7).
+
+    Ordinal 0 hashes the four identifying fields alone, exactly as before this field
+    existed, so every checkpoint that never collided keeps the id it already has and
+    no stored run, committed result or example output moves. Only the second and
+    later checkpoint sharing a set of fields carries the ordinal into the hash.
+    """
+    parts: tuple[object, ...] = (run_id, at_response_count, trigger, base_snapshot_id)
+    if ordinal:
+        parts = (*parts, ordinal)
+    return mint("ckpt", *parts)
 
 
 def llm_call_id(

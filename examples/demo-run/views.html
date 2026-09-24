@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Views of the dataset — run demo</title>
+<style>:root {
+  --ink: #1b1b1b;
+  --muted: #5b5b5b;
+  --rule: #d8d5cf;
+  --paper: #fbfaf7;
+  --panel: #ffffff;
+  --accent: #29506d;
+  --flag: #8c1d18;
+  --hold: #8a5a00;
+  --caveat-bg: #fdf6e3;
+  --caveat-rule: #b8860b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e6e1;
+    --muted: #a09b93;
+    --rule: #3a3936;
+    --paper: #17181a;
+    --panel: #1e1f22;
+    --accent: #8fb6d8;
+    --flag: #e58a86;
+    --hold: #e0a458;
+    --caveat-bg: #2a2418;
+    --caveat-rule: #b8860b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 0 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.55 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+main { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
+header.page { border-bottom: 2px solid var(--ink); margin-bottom: 1rem; padding: 2rem 0 1rem; }
+h1 { font-size: 1.7rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
+h2 { font-size: 1.3rem; margin: 0 0 .5rem; }
+h3 { font-size: 1.02rem; margin: 1.3rem 0 .3rem; }
+h4 { font-size: .95rem; margin: 1rem 0 .2rem; color: var(--muted); }
+p { margin: .5rem 0; }
+a { color: var(--accent); }
+.sub, .meta { color: var(--muted); font-size: .85rem; }
+.mono, code, pre { font-family: "SF Mono", ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: .85em; }
+pre { white-space: pre-wrap; word-break: break-word; }
+nav.toc { border-bottom: 1px solid var(--rule); padding-bottom: .7rem; margin-bottom: 1.4rem; }
+nav.toc ol { margin: 0; padding-left: 1.3rem; columns: 2; font-size: .9rem; }
+section.view {
+  border-top: 1px solid var(--rule);
+  padding-top: 1.4rem;
+  margin-top: 2rem;
+}
+section.view > .idx { color: var(--muted); font-size: .8rem; letter-spacing: .08em; }
+.how { border-left: 3px solid var(--accent); padding-left: .7rem; font-size: .92rem; }
+.note { color: var(--muted); font-size: .86rem; }
+.missing { background: var(--panel); border: 1px dashed var(--rule); padding: .7rem .9rem; font-size: .9rem; }
+.caveat { background: var(--caveat-bg); border: 1px solid var(--rule); border-left: 5px solid var(--caveat-rule); padding: .7rem .9rem; margin: .9rem 0; }
+.caveat h2, .caveat h3 { border: 0; margin: 0 0 .3rem; font-size: 1rem; }
+table { border-collapse: collapse; width: 100%; margin: .7rem 0; font-size: .88rem; }
+th, td { border-bottom: 1px solid var(--rule); padding: .32rem .45rem; text-align: left; vertical-align: top; }
+th { border-bottom: 2px solid var(--ink); font-weight: 600; }
+td.num, th.num { text-align: right; }
+.wrap, .scroll { overflow-x: auto; }
+.scroll { max-height: 42rem; overflow-y: auto; border: 1px solid var(--rule); background: var(--panel); padding: .6rem; }
+.figure { background: #ffffff; }
+details { margin: .6rem 0; }
+summary { cursor: pointer; font-size: .92rem; }
+ul.tree { list-style: none; padding-left: .8rem; font-size: .88rem; }
+ul.tree ul { list-style: none; padding-left: 1.1rem; }
+ul.findings { list-style: none; margin: .4rem 0; padding: 0; font-size: .88rem; }
+ul.findings li { border-top: 1px dotted var(--rule); padding: .3rem 0; }
+.cards { display: flex; flex-wrap: wrap; gap: .7rem; margin: .8rem 0; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: .6rem .8rem; flex: 1 1 19rem; }
+.card h3 { margin: 0 0 .2rem; font-size: 1rem; }
+.chips { margin: .3rem 0; line-height: 2; }
+.chip { border: 1px solid var(--rule); border-radius: 3px; padding: .1rem .35rem; margin-right: .25rem; font-size: .82rem; white-space: nowrap; }
+.chip .fam { color: var(--muted); }
+.chip .sep { color: var(--muted); padding: 0 .2em; }
+.badge { border: 1px solid var(--rule); border-radius: 2px; padding: 0 .3rem; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
+.badge-cross { border-color: var(--accent); color: var(--accent); }
+.fired { color: var(--flag); font-weight: 600; }
+.held { color: var(--hold); }
+.quiet { color: var(--muted); }
+.verdict { font-weight: 600; }
+.empty { color: var(--muted); font-style: italic; }
+footer { border-top: 1px solid var(--rule); margin-top: 2.5rem; padding-top: .8rem; color: var(--muted); font-size: .85rem; }
+@media print { body { background: #fff; } section.view { break-inside: avoid; } .scroll { max-height: none; } }
+:root {
+  --v-grid: #e6e3dd;
+  --v-axis: #9a958c;
+  --v-seq: #2a78d6;
+  --v-off: #eceae5;
+  --f0: #579a3d; --f1: #aa67be; --f2: #8f8b00; --f3: #0093bf;
+  --f4: #cf5c64; --f5: #4b86dc; --f6: #009e77; --f7: #8375d8;
+  --f8: #ca662b; --f9: #00999d; --f10: #b07b00; --f11: #c35d95;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --v-grid: #2f3033;
+    --v-axis: #6f6c66;
+    --v-seq: #3987e5;
+    --v-off: #26272a;
+    --f0: #67a550; --f1: #b476c7; --f2: #9b981b; --f3: #00a0d0;
+    --f4: #d86c72; --f5: #5c93e4; --f6: #00ac82; --f7: #8f83e0;
+    --f8: #d37642; --f9: #00a7ab; --f10: #bf860c; --f11: #cd6da1;
+  }
+}
+.v-chart { display: block; }
+.v-chart text {
+  fill: var(--ink);
+  font-family: "SF Mono", ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+}
+.v-chart .v-tick { fill: var(--muted); font-size: 9px; }
+.v-chart .v-lbl { fill: var(--ink); font-size: 10px; }
+.v-chart .v-ttl { fill: var(--ink); font-size: 12px; font-weight: 600; }
+.v-chart .v-axis { stroke: var(--v-axis); stroke-width: 1; fill: none; }
+.v-chart .v-grid { stroke: var(--v-grid); stroke-width: 1; fill: none; }
+.v-chart .v-off { fill: var(--v-off); }
+.v-chart .v-seq { fill: var(--v-seq); }
+.v-chart .v-rule { stroke: var(--rule); stroke-width: 1; fill: none; }
+.v-chart .v-f0 { fill: var(--f0); } .v-chart .v-f1 { fill: var(--f1); }
+.v-chart .v-f2 { fill: var(--f2); } .v-chart .v-f3 { fill: var(--f3); }
+.v-chart .v-f4 { fill: var(--f4); } .v-chart .v-f5 { fill: var(--f5); }
+.v-chart .v-f6 { fill: var(--f6); } .v-chart .v-f7 { fill: var(--f7); }
+.v-chart .v-f8 { fill: var(--f8); } .v-chart .v-f9 { fill: var(--f9); }
+.v-chart .v-f10 { fill: var(--f10); } .v-chart .v-f11 { fill: var(--f11); }
+.v-swatch { display: inline-block; width: .62em; height: .62em; border-radius: 2px; }
+.v-swatch.v-f0 { background: var(--f0); } .v-swatch.v-f1 { background: var(--f1); }
+.v-swatch.v-f2 { background: var(--f2); } .v-swatch.v-f3 { background: var(--f3); }
+.v-swatch.v-f4 { background: var(--f4); } .v-swatch.v-f5 { background: var(--f5); }
+.v-swatch.v-f6 { background: var(--f6); } .v-swatch.v-f7 { background: var(--f7); }
+.v-swatch.v-f8 { background: var(--f8); } .v-swatch.v-f9 { background: var(--f9); }
+.v-swatch.v-f10 { background: var(--f10); } .v-swatch.v-f11 { background: var(--f11); }
+#fig-timeline text {font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#1a202c}
+#fig-timeline .axis {stroke:#a0aec0;stroke-width:1}
+#fig-timeline .grid {stroke:#e2e8f0;stroke-width:1}
+#fig-timeline .link {fill:none;stroke-width:1.4;stroke-linejoin:round}
+#fig-timeline .cut {stroke:#c53030;stroke-width:1.2;stroke-dasharray:5 4;fill:none}
+#fig-timeline .ttl {font-size:14px;font-weight:600}
+#fig-timeline .lbl {font-size:9px;fill:#4a5568}
+#fig-timeline .tick {font-size:10px;fill:#4a5568}
+#fig-timeline .bar {fill:#90cdf4;stroke:#2b6cb0;stroke-width:0.8}
+#fig-timeline .curve {fill:none;stroke:#2f855a;stroke-width:2}
+#fig-timeline .dot {fill:#2f855a}
+#fig-timeline .snapmark {stroke:#a0aec0;stroke-width:1;stroke-dasharray:2 3}
+#fig-timeline .ckptmark {stroke:#9b2c2c;stroke-width:1.4;stroke-dasharray:5 3}
+#fig-timeline .usermark {stroke:#6b46c1;stroke-width:1.2;stroke-dasharray:4 2}
+#fig-dendrogram text {font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#1a202c}
+#fig-dendrogram .axis {stroke:#a0aec0;stroke-width:1}
+#fig-dendrogram .grid {stroke:#e2e8f0;stroke-width:1}
+#fig-dendrogram .link {fill:none;stroke-width:1.4;stroke-linejoin:round}
+#fig-dendrogram .cut {stroke:#c53030;stroke-width:1.2;stroke-dasharray:5 4;fill:none}
+#fig-dendrogram .ttl {font-size:14px;font-weight:600}
+#fig-dendrogram .lbl {font-size:9px;fill:#4a5568}
+#fig-dendrogram .tick {font-size:10px;fill:#4a5568}
+#fig-dendrogram .bar {fill:#90cdf4;stroke:#2b6cb0;stroke-width:0.8}
+#fig-dendrogram .curve {fill:none;stroke:#2f855a;stroke-width:2}
+#fig-dendrogram .dot {fill:#2f855a}
+#fig-saturation text {font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#1a202c}
+#fig-saturation .axis {stroke:#a0aec0;stroke-width:1}
+#fig-saturation .grid {stroke:#e2e8f0;stroke-width:1}
+#fig-saturation .link {fill:none;stroke-width:1.4;stroke-linejoin:round}
+#fig-saturation .cut {stroke:#c53030;stroke-width:1.2;stroke-dasharray:5 4;fill:none}
+#fig-saturation .ttl {font-size:14px;font-weight:600}
+#fig-saturation .lbl {font-size:9px;fill:#4a5568}
+#fig-saturation .tick {font-size:10px;fill:#4a5568}
+#fig-saturation .bar {fill:#90cdf4;stroke:#2b6cb0;stroke-width:0.8}
+#fig-saturation .curve {fill:none;stroke:#2f855a;stroke-width:2}
+#fig-saturation .dot {fill:#2f855a}</style>
+</head>
+<body>
+<main id="top">
+<header class="page">
+<h1>Views of the dataset — run demo</h1>
+<p class="sub">responses coded 14 · codes 14 · families 5 · assignment rows 61 · embedding space lexical-v1-512 · snapshot snap-3281fbd1f36b27ec · mode offline · seed 1729 · batch size 10</p>
+<p class="sub">Eleven views of one coding. This page shows code names, family names, response numbers, counts and scores — never a respondent's words. It is self-contained: no script, no network request, no external asset.</p>
+</header>
+<p class="sub">Analysis artefacts read from <span class="mono">runs/demo/analysis</span>.</p>
+<div class="caveat">
+<h2>Caveats — read these before the figures</h2>
+<p>Offline run: M3&#x27;s code-to-evidence fit does not discriminate in the lexical fallback space (median fit 0.000) and M2&#x27;s grey zone is empty, so the fit and routing statistics are artefacts of the stand-in embedder rather than findings about the coding. See ADR-0019.</p>
+</div>
+<nav class="toc"><ol>
+<li><a href="#codebook-tree">Codebook tree</a></li>
+<li><a href="#frequencies">Code frequencies</a></li>
+<li><a href="#heatmap">Response by code</a></li>
+<li><a href="#cooccurrence">Co-occurrence</a></li>
+<li><a href="#patterns">Pattern map</a></li>
+<li><a href="#affinity">Affinity map</a></li>
+<li><a href="#growth">Code growth and timeline</a></li>
+<li><a href="#handover">Loop handover</a></li>
+<li><a href="#trail">Reorganisation trail</a></li>
+<li><a href="#crosswalk">Crosswalk</a></li>
+<li><a href="#clusters">Clusters and saturation</a></li>
+</ol></nav>
+<section class="view" id="codebook-tree">
+<p class="idx">VIEW 1 OF 11</p>
+<h2>Codebook tree</h2>
+<p class="how"><strong>How to read this.</strong> Each band is one code; its height is how many responses carry it, and its colour is its family.</p>
+<div class="scroll">
+<svg class="v-chart" width="900" height="654" viewBox="0 0 900 654" role="img" aria-label="Codebook tree, families and their leaf codes">
+<title>Codebook tree, families and their leaf codes</title>
+<text class="v-tick" x="0.00" y="12.00">family</text>
+<text class="v-tick" x="216.00" y="12.00">leaf code — band height is the number of responses</text>
+<rect x="216.00" y="22.00" width="684.00" height="114.35" class="v-f0" fill-opacity="0.55"><title>adoption-social_change — 8 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="82.67">social_change  (8)<title>adoption-social_change — 8 response(s)</title></text>
+<rect x="216.00" y="137.35" width="684.00" height="42.26" class="v-f1" fill-opacity="0.55"><title>applications-data_driven_systems — 3 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="161.98">data_driven_systems  (3)<title>applications-data_driven_systems — 3 response(s)</title></text>
+<rect x="216.00" y="180.60" width="684.00" height="42.26" class="v-f1" fill-opacity="0.55"><title>applications-industry_and_transport — 3 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="205.23">industry_and_transport  (3)<title>applications-industry_and_transport — 3 response(s)</title></text>
+<rect x="216.00" y="223.86" width="684.00" height="27.84" class="v-f1" fill-opacity="0.55"><title>applications-automation — 2 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="241.28">automation  (2)<title>applications-automation — 2 response(s)</title></text>
+<rect x="216.00" y="252.70" width="684.00" height="27.84" class="v-f1" fill-opacity="0.55"><title>applications-education — 2 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="270.12">education  (2)<title>applications-education — 2 response(s)</title></text>
+<rect x="216.00" y="281.53" width="684.00" height="27.84" class="v-f1" fill-opacity="0.55"><title>applications-healthcare — 2 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="298.95">healthcare  (2)<title>applications-healthcare — 2 response(s)</title></text>
+<rect x="216.00" y="310.37" width="684.00" height="13.42" class="v-f1" fill-opacity="0.55"><title>applications-personalisation — 1 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="320.58">personalisation  (1)<title>applications-personalisation — 1 response(s)</title></text>
+<rect x="216.00" y="324.79" width="684.00" height="128.77" class="v-f2" fill-opacity="0.55"><title>future-imagined_scenario — 9 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="392.67">imagined_scenario  (9)<title>future-imagined_scenario — 9 response(s)</title></text>
+<rect x="216.00" y="454.56" width="684.00" height="13.42" class="v-f2" fill-opacity="0.55"><title>future-uncertainty — 1 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="464.77">uncertainty  (1)<title>future-uncertainty — 1 response(s)</title></text>
+<rect x="216.00" y="468.98" width="684.00" height="42.26" class="v-f3" fill-opacity="0.55"><title>negative_impacts-dependence — 3 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="493.60">dependence  (3)<title>negative_impacts-dependence — 3 response(s)</title></text>
+<rect x="216.00" y="512.23" width="684.00" height="42.26" class="v-f3" fill-opacity="0.55"><title>negative_impacts-job_loss — 3 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="536.86">job_loss  (3)<title>negative_impacts-job_loss — 3 response(s)</title></text>
+<rect x="216.00" y="555.49" width="684.00" height="42.26" class="v-f4" fill-opacity="0.55"><title>positive_impacts-problem_solving — 3 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="580.12">problem_solving  (3)<title>positive_impacts-problem_solving — 3 response(s)</title></text>
+<rect x="216.00" y="598.74" width="684.00" height="27.84" class="v-f4" fill-opacity="0.55"><title>positive_impacts-quality_of_life — 2 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="616.16">quality_of_life  (2)<title>positive_impacts-quality_of_life — 2 response(s)</title></text>
+<rect x="216.00" y="627.58" width="684.00" height="13.42" class="v-f4" fill-opacity="0.55"><title>positive_impacts-access — 1 response(s)</title></rect>
+<text class="v-lbl" x="221.00" y="637.79">access  (1)<title>positive_impacts-access — 1 response(s)</title></text>
+<rect x="0.00" y="22.00" width="210.00" height="114.35" class="v-f0"><title>adoption — 1 leaf code(s), 8 response(s)</title></rect>
+<text class="v-lbl" x="6.00" y="82.67">adoption (1)<title>adoption — 1 leaf code(s), 8 response(s)</title></text>
+<rect x="0.00" y="137.35" width="210.00" height="186.44" class="v-f1"><title>applications — 6 leaf code(s), 13 response(s)</title></rect>
+<text class="v-lbl" x="6.00" y="234.07">applications (6)<title>applications — 6 leaf code(s), 13 response(s)</title></text>
+<rect x="0.00" y="324.79" width="210.00" height="143.19" class="v-f2"><title>future — 2 leaf code(s), 10 response(s)</title></rect>
+<text class="v-lbl" x="6.00" y="399.88">future (2)<title>future — 2 leaf code(s), 10 response(s)</title></text>
+<rect x="0.00" y="468.98" width="210.00" height="85.51" class="v-f3"><title>negative_impacts — 2 leaf code(s), 6 response(s)</title></rect>
+<text class="v-lbl" x="6.00" y="515.23">negative_impacts (2)<title>negative_impacts — 2 leaf code(s), 6 response(s)</title></text>
+<rect x="0.00" y="555.49" width="210.00" height="85.51" class="v-f4"><title>positive_impacts — 3 leaf code(s), 6 response(s)</title></rect>
+<text class="v-lbl" x="6.00" y="601.74">positive_impacts (3)<title>positive_impacts — 3 leaf code(s), 6 response(s)</title></text>
+</svg>
+</div>
+<details><summary>Every family and leaf, as text</summary><ul class="tree">
+<li><span class="v-swatch v-f0" aria-hidden="true"></span> <span class="fam">adoption</span><ul>
+<li><span class="mono">social_change</span> — 8</li>
+</ul></li>
+<li><span class="v-swatch v-f1" aria-hidden="true"></span> <span class="fam">applications</span><ul>
+<li><span class="mono">data_driven_systems</span> — 3</li>
+<li><span class="mono">industry_and_transport</span> — 3</li>
+<li><span class="mono">automation</span> — 2</li>
+<li><span class="mono">education</span> — 2</li>
+<li><span class="mono">healthcare</span> — 2</li>
+<li><span class="mono">personalisation</span> — 1</li>
+</ul></li>
+<li><span class="v-swatch v-f2" aria-hidden="true"></span> <span class="fam">future</span><ul>
+<li><span class="mono">imagined_scenario</span> — 9</li>
+<li><span class="mono">uncertainty</span> — 1</li>
+</ul></li>
+<li><span class="v-swatch v-f3" aria-hidden="true"></span> <span class="fam">negative_impacts</span><ul>
+<li><span class="mono">dependence</span> — 3</li>
+<li><span class="mono">job_loss</span> — 3</li>
+</ul></li>
+<li><span class="v-swatch v-f4" aria-hidden="true"></span> <span class="fam">positive_impacts</span><ul>
+<li><span class="mono">problem_solving</span> — 3</li>
+<li><span class="mono">quality_of_life</span> — 2</li>
+<li><span class="mono">access</span> — 1</li>
+</ul></li>
+</ul></details>
+<p>The same tree as Mermaid: <a href="tree.mmd"><code>tree.mmd</code></a>, written beside this page.</p>
+<details><summary>The Mermaid source, inline</summary><pre class="mono">flowchart LR
+  ROOT([&quot;Codebook&quot;]):::root
+  P1[&quot;adoption&lt;br/&gt;n=8&quot;]:::parent
+  ROOT --&gt; P1
+  P1L1[&quot;social_change&lt;br/&gt;n=8&quot;]:::leaf
+  P1 --&gt; P1L1
+  P2[&quot;applications&lt;br/&gt;n=13&quot;]:::parent
+  ROOT --&gt; P2
+  P2L1[&quot;automation&lt;br/&gt;n=2&quot;]:::leaf
+  P2 --&gt; P2L1
+  P2L2[&quot;data_driven_systems&lt;br/&gt;n=3&quot;]:::leaf
+  P2 --&gt; P2L2
+  P2L3[&quot;education&lt;br/&gt;n=2&quot;]:::leaf
+  P2 --&gt; P2L3
+  P2L4[&quot;healthcare&lt;br/&gt;n=2&quot;]:::leaf
+  P2 --&gt; P2L4
+  P2L5[&quot;industry_and_transport&lt;br/&gt;n=3&quot;]:::leaf
+  P2 --&gt; P2L5
+  P2L6[&quot;personalisation&lt;br/&gt;n=1&quot;]:::leaf
+  P2 --&gt; P2L6
+  P3[&quot;future&lt;br/&gt;n=10&quot;]:::parent
+  ROOT --&gt; P3
+  P3L1[&quot;imagined_scenario&lt;br/&gt;n=9&quot;]:::leaf
+  P3 --&gt; P3L1
+  P3L2[&quot;uncertainty&lt;br/&gt;n=1&quot;]:::leaf
+  P3 --&gt; P3L2
+  P4[&quot;negative_impacts&lt;br/&gt;n=6&quot;]:::parent
+  ROOT --&gt; P4
+  P4L1[&quot;dependence&lt;br/&gt;n=3&quot;]:::leaf
+  P4 --&gt; P4L1
+  P4L2[&quot;job_loss&lt;br/&gt;n=3&quot;]:::leaf
+  P4 --&gt; P4L2
+  P5[&quot;positive_impacts&lt;br/&gt;n=6&quot;]:::parent
+  ROOT --&gt; P5
+  P5L1[&quot;access&lt;br/&gt;n=1&quot;]:::leaf
+  P5 --&gt; P5L1
+  P5L2[&quot;problem_solving&lt;br/&gt;n=3&quot;]:::leaf
+  P5 --&gt; P5L2
+  P5L3[&quot;quality_of_life&lt;br/&gt;n=2&quot;]:::leaf
+  P5 --&gt; P5L3
+  classDef root fill:#1b1b1b,color:#ffffff,stroke:#1b1b1b
+  classDef parent fill:#29506d,color:#ffffff,stroke:#29506d
+  classDef leaf fill:#f2efe9,color:#1b1b1b,stroke:#d8d5cf
+</pre></details>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="frequencies">
+<p class="idx">VIEW 2 OF 11</p>
+<h2>Code frequencies</h2>
+<p class="how"><strong>How to read this.</strong> One bar per code, grouped under its family and ordered by how many responses carry it; the number at the end of each bar is that count.</p>
+<div class="scroll">
+<svg class="v-chart" width="900" height="317" viewBox="0 0 900 317" role="img" aria-label="Code frequencies, grouped by family">
+<title>Code frequencies, grouped by family</title>
+<text class="v-tick" x="0.00" y="12.00">responses carrying each code</text>
+<text class="v-ttl" x="0.00" y="35.00">adoption — 1 code(s)<title>adoption</title></text>
+<text class="v-lbl" x="294.00" y="55.00" text-anchor="end">social_change<title>adoption-social_change — 8 response(s)</title></text>
+<rect x="300.00" y="47.00" width="483.56" height="10.00" class="v-f0"><title>adoption-social_change — 8 response(s)</title></rect>
+<text class="v-tick" x="788.56" y="55.00">8</text>
+<text class="v-ttl" x="0.00" y="68.00">applications — 6 code(s)<title>applications</title></text>
+<text class="v-lbl" x="294.00" y="88.00" text-anchor="end">data_driven_systems<title>applications-data_driven_systems — 3 response(s)</title></text>
+<rect x="300.00" y="80.00" width="181.33" height="10.00" class="v-f1"><title>applications-data_driven_systems — 3 response(s)</title></rect>
+<text class="v-tick" x="486.33" y="88.00">3</text>
+<text class="v-lbl" x="294.00" y="102.00" text-anchor="end">industry_and_transport<title>applications-industry_and_transport — 3 response(s)</title></text>
+<rect x="300.00" y="94.00" width="181.33" height="10.00" class="v-f1"><title>applications-industry_and_transport — 3 response(s)</title></rect>
+<text class="v-tick" x="486.33" y="102.00">3</text>
+<text class="v-lbl" x="294.00" y="116.00" text-anchor="end">automation<title>applications-automation — 2 response(s)</title></text>
+<rect x="300.00" y="108.00" width="120.89" height="10.00" class="v-f1"><title>applications-automation — 2 response(s)</title></rect>
+<text class="v-tick" x="425.89" y="116.00">2</text>
+<text class="v-lbl" x="294.00" y="130.00" text-anchor="end">education<title>applications-education — 2 response(s)</title></text>
+<rect x="300.00" y="122.00" width="120.89" height="10.00" class="v-f1"><title>applications-education — 2 response(s)</title></rect>
+<text class="v-tick" x="425.89" y="130.00">2</text>
+<text class="v-lbl" x="294.00" y="144.00" text-anchor="end">healthcare<title>applications-healthcare — 2 response(s)</title></text>
+<rect x="300.00" y="136.00" width="120.89" height="10.00" class="v-f1"><title>applications-healthcare — 2 response(s)</title></rect>
+<text class="v-tick" x="425.89" y="144.00">2</text>
+<text class="v-lbl" x="294.00" y="158.00" text-anchor="end">personalisation<title>applications-personalisation — 1 response(s)</title></text>
+<rect x="300.00" y="150.00" width="60.44" height="10.00" class="v-f1"><title>applications-personalisation — 1 response(s)</title></rect>
+<text class="v-tick" x="365.44" y="158.00">1</text>
+<text class="v-ttl" x="0.00" y="171.00">future — 2 code(s)<title>future</title></text>
+<text class="v-lbl" x="294.00" y="191.00" text-anchor="end">imagined_scenario<title>future-imagined_scenario — 9 response(s)</title></text>
+<rect x="300.00" y="183.00" width="544.00" height="10.00" class="v-f2"><title>future-imagined_scenario — 9 response(s)</title></rect>
+<text class="v-tick" x="849.00" y="191.00">9</text>
+<text class="v-lbl" x="294.00" y="205.00" text-anchor="end">uncertainty<title>future-uncertainty — 1 response(s)</title></text>
+<rect x="300.00" y="197.00" width="60.44" height="10.00" class="v-f2"><title>future-uncertainty — 1 response(s)</title></rect>
+<text class="v-tick" x="365.44" y="205.00">1</text>
+<text class="v-ttl" x="0.00" y="218.00">negative_impacts — 2 code(s)<title>negative_impacts</title></text>
+<text class="v-lbl" x="294.00" y="238.00" text-anchor="end">dependence<title>negative_impacts-dependence — 3 response(s)</title></text>
+<rect x="300.00" y="230.00" width="181.33" height="10.00" class="v-f3"><title>negative_impacts-dependence — 3 response(s)</title></rect>
+<text class="v-tick" x="486.33" y="238.00">3</text>
+<text class="v-lbl" x="294.00" y="252.00" text-anchor="end">job_loss<title>negative_impacts-job_loss — 3 response(s)</title></text>
+<rect x="300.00" y="244.00" width="181.33" height="10.00" class="v-f3"><title>negative_impacts-job_loss — 3 response(s)</title></rect>
+<text class="v-tick" x="486.33" y="252.00">3</text>
+<text class="v-ttl" x="0.00" y="265.00">positive_impacts — 3 code(s)<title>positive_impacts</title></text>
+<text class="v-lbl" x="294.00" y="285.00" text-anchor="end">problem_solving<title>positive_impacts-problem_solving — 3 response(s)</title></text>
+<rect x="300.00" y="277.00" width="181.33" height="10.00" class="v-f4"><title>positive_impacts-problem_solving — 3 response(s)</title></rect>
+<text class="v-tick" x="486.33" y="285.00">3</text>
+<text class="v-lbl" x="294.00" y="299.00" text-anchor="end">quality_of_life<title>positive_impacts-quality_of_life — 2 response(s)</title></text>
+<rect x="300.00" y="291.00" width="120.89" height="10.00" class="v-f4"><title>positive_impacts-quality_of_life — 2 response(s)</title></rect>
+<text class="v-tick" x="425.89" y="299.00">2</text>
+<text class="v-lbl" x="294.00" y="313.00" text-anchor="end">access<title>positive_impacts-access — 1 response(s)</title></text>
+<rect x="300.00" y="305.00" width="60.44" height="10.00" class="v-f4"><title>positive_impacts-access — 1 response(s)</title></rect>
+<text class="v-tick" x="365.44" y="313.00">1</text>
+</svg>
+</div>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="heatmap">
+<p class="idx">VIEW 3 OF 11</p>
+<h2>Response by code</h2>
+<p class="how"><strong>How to read this.</strong> One row per response and one column per code: a filled cell means that response carries that code, and the bar in the right margin is how many codes it carries in total.</p>
+<div class="scroll">
+<svg class="v-chart" width="460" height="430" viewBox="0 0 460 430" role="img" aria-label="Response by code occurrence">
+<title>Response by code occurrence</title>
+<rect x="62.00" y="86.00" width="21.00" height="7.00" class="v-f0"><title>adoption — 1 code(s)</title></rect>
+<text class="v-tick" x="64.00" y="80.00">ad…<title>adoption</title></text>
+<rect x="84.00" y="86.00" width="109.00" height="7.00" class="v-f1"><title>applications — 5 code(s)</title></rect>
+<text class="v-tick" x="86.00" y="80.00">applications</text>
+<rect x="194.00" y="86.00" width="21.00" height="7.00" class="v-f2"><title>future — 1 code(s)</title></rect>
+<text class="v-tick" x="196.00" y="80.00">fu…<title>future</title></text>
+<rect x="216.00" y="86.00" width="43.00" height="7.00" class="v-f3"><title>negative_impacts — 2 code(s)</title></rect>
+<text class="v-tick" x="218.00" y="80.00">negati…<title>negative_impacts</title></text>
+<rect x="260.00" y="86.00" width="43.00" height="7.00" class="v-f4"><title>positive_impacts — 2 code(s)</title></rect>
+<text class="v-tick" x="262.00" y="80.00">positi…<title>positive_impacts</title></text>
+<rect x="62.00" y="96.00" width="242.00" height="21.60" class="v-off"><title>response 203 — 4 code(s), cluster 1</title></rect>
+<rect x="62.00" y="96.00" width="21.60" height="21.60" class="v-f0"><title>response 203 — adoption-social_change</title></rect>
+<rect x="84.00" y="96.00" width="21.60" height="21.60" class="v-f1"><title>response 203 — applications-data_driven_systems</title></rect>
+<rect x="172.00" y="96.00" width="21.60" height="21.60" class="v-f1"><title>response 203 — applications-healthcare</title></rect>
+<rect x="194.00" y="96.00" width="21.60" height="21.60" class="v-f2"><title>response 203 — future-imagined_scenario</title></rect>
+<rect x="312.00" y="96.00" width="58.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 203 — 4 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="117.00" text-anchor="end">203</text>
+<rect x="62.00" y="118.00" width="242.00" height="21.60" class="v-off"><title>response 207 — 4 code(s), cluster 1</title></rect>
+<rect x="62.00" y="118.00" width="21.60" height="21.60" class="v-f0"><title>response 207 — adoption-social_change</title></rect>
+<rect x="150.00" y="118.00" width="21.60" height="21.60" class="v-f1"><title>response 207 — applications-education</title></rect>
+<rect x="194.00" y="118.00" width="21.60" height="21.60" class="v-f2"><title>response 207 — future-imagined_scenario</title></rect>
+<rect x="238.00" y="118.00" width="21.60" height="21.60" class="v-f3"><title>response 207 — negative_impacts-job_loss</title></rect>
+<rect x="312.00" y="118.00" width="58.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 207 — 4 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="139.00" text-anchor="end">207</text>
+<rect x="62.00" y="140.00" width="242.00" height="21.60" class="v-off"><title>response 212 — 3 code(s), cluster 1</title></rect>
+<rect x="62.00" y="140.00" width="21.60" height="21.60" class="v-f0"><title>response 212 — adoption-social_change</title></rect>
+<rect x="106.00" y="140.00" width="21.60" height="21.60" class="v-f1"><title>response 212 — applications-industry_and_transport</title></rect>
+<rect x="194.00" y="140.00" width="21.60" height="21.60" class="v-f2"><title>response 212 — future-imagined_scenario</title></rect>
+<rect x="312.00" y="140.00" width="43.50" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 212 — 3 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="161.00" text-anchor="end">212</text>
+<rect x="62.00" y="162.00" width="242.00" height="21.60" class="v-off"><title>response 217 — 4 code(s), cluster 1</title></rect>
+<rect x="62.00" y="162.00" width="21.60" height="21.60" class="v-f0"><title>response 217 — adoption-social_change</title></rect>
+<rect x="106.00" y="162.00" width="21.60" height="21.60" class="v-f1"><title>response 217 — applications-industry_and_transport</title></rect>
+<rect x="194.00" y="162.00" width="21.60" height="21.60" class="v-f2"><title>response 217 — future-imagined_scenario</title></rect>
+<rect x="260.00" y="162.00" width="21.60" height="21.60" class="v-f4"><title>response 217 — positive_impacts-problem_solving</title></rect>
+<rect x="312.00" y="162.00" width="58.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 217 — 4 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="183.00" text-anchor="end">217</text>
+<rect x="62.00" y="184.00" width="242.00" height="21.60" class="v-off"><title>response 218 — 4 code(s), cluster 1</title></rect>
+<rect x="62.00" y="184.00" width="21.60" height="21.60" class="v-f0"><title>response 218 — adoption-social_change</title></rect>
+<rect x="84.00" y="184.00" width="21.60" height="21.60" class="v-f1"><title>response 218 — applications-data_driven_systems</title></rect>
+<rect x="194.00" y="184.00" width="21.60" height="21.60" class="v-f2"><title>response 218 — future-imagined_scenario</title></rect>
+<rect x="216.00" y="184.00" width="21.60" height="21.60" class="v-f3"><title>response 218 — negative_impacts-dependence</title></rect>
+<rect x="312.00" y="184.00" width="58.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 218 — 4 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="205.00" text-anchor="end">218</text>
+<rect x="62.00" y="206.00" width="242.00" height="21.60" class="v-off"><title>response 221 — 3 code(s), cluster 1</title></rect>
+<rect x="62.00" y="206.00" width="21.60" height="21.60" class="v-f0"><title>response 221 — adoption-social_change</title></rect>
+<rect x="194.00" y="206.00" width="21.60" height="21.60" class="v-f2"><title>response 221 — future-imagined_scenario</title></rect>
+<rect x="216.00" y="206.00" width="21.60" height="21.60" class="v-f3"><title>response 221 — negative_impacts-dependence</title></rect>
+<rect x="312.00" y="206.00" width="43.50" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 221 — 3 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="227.00" text-anchor="end">221</text>
+<rect x="62.00" y="228.00" width="242.00" height="21.60" class="v-off"><title>response 226 — 2 code(s), cluster 1</title></rect>
+<rect x="150.00" y="228.00" width="21.60" height="21.60" class="v-f1"><title>response 226 — applications-education</title></rect>
+<rect x="194.00" y="228.00" width="21.60" height="21.60" class="v-f2"><title>response 226 — future-imagined_scenario</title></rect>
+<rect x="312.00" y="228.00" width="29.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 226 — 2 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="249.00" text-anchor="end">226</text>
+<rect x="62.00" y="250.00" width="242.00" height="21.60" class="v-off"><title>response 231 — 0 code(s), cluster 1</title></rect>
+<rect x="312.00" y="250.00" width="0.80" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 231 — 0 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="271.00" text-anchor="end">231</text>
+<rect x="62.00" y="272.00" width="242.00" height="21.60" class="v-off"><title>response 234 — 2 code(s), cluster 1</title></rect>
+<rect x="62.00" y="272.00" width="21.60" height="21.60" class="v-f0"><title>response 234 — adoption-social_change</title></rect>
+<rect x="106.00" y="272.00" width="21.60" height="21.60" class="v-f1"><title>response 234 — applications-industry_and_transport</title></rect>
+<rect x="312.00" y="272.00" width="29.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 234 — 2 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="293.00" text-anchor="end">234</text>
+<rect x="62.00" y="294.00" width="242.00" height="21.60" class="v-off"><title>response 239 — 2 code(s), cluster 1</title></rect>
+<rect x="128.00" y="294.00" width="21.60" height="21.60" class="v-f1"><title>response 239 — applications-automation</title></rect>
+<rect x="238.00" y="294.00" width="21.60" height="21.60" class="v-f3"><title>response 239 — negative_impacts-job_loss</title></rect>
+<rect x="312.00" y="294.00" width="29.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 239 — 2 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="315.00" text-anchor="end">239</text>
+<rect x="62.00" y="316.00" width="242.00" height="21.60" class="v-off"><title>response 244 — 3 code(s), cluster 1</title></rect>
+<rect x="128.00" y="316.00" width="21.60" height="21.60" class="v-f1"><title>response 244 — applications-automation</title></rect>
+<rect x="194.00" y="316.00" width="21.60" height="21.60" class="v-f2"><title>response 244 — future-imagined_scenario</title></rect>
+<rect x="260.00" y="316.00" width="21.60" height="21.60" class="v-f4"><title>response 244 — positive_impacts-problem_solving</title></rect>
+<rect x="312.00" y="316.00" width="43.50" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 244 — 3 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="337.00" text-anchor="end">244</text>
+<rect x="62.00" y="338.00" width="242.00" height="21.60" class="v-off"><title>response 245 — 4 code(s), cluster 1</title></rect>
+<rect x="62.00" y="338.00" width="21.60" height="21.60" class="v-f0"><title>response 245 — adoption-social_change</title></rect>
+<rect x="172.00" y="338.00" width="21.60" height="21.60" class="v-f1"><title>response 245 — applications-healthcare</title></rect>
+<rect x="194.00" y="338.00" width="21.60" height="21.60" class="v-f2"><title>response 245 — future-imagined_scenario</title></rect>
+<rect x="282.00" y="338.00" width="21.60" height="21.60" class="v-f4"><title>response 245 — positive_impacts-quality_of_life</title></rect>
+<rect x="312.00" y="338.00" width="58.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 245 — 4 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="359.00" text-anchor="end">245</text>
+<rect x="62.00" y="360.00" width="242.00" height="21.60" class="v-off"><title>response 253 — 2 code(s), cluster 1</title></rect>
+<rect x="216.00" y="360.00" width="21.60" height="21.60" class="v-f3"><title>response 253 — negative_impacts-dependence</title></rect>
+<rect x="238.00" y="360.00" width="21.60" height="21.60" class="v-f3"><title>response 253 — negative_impacts-job_loss</title></rect>
+<rect x="312.00" y="360.00" width="29.00" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 253 — 2 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="381.00" text-anchor="end">253</text>
+<rect x="62.00" y="382.00" width="242.00" height="21.60" class="v-off"><title>response 258 — 3 code(s), cluster 1</title></rect>
+<rect x="84.00" y="382.00" width="21.60" height="21.60" class="v-f1"><title>response 258 — applications-data_driven_systems</title></rect>
+<rect x="260.00" y="382.00" width="21.60" height="21.60" class="v-f4"><title>response 258 — positive_impacts-problem_solving</title></rect>
+<rect x="282.00" y="382.00" width="21.60" height="21.60" class="v-f4"><title>response 258 — positive_impacts-quality_of_life</title></rect>
+<rect x="312.00" y="382.00" width="43.50" height="21.60" class="v-seq" fill-opacity="0.8"><title>response 258 — 3 code(s)</title></rect>
+<text class="v-tick" x="56.00" y="403.00" text-anchor="end">258</text>
+<text class="v-tick" x="312.00" y="80.00">codes per response</text>
+<text class="v-tick" x="62.00" y="420.00">11 code(s) left to right, by family then frequency; 14 response(s) top to bottom</text>
+</svg>
+</div>
+<p class="note">Responses are grouped by the cluster Ward&#x27;s HCA assigned them, then by response number inside each cluster. This is the cluster order, not the dendrogram&#x27;s own leaf order: clusters.json records the partition, not the drawing order, and view 11 shows the dendrogram itself.</p>
+<p class="note">Filter applied to this matrix: Low-frequency filter: threshold 2 response(s) (absolute); dropped 3 of 14 codes: applications-personalisation, future-uncertainty, positive_impacts-access.</p>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="cooccurrence">
+<p class="idx">VIEW 4 OF 11</p>
+<h2>Co-occurrence</h2>
+<p class="how"><strong>How to read this.</strong> The matrix counts responses in which two families both appear; the table below ranks individual code pairs by how often they travel together.</p>
+<div class="scroll">
+<svg class="v-chart" width="432" height="376" viewBox="0 0 432 376" role="img" aria-label="Family by family co-occurrence">
+<title>Family by family co-occurrence</title>
+<text class="v-tick" x="213.00" y="122.00" transform="rotate(-60.00 213.00 122.00)">adoption</text>
+<text class="v-tick" x="259.00" y="122.00" transform="rotate(-60.00 259.00 122.00)">applications</text>
+<text class="v-tick" x="305.00" y="122.00" transform="rotate(-60.00 305.00 122.00)">future</text>
+<text class="v-tick" x="351.00" y="122.00" transform="rotate(-60.00 351.00 122.00)">negative_impacts</text>
+<text class="v-tick" x="397.00" y="122.00" transform="rotate(-60.00 397.00 122.00)">positive_impacts</text>
+<text class="v-f0" x="180.00" y="156.00" text-anchor="end">adoption</text>
+<rect x="190.00" y="130.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.55"><title>adoption x adoption: 8</title></rect>
+<text class="v-tick" x="213.00" y="156.00" text-anchor="middle">8</text>
+<rect x="236.00" y="130.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.50"><title>adoption x applications: 7</title></rect>
+<text class="v-tick" x="259.00" y="156.00" text-anchor="middle">7</text>
+<rect x="282.00" y="130.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.50"><title>adoption x future: 7</title></rect>
+<text class="v-tick" x="305.00" y="156.00" text-anchor="middle">7</text>
+<rect x="328.00" y="130.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>adoption x negative_impacts: 3</title></rect>
+<text class="v-tick" x="351.00" y="156.00" text-anchor="middle">3</text>
+<rect x="374.00" y="130.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>adoption x positive_impacts: 3</title></rect>
+<text class="v-tick" x="397.00" y="156.00" text-anchor="middle">3</text>
+<text class="v-f1" x="180.00" y="202.00" text-anchor="end">applications</text>
+<rect x="190.00" y="176.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.50"><title>applications x adoption: 7</title></rect>
+<text class="v-tick" x="213.00" y="202.00" text-anchor="middle">7</text>
+<rect x="236.00" y="176.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.70"><title>applications x applications: 11</title></rect>
+<text class="v-tick" x="259.00" y="202.00" text-anchor="middle">11</text>
+<rect x="282.00" y="176.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.60"><title>applications x future: 9</title></rect>
+<text class="v-tick" x="305.00" y="202.00" text-anchor="middle">9</text>
+<rect x="328.00" y="176.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>applications x negative_impacts: 3</title></rect>
+<text class="v-tick" x="351.00" y="202.00" text-anchor="middle">3</text>
+<rect x="374.00" y="176.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.39"><title>applications x positive_impacts: 5</title></rect>
+<text class="v-tick" x="397.00" y="202.00" text-anchor="middle">5</text>
+<text class="v-f2" x="180.00" y="248.00" text-anchor="end">future</text>
+<rect x="190.00" y="222.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.50"><title>future x adoption: 7</title></rect>
+<text class="v-tick" x="213.00" y="248.00" text-anchor="middle">7</text>
+<rect x="236.00" y="222.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.60"><title>future x applications: 9</title></rect>
+<text class="v-tick" x="259.00" y="248.00" text-anchor="middle">9</text>
+<rect x="282.00" y="222.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.65"><title>future x future: 10</title></rect>
+<text class="v-tick" x="305.00" y="248.00" text-anchor="middle">10</text>
+<rect x="328.00" y="222.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>future x negative_impacts: 3</title></rect>
+<text class="v-tick" x="351.00" y="248.00" text-anchor="middle">3</text>
+<rect x="374.00" y="222.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.39"><title>future x positive_impacts: 5</title></rect>
+<text class="v-tick" x="397.00" y="248.00" text-anchor="middle">5</text>
+<text class="v-f3" x="180.00" y="294.00" text-anchor="end">negative_impacts</text>
+<rect x="190.00" y="268.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>negative_impacts x adoption: 3</title></rect>
+<text class="v-tick" x="213.00" y="294.00" text-anchor="middle">3</text>
+<rect x="236.00" y="268.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>negative_impacts x applications: 3</title></rect>
+<text class="v-tick" x="259.00" y="294.00" text-anchor="middle">3</text>
+<rect x="282.00" y="268.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>negative_impacts x future: 3</title></rect>
+<text class="v-tick" x="305.00" y="294.00" text-anchor="middle">3</text>
+<rect x="328.00" y="268.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.39"><title>negative_impacts x negative_impacts: 5</title></rect>
+<text class="v-tick" x="351.00" y="294.00" text-anchor="middle">5</text>
+<rect x="374.00" y="268.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0"><title>negative_impacts x positive_impacts: 0</title></rect>
+<text class="v-f4" x="180.00" y="340.00" text-anchor="end">positive_impacts</text>
+<rect x="190.00" y="314.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.29"><title>positive_impacts x adoption: 3</title></rect>
+<text class="v-tick" x="213.00" y="340.00" text-anchor="middle">3</text>
+<rect x="236.00" y="314.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.39"><title>positive_impacts x applications: 5</title></rect>
+<text class="v-tick" x="259.00" y="340.00" text-anchor="middle">5</text>
+<rect x="282.00" y="314.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.39"><title>positive_impacts x future: 5</title></rect>
+<text class="v-tick" x="305.00" y="340.00" text-anchor="middle">5</text>
+<rect x="328.00" y="314.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0"><title>positive_impacts x negative_impacts: 0</title></rect>
+<rect x="374.00" y="314.00" width="45.00" height="45.00" class="v-seq" fill-opacity="0.39"><title>positive_impacts x positive_impacts: 5</title></rect>
+<text class="v-tick" x="397.00" y="340.00" text-anchor="middle">5</text>
+</svg>
+</div>
+<h3>Top code pairs</h3>
+<div class="wrap"><table><thead><tr><th>code pair</th><th class="num">support</th><th class="num">share</th><th class="num">lift</th></tr></thead><tbody>
+<tr><td>adoption-social_change + future-imagined_scenario</td><td class="num">7</td><td class="num">0.500</td><td class="num">1.36</td></tr>
+<tr><td>adoption-social_change + applications-industry_and_transport</td><td class="num">3</td><td class="num">0.214</td><td class="num">1.75</td></tr>
+<tr><td>adoption-social_change + applications-healthcare</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.75</td></tr>
+<tr><td>applications-education + future-imagined_scenario</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.56</td></tr>
+<tr><td>applications-healthcare + future-imagined_scenario</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.56</td></tr>
+<tr><td>adoption-social_change + applications-data_driven_systems</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.17</td></tr>
+<tr><td>adoption-social_change + negative_impacts-dependence</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.17</td></tr>
+<tr><td>applications-data_driven_systems + future-imagined_scenario</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.04</td></tr>
+<tr><td>applications-industry_and_transport + future-imagined_scenario</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.04</td></tr>
+<tr><td>future-imagined_scenario + negative_impacts-dependence</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.04</td></tr>
+<tr><td>future-imagined_scenario + positive_impacts-problem_solving</td><td class="num">2</td><td class="num">0.143</td><td class="num">1.04</td></tr>
+</tbody></table></div>
+<p class="note">Support is the number of responses carrying both codes; share is that over all responses; lift is the joint share over what chance alone would give — 1.00 is chance, above 1.00 is travelling together.</p>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="patterns">
+<p class="idx">VIEW 5 OF 11</p>
+<h2>Pattern map</h2>
+<p class="how"><strong>How to read this.</strong> Each row is a group of responses whose codes touch exactly the same families; a filled cell means that family is in the group&#x27;s signature.</p>
+<div class="scroll">
+<svg class="v-chart" width="244" height="222" viewBox="0 0 244 222" role="img" aria-label="Pattern groups by family signature">
+<title>Pattern groups by family signature</title>
+<text class="v-f0" x="86.00" y="142.00" transform="rotate(-60.00 86.00 142.00)">adoption</text>
+<text class="v-f1" x="102.00" y="142.00" transform="rotate(-60.00 102.00 142.00)">applications</text>
+<text class="v-f2" x="118.00" y="142.00" transform="rotate(-60.00 118.00 142.00)">future</text>
+<text class="v-f3" x="134.00" y="142.00" transform="rotate(-60.00 134.00 142.00)">negative_impacts</text>
+<text class="v-f4" x="150.00" y="142.00" transform="rotate(-60.00 150.00 142.00)">positive_impacts</text>
+<text class="v-tick" x="66.00" y="163.00" text-anchor="end">n=3</text>
+<rect x="74.00" y="152.00" width="14.00" height="12.00" class="v-f0"><title>group 1: adoption present</title></rect>
+<rect x="90.00" y="152.00" width="14.00" height="12.00" class="v-f1"><title>group 1: applications present</title></rect>
+<rect x="106.00" y="152.00" width="14.00" height="12.00" class="v-f2"><title>group 1: future present</title></rect>
+<rect x="122.00" y="152.00" width="14.00" height="12.00" class="v-off"><title>group 1: negative_impacts absent</title></rect>
+<rect x="138.00" y="152.00" width="14.00" height="12.00" class="v-f4"><title>group 1: positive_impacts present</title></rect>
+<text class="v-tick" x="162.00" y="163.00">212, 217, 245</text>
+<text class="v-tick" x="66.00" y="181.00" text-anchor="end">n=2</text>
+<rect x="74.00" y="170.00" width="14.00" height="12.00" class="v-f0"><title>group 2: adoption present</title></rect>
+<rect x="90.00" y="170.00" width="14.00" height="12.00" class="v-f1"><title>group 2: applications present</title></rect>
+<rect x="106.00" y="170.00" width="14.00" height="12.00" class="v-f2"><title>group 2: future present</title></rect>
+<rect x="122.00" y="170.00" width="14.00" height="12.00" class="v-f3"><title>group 2: negative_impacts present</title></rect>
+<rect x="138.00" y="170.00" width="14.00" height="12.00" class="v-off"><title>group 2: positive_impacts absent</title></rect>
+<text class="v-tick" x="162.00" y="181.00">207, 218</text>
+<text class="v-tick" x="66.00" y="199.00" text-anchor="end">n=2</text>
+<rect x="74.00" y="188.00" width="14.00" height="12.00" class="v-off"><title>group 3: adoption absent</title></rect>
+<rect x="90.00" y="188.00" width="14.00" height="12.00" class="v-f1"><title>group 3: applications present</title></rect>
+<rect x="106.00" y="188.00" width="14.00" height="12.00" class="v-f2"><title>group 3: future present</title></rect>
+<rect x="122.00" y="188.00" width="14.00" height="12.00" class="v-off"><title>group 3: negative_impacts absent</title></rect>
+<rect x="138.00" y="188.00" width="14.00" height="12.00" class="v-f4"><title>group 3: positive_impacts present</title></rect>
+<text class="v-tick" x="162.00" y="199.00">244, 258</text>
+</svg>
+</div>
+<div class="wrap"><table><thead><tr><th class="num">group</th><th class="num">size</th><th>family signature</th><th>responses</th></tr></thead><tbody>
+<tr><td class="num">1</td><td class="num">3</td><td>adoption, applications, future, positive_impacts</td><td>212, 217, 245</td></tr>
+<tr><td class="num">2</td><td class="num">2</td><td>adoption, applications, future, negative_impacts</td><td>207, 218</td></tr>
+<tr><td class="num">3</td><td class="num">2</td><td>applications, future, positive_impacts</td><td>244, 258</td></tr>
+</tbody></table></div>
+<p class="note">6 response(s) carry a family signature no other response shares: 203, 221, 226, 234, 239, 253.</p>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="affinity">
+<p class="idx">VIEW 6 OF 11</p>
+<h2>Affinity map</h2>
+<p class="how"><strong>How to read this.</strong> Each card is a group of leaf codes that sit close together by description and by co-occurrence, regardless of which family they were filed under.</p>
+<div class="caveat"><p>Offline similarity describes the fallback lexical embedder, not meaning (ADR-0019): the cosine component of the blend is lexical overlap here, and a cluster is a starting point for a human read, not a semantic claim.</p></div>
+<p class="note">alpha 0.7 on the description cosine, 0.30 on co-occurrence; cut at similarity 0.5. Both are uncalibrated inspection defaults (ADR-0036).</p>
+<p class="empty">No two leaf codes clustered together at this threshold.</p>
+<div class="cards">
+</div>
+<p class="note">Every label above is mechanical — the most frequent name tokens among the group&#x27;s members. Naming a theme is a human act; this is a starting point for one, not a finding.</p>
+<h3>Sub-labels that occur under more than one family</h3>
+<div class="wrap"><table><thead><tr><th>sub-label</th><th>families</th><th>codes</th></tr></thead><tbody>
+<tr><td colspan="3" class="empty">Nothing to show.</td></tr>
+</tbody></table></div>
+<p class="note">11 leaf code(s) clustered with nothing else at this threshold.</p>
+<h3>Leaves the clustering could not place</h3>
+<div class="wrap"><table><thead><tr><th>code</th><th>why</th></tr></thead><tbody>
+<tr><td><span class="mono">applications-personalisation</span></td><td>not present in the occurrence matrix (filtered out, or never assigned)</td></tr>
+<tr><td><span class="mono">future-uncertainty</span></td><td>not present in the occurrence matrix (filtered out, or never assigned)</td></tr>
+<tr><td><span class="mono">positive_impacts-access</span></td><td>not present in the occurrence matrix (filtered out, or never assigned)</td></tr>
+</tbody></table></div>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="growth">
+<p class="idx">VIEW 7 OF 11</p>
+<h2>Code growth and timeline</h2>
+<p class="how"><strong>How to read this.</strong> The line is how many distinct codes existed after each batch and the bars are how many were new; a marked batch is one the spike rule flagged.</p>
+<div class="scroll figure" id="fig-timeline">
+<svg width="860" height="420" viewBox="0 0 860 420" role="img" aria-label="Timeline of code generation and change — run demo">
+<title>Timeline of code generation and change — run demo</title>
+
+<rect x="0" y="0" width="860" height="420" fill="#ffffff"/>
+
+<text class="ttl" x="56" y="24">Timeline of code generation and change — run demo</text>
+<line class="grid" x1="56" y1="380.00" x2="836" y2="380.00"/>
+<text class="tick" x="50" y="383.00" text-anchor="end">0</text>
+<line class="grid" x1="56" y1="296.00" x2="836" y2="296.00"/>
+<text class="tick" x="50" y="299.00" text-anchor="end">3.5</text>
+<line class="grid" x1="56" y1="212.00" x2="836" y2="212.00"/>
+<text class="tick" x="50" y="215.00" text-anchor="end">7</text>
+<line class="grid" x1="56" y1="128.00" x2="836" y2="128.00"/>
+<text class="tick" x="50" y="131.00" text-anchor="end">10.5</text>
+<line class="grid" x1="56" y1="44.00" x2="836" y2="44.00"/>
+<text class="tick" x="50" y="47.00" text-anchor="end">14</text>
+<line class="axis" x1="56" y1="380.00" x2="836" y2="380.00"/>
+<rect class="bar" x="56.00" y="92.00" width="557.14" height="288.00"/>
+<text class="lbl" x="334.57" y="394.00" text-anchor="middle">1</text>
+<rect class="bar" x="613.14" y="332.00" width="222.86" height="48.00"/>
+<text class="lbl" x="724.57" y="394.00" text-anchor="middle">2</text>
+<polyline class="curve" points="56.00,380.00 613.14,380.00 613.14,92.00 613.14,92.00 836.00,92.00 836.00,44.00"/>
+<line class="snapmark" x1="613.14" y1="44.00" x2="613.14" y2="380.00"/>
+<text class="lbl" x="615.14" y="54.00" text-anchor="start">snap-4041159</text>
+</svg>
+</div>
+<div class="wrap"><table><thead><tr><th class="num">batch</th><th class="num">responses</th><th class="num">cumulative</th><th class="num">new codes</th><th class="num">codes so far</th><th class="num">new per response</th><th>spike</th></tr></thead><tbody>
+<tr><td class="num">1</td><td class="num">10</td><td class="num">10</td><td class="num">12</td><td class="num">12</td><td class="num">1.200</td><td>·</td></tr>
+<tr><td class="num">2</td><td class="num">4</td><td class="num">14</td><td class="num">2</td><td class="num">14</td><td class="num">0.500</td><td>·</td></tr>
+</tbody></table></div>
+<p class="note">Batch numbers are 1-based. Batch size 10; 14 distinct code(s); first batch admitting nothing new: no batch yet.</p>
+<p class="note">No batch met the spike rule.</p>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="handover">
+<p class="idx">VIEW 8 OF 11</p>
+<h2>Loop handover</h2>
+<p class="how"><strong>How to read this.</strong> One row per batch boundary, showing which handover rule fired, which was held back by the spacing rule, and which stayed quiet.</p>
+<div class="wrap"><table><thead><tr><th class="num">batch</th><th>verdict</th><th>near_duplicates</th><th>new_codes</th><th>spike</th><th>floor</th><th>cadence</th><th>spacing_hold</th><th>manual</th><th>trigger</th><th>reason</th></tr></thead><tbody>
+<tr><td class="num">1</td><td><span class="verdict v-checkpoint-due">checkpoint_due</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="fired" title="fired">● fired</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td>health</td><td>new codes this batch 12 &gt; 8; the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 1 is judged by the absolute ceiling alone</td></tr>
+<tr><td class="num">2</td><td><span class="verdict v-continue">continue</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td><span class="quiet" title="quiet">· quiet</span></td><td>none</td><td>the spike rule has no baseline yet: a ratio needs 3 coded batches behind it, so batch 2 is judged by the absolute ceiling alone</td></tr>
+</tbody></table></div>
+<p class="note">One row per batch boundary, 1-based. A cell says whether that rule fired, was held by the spacing rule, or was quiet; the glyph carries the same meaning as the colour.</p>
+<h3>The decision matrix</h3>
+<p class="note">29 rules across fast, handover, slow. Trigger precedence: health &gt; spike &gt; floor &gt; cadence.</p>
+<h4>fast loop</h4>
+<div class="wrap"><table><thead><tr><th>rule</th><th>decision</th><th>decided by</th><th>condition</th><th>outcome</th></tr></thead><tbody>
+<tr><td><span class="mono">fast.duplicate_response</span></td><td>Is this response a verbatim repeat of one already coded?</td><td>deterministic</td><td>the normalised response hashes to a digest an earlier response already produced</td><td>flagged as a duplicate on the response&#x27;s outcome row and in the log; the response is still coded, because dropping it would silently change the denominator of every rate in the report</td></tr>
+<tr><td><span class="mono">fast.structural_drop</span></td><td>Does a proposed candidate survive the structural checks?</td><td>deterministic</td><td>S1 (a name, a description and at least one quote) or S2 (the quote occurs in the response it cites, at or above a fuzzy similarity of 0.85) reports an ERROR</td><td>the candidate is dropped before any embedding or model call; S2b, S3, S4 and S5 flag and never drop</td></tr>
+<tr><td><span class="mono">fast.accept_agreed</span></td><td>What survives when the two coders propose the same code?</td><td>deterministic</td><td>the Hungarian-matched cross-coder score is at or above tau_high (0.8)</td><td>one candidate, carrying both coders&#x27; evidence. The common case, and it costs no model call</td></tr>
+<tr><td><span class="mono">fast.accept_grey</span></td><td>What happens to a cross-coder pair in the grey band?</td><td>judge</td><td>the cross-coder score lies between tau_low (0.45) and tau_high (0.8)</td><td>the only pair that reaches the frontier judge. DROP accepts coder A&#x27;s candidate and drops coder B&#x27;s; any other verdict, an unreadable reply and the offline case with no judge all keep both</td></tr>
+<tr><td><span class="mono">fast.accept_disputed</span></td><td>What happens to a cross-coder pair below tau_low?</td><td>deterministic</td><td>the cross-coder score is below tau_low (0.45)</td><td>both candidates are kept and flagged, never escalated: the coders named two different things, and choosing between them is a meaning judgment the fast loop is not allowed to make</td></tr>
+<tr><td><span class="mono">fast.accept_unmatched</span></td><td>What happens to a code only one coder proposed?</td><td>deterministic</td><td>M1&#x27;s Hungarian assignment leaves the candidate unmatched</td><td>accepted and flagged as unmatched. A code one coder saw and the other did not is the disagreement the two-coder design exists to surface</td></tr>
+<tr><td><span class="mono">fast.fit_below_tau_fit</span></td><td>Does a quote actually evidence the code it was offered for?</td><td>judge</td><td>the code-to-evidence cosine fit is below tau_fit (0.3)</td><td>the pairing is put to the judge; a quote ruled UNNECESSARY is removed, and a candidate left with no verified quote is dropped. Offline this escalates nearly every pairing, so those counts are artefacts of the stand-in embedder (ADR-0019)</td></tr>
+<tr><td><span class="mono">fast.route_merge</span></td><td>Does an accepted candidate fold into an existing code?</td><td>deterministic</td><td>the best retrieved code scores at or above tau_high (0.8)</td><td>MERGE: the target keeps its id, name, description and parent and gains this candidate&#x27;s evidence. Merging evidence is integration; rewriting a description would be restructuring</td></tr>
+<tr><td><span class="mono">fast.route_create</span></td><td>Is an accepted candidate a genuinely new code?</td><td>deterministic</td><td>the best retrieved code scores below tau_low (0.45)</td><td>CREATE: a new code, its id the content hash of its name, its provenance the snapshot the batch&#x27;s coders read. Its parent is the family node only if one already exists — the fast loop does not invent hierarchy</td></tr>
+<tr><td><span class="mono">fast.route_judge</span></td><td>What happens when the geometry cannot tell merge from create?</td><td>judge</td><td>the best retrieved code scores between tau_low (0.45) and tau_high (0.8)</td><td>JUDGE: the judge&#x27;s MERGE is honoured; every other verdict, and the offline case with no judge, CREATEs. A spurious code is visible to M4 and recoverable at the gate; a spurious merge destroys a distinction silently</td></tr>
+</tbody></table></div>
+<h4>handover loop</h4>
+<div class="wrap"><table><thead><tr><th>rule</th><th>decision</th><th>decided by</th><th>condition</th><th>outcome</th></tr></thead><tbody>
+<tr><td><span class="mono">handover.near_duplicates</span></td><td>Has the codebook accumulated near-duplicate leaves?</td><td>deterministic</td><td>mode is event_driven, M4 counts more than 3 near-duplicate leaf pairs, and spacing is satisfied</td><td>verdict checkpoint_due under trigger `health`</td></tr>
+<tr><td><span class="mono">handover.new_codes</span></td><td>Did this batch admit too many codes in absolute terms?</td><td>deterministic</td><td>mode is event_driven, the batch admitted more than 8 new codes, and spacing is satisfied</td><td>verdict checkpoint_due under trigger `health`</td></tr>
+<tr><td><span class="mono">handover.spike</span></td><td>Did this batch admit far more codes than the batches just before it?</td><td>deterministic</td><td>mode is event_driven, the batch admitted at least 4 new codes and at least 2.0x the median of the previous 3 batches, and spacing is satisfied. The first 3 batches have no baseline and do not spike at all: `handover.new_codes` is the rule that speaks there, and this one would only repeat it</td><td>verdict checkpoint_due under trigger `spike`. The defaults are uncalibrated (ADR-0033)</td></tr>
+<tr><td><span class="mono">handover.floor</span></td><td>Has a quiet codebook gone too long without a human look?</td><td>deterministic</td><td>50 responses have been coded **since the last checkpoint**, whatever the codebook looks like</td><td>verdict checkpoint_due under trigger `floor`. Not held by spacing: the floor exists precisely for the run where nothing else ever fires. Measured since the last checkpoint, so taking one clears it; measured from the start of the run it would latch on and report a checkpoint due at every later batch of every later run (ADR-0033, R1 I1)</td></tr>
+<tr><td><span class="mono">handover.cadence</span></td><td>Is this one of the scheduled checkpoints?</td><td>deterministic</td><td>mode is fixed and the running total of responses coded is one of 10, 20, 30, 40, 50</td><td>verdict checkpoint_due under trigger `cadence` (the predecessor&#x27;s schedule)</td></tr>
+<tr><td><span class="mono">handover.spacing_hold</span></td><td>Has enough been coded since the last checkpoint for another to be worth it?</td><td>deterministic</td><td>fewer than 10 responses since the last checkpoint</td><td>every event trigger — health, new codes, spike — is held: the evaluation names the held rule and its reason and returns verdict continue. The floor and the cadence are not held</td></tr>
+<tr><td><span class="mono">handover.manual</span></td><td>May an operator open the gate with nothing firing?</td><td>human</td><td>the operator runs `gaf checkpoint` and supplies the trigger themselves</td><td>a checkpoint runs under trigger `manual`. The fast loop never blocks for the gate, so this is how a person acts on a checkpoint that is due</td></tr>
+</tbody></table></div>
+<h4>slow loop</h4>
+<div class="wrap"><table><thead><tr><th>rule</th><th>decision</th><th>decided by</th><th>condition</th><th>outcome</th></tr></thead><tbody>
+<tr><td><span class="mono">slow.proposal</span></td><td>What structural edits does the codebook need?</td><td>refactorer</td><td>a checkpoint has fired and the whole codebook plus usage statistics is assembled</td><td>an edit script. The Refactorer proposes and never applies; this is a creation task, which is where the Vaccaro et al. meta-analysis finds human-AI pairing helps</td></tr>
+<tr><td><span class="mono">slow.validation_drop</span></td><td>Could this operation be applied at all?</td><td>deterministic</td><td>the operation&#x27;s shape, targets or name collide, or the codebook it would produce fails S6 — including a hierarchy deeper than 2</td><td>dropped with a finding before any human sees it, and the valid operations beside it still apply: one hallucinated row must not cost five good ones</td></tr>
+<tr><td><span class="mono">slow.gate_accept</span></td><td>Does this operation go into the codebook?</td><td>human</td><td>the person at the gate returns `accept` for this operation</td><td>the operation is applied. Silence, an unreadable verdict and no human at all all reject</td></tr>
+<tr><td><span class="mono">slow.gate_reject</span></td><td>Does this operation go into the codebook?</td><td>human</td><td>the person returns `reject`, returns nothing, or no human is present</td><td>nothing is applied and the codebook is byte-identical. A machine that disposes of its own proposals when nobody is watching is the failure the gate exists to prevent (ADR-0004)</td></tr>
+<tr><td><span class="mono">slow.gate_edit</span></td><td>May the person replace the operation with their own?</td><td>human</td><td>the person returns `edit` with a replacement operation</td><td>the replacement is validated exactly as the machine&#x27;s was, then applied. An `edit` with no replacement rejects</td></tr>
+<tr><td><span class="mono">slow.op_create</span></td><td>Admit a code the coders never proposed.</td><td>human</td><td>an accepted `create` operation names a new code and its parent</td><td>a new code, its provenance the base snapshot the proposal was made against</td></tr>
+<tr><td><span class="mono">slow.op_merge</span></td><td>Fold two codes that turned out to be one.</td><td>human</td><td>an accepted `merge` operation names two or more existing codes</td><td>merge-with-re-examination: every source&#x27;s evidence carries into the target, and an apply that lost a quote raises rather than reaching a snapshot</td></tr>
+<tr><td><span class="mono">slow.op_split</span></td><td>Break an overloaded code into the concepts it was carrying.</td><td>human</td><td>an accepted `split` operation names one code and the codes to distribute it into</td><td>the target&#x27;s evidence is distributed across the resulting codes and none is dropped. The predecessor had no split, and that absence is the documented cause of its codebook flattening</td></tr>
+<tr><td><span class="mono">slow.op_reparent</span></td><td>Move a code under a different family.</td><td>human</td><td>an accepted `reparent` operation names a code and its new parent</td><td>the code&#x27;s parent and name change together, so the derived family and the explicit parent_id stay in agreement and S6 still passes</td></tr>
+<tr><td><span class="mono">slow.op_rename</span></td><td>Correct a code&#x27;s name without changing what it means.</td><td>human</td><td>an accepted `rename` operation names a code and its new name</td><td>the code keeps its evidence; a rename reads as one new and one lost code on the health row</td></tr>
+<tr><td><span class="mono">slow.op_noop</span></td><td>Record that the Refactorer looked and found nothing to change.</td><td>refactorer</td><td>the proposed operation is `noop`</td><td>no structural change, and the checkpoint is recorded as `noop` rather than `rejected`: a codebook found healthy is not the same fact as a refusal</td></tr>
+<tr><td><span class="mono">slow.apply_and_snapshot</span></td><td>What becomes of the codebook the accepted operations produce?</td><td>deterministic</td><td>at least one accepted operation changed the codebook&#x27;s bytes</td><td>a new snapshot, content-addressed, its parent the base snapshot, plus a changelog naming both ids. An unchanged codebook writes no snapshot at all</td></tr>
+</tbody></table></div>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="trail">
+<p class="idx">VIEW 9 OF 11</p>
+<h2>Reorganisation trail</h2>
+<p class="how"><strong>How to read this.</strong> One entry per checkpoint the slow loop opened, what the human decided, and what every retired code name became.</p>
+<p class="empty">No checkpoint ran in this run: the codebook was never reorganised.</p>
+<p class="note">Codebook health after a checkpoint is not recomputed anywhere in this build, so it is reported as not recorded rather than as zero.</p>
+<h3>Lineage — every name that no longer exists</h3>
+<div class="wrap"><table><thead><tr><th>was</th><th>why</th><th>became</th><th>at checkpoint</th></tr></thead><tbody>
+<tr><td colspan="4" class="empty">Nothing to show.</td></tr>
+</tbody></table></div>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="crosswalk">
+<p class="idx">VIEW 10 OF 11</p>
+<h2>Crosswalk</h2>
+<p class="how"><strong>How to read this.</strong> The matrix counts how many of each source family&#x27;s leaf codes land on each target family; scattered rows are where the two codebooks cut the world differently.</p>
+<p class="missing"><strong>Not on this page.</strong> `crosswalk.json` was not found. Run <code>gaf analyse --assignments &lt;assignments.json&gt; --out &lt;dir&gt; --crosswalk-target &lt;codebook.json&gt;</code> and build the page again.</p>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<section class="view" id="clusters">
+<p class="idx">VIEW 11 OF 11</p>
+<h2>Clusters and saturation</h2>
+<p class="how"><strong>How to read this.</strong> The dendrogram is the full agglomeration the cluster partition was cut out of; the saturation curve is the grounded-theory claim that further sampling stops producing new codes.</p>
+<h3>Ward's hierarchical cluster analysis</h3>
+<p class="note">14 response(s) x 11 code(s) into 1 cluster(s) (schedule), cut at distance 3.582.</p>
+<div class="caveat"><h3>Warnings carried from clusters.json</h3>
+<p>the largest break is at stage 13 of 13, so the Essary rule gives 1 cluster(s); the data does not support a cluster structure at this sample size — set AnalysisConfig.n_clusters explicitly if a partition is wanted anyway.</p>
+</div>
+<div class="scroll figure" id="fig-dendrogram">
+<svg width="960" height="520" viewBox="0 0 960 520" role="img" aria-label="Ward&#x27;s linkage — 14 responses, 1 clusters">
+<title>Ward&#x27;s linkage — 14 responses, 1 clusters</title>
+
+<rect x="0" y="0" width="960" height="520" fill="#ffffff"/>
+<text class="ttl" x="60" y="24">Ward&#x27;s linkage — 14 responses, 1 clusters</text>
+<line class="axis" x1="60" y1="472.00" x2="60" y2="44.00"/>
+<line class="grid" x1="60" y1="472.00" x2="936" y2="472.00"/>
+<text class="tick" x="54" y="475.00" text-anchor="end">0.00</text>
+<line class="grid" x1="60" y1="386.40" x2="936" y2="386.40"/>
+<text class="tick" x="54" y="389.40" text-anchor="end">0.68</text>
+<line class="grid" x1="60" y1="300.80" x2="936" y2="300.80"/>
+<text class="tick" x="54" y="303.80" text-anchor="end">1.36</text>
+<line class="grid" x1="60" y1="215.20" x2="936" y2="215.20"/>
+<text class="tick" x="54" y="218.20" text-anchor="end">2.05</text>
+<line class="grid" x1="60" y1="129.60" x2="936" y2="129.60"/>
+<text class="tick" x="54" y="132.60" text-anchor="end">2.73</text>
+<line class="grid" x1="60" y1="44.00" x2="936" y2="44.00"/>
+<text class="tick" x="54" y="47.00" text-anchor="end">3.41</text>
+<polyline class="link" stroke="#2b6cb0" points="153.86,472.00 153.86,294.57 216.43,294.57 216.43,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="91.29,472.00 91.29,294.57 185.14,294.57 185.14,294.57"/>
+<polyline class="link" stroke="#2b6cb0" points="279.00,472.00 279.00,221.08 341.57,221.08 341.57,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="138.21,294.57 138.21,175.11 310.29,175.11 310.29,221.08"/>
+<polyline class="link" stroke="#2b6cb0" points="466.71,472.00 466.71,346.54 529.29,346.54 529.29,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="404.14,472.00 404.14,310.03 498.00,310.03 498.00,346.54"/>
+<polyline class="link" stroke="#2b6cb0" points="591.86,472.00 591.86,294.57 654.43,294.57 654.43,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="717.00,472.00 717.00,346.54 779.57,346.54 779.57,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="842.14,472.00 842.14,294.57 904.71,294.57 904.71,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="748.29,346.54 748.29,205.86 873.43,205.86 873.43,294.57"/>
+<polyline class="link" stroke="#2b6cb0" points="623.14,294.57 623.14,160.45 810.86,160.45 810.86,205.86"/>
+<polyline class="link" stroke="#2b6cb0" points="451.07,310.03 451.07,140.07 717.00,140.07 717.00,160.45"/>
+<polyline class="link" stroke="#2b6cb0" points="224.25,175.11 224.25,44.00 584.04,44.00 584.04,140.07"/>
+<text class="lbl" x="91.29" y="480.00" text-anchor="end" transform="rotate(-90 91.29 480.00)">253</text>
+<text class="lbl" x="153.86" y="480.00" text-anchor="end" transform="rotate(-90 153.86 480.00)">231</text>
+<text class="lbl" x="216.43" y="480.00" text-anchor="end" transform="rotate(-90 216.43 480.00)">239</text>
+<text class="lbl" x="279.00" y="480.00" text-anchor="end" transform="rotate(-90 279.00 480.00)">244</text>
+<text class="lbl" x="341.57" y="480.00" text-anchor="end" transform="rotate(-90 341.57 480.00)">258</text>
+<text class="lbl" x="404.14" y="480.00" text-anchor="end" transform="rotate(-90 404.14 480.00)">234</text>
+<text class="lbl" x="466.71" y="480.00" text-anchor="end" transform="rotate(-90 466.71 480.00)">212</text>
+<text class="lbl" x="529.29" y="480.00" text-anchor="end" transform="rotate(-90 529.29 480.00)">217</text>
+<text class="lbl" x="591.86" y="480.00" text-anchor="end" transform="rotate(-90 591.86 480.00)">207</text>
+<text class="lbl" x="654.43" y="480.00" text-anchor="end" transform="rotate(-90 654.43 480.00)">226</text>
+<text class="lbl" x="717.00" y="480.00" text-anchor="end" transform="rotate(-90 717.00 480.00)">218</text>
+<text class="lbl" x="779.57" y="480.00" text-anchor="end" transform="rotate(-90 779.57 480.00)">221</text>
+<text class="lbl" x="842.14" y="480.00" text-anchor="end" transform="rotate(-90 842.14 480.00)">203</text>
+<text class="lbl" x="904.71" y="480.00" text-anchor="end" transform="rotate(-90 904.71 480.00)">245</text>
+</svg>
+</div>
+<h3>Theoretical saturation</h3>
+<p class="note">Batch size 10; 14 distinct code(s); first batch admitting nothing new: no batch yet.</p>
+<div class="scroll figure" id="fig-saturation">
+<svg width="760" height="380" viewBox="0 0 760 380" role="img" aria-label="Theoretical saturation">
+<title>Theoretical saturation</title>
+
+<rect x="0" y="0" width="760" height="380" fill="#ffffff"/>
+<text class="ttl" x="56" y="24">Theoretical saturation</text>
+<line class="grid" x1="56" y1="324.00" x2="736" y2="324.00"/>
+<text class="tick" x="50" y="327.00" text-anchor="end">0</text>
+<line class="grid" x1="56" y1="254.00" x2="736" y2="254.00"/>
+<text class="tick" x="50" y="257.00" text-anchor="end">4</text>
+<line class="grid" x1="56" y1="184.00" x2="736" y2="184.00"/>
+<text class="tick" x="50" y="187.00" text-anchor="end">7</text>
+<line class="grid" x1="56" y1="114.00" x2="736" y2="114.00"/>
+<text class="tick" x="50" y="117.00" text-anchor="end">10</text>
+<line class="grid" x1="56" y1="44.00" x2="736" y2="44.00"/>
+<text class="tick" x="50" y="47.00" text-anchor="end">14</text>
+<line class="axis" x1="56" y1="324.00" x2="736" y2="324.00"/>
+<rect class="bar" x="132.50" y="84.00" width="187.00" height="240.00"/>
+<text class="lbl" x="226.00" y="338.00" text-anchor="middle">10</text>
+<rect class="bar" x="472.50" y="284.00" width="187.00" height="40.00"/>
+<text class="lbl" x="566.00" y="338.00" text-anchor="middle">14</text>
+<polyline class="curve" points="226.00,84.00 566.00,44.00"/>
+<circle class="dot" cx="226.00" cy="84.00" r="3"/>
+<circle class="dot" cx="566.00" cy="44.00" r="3"/>
+<text class="tick" x="56" y="366">responses coded (batch size 10) — bars: new codes; line: cumulative unique codes</text>
+</svg>
+</div>
+<p class="sub"><a href="#top">back to the top</a></p>
+</section>
+<footer>
+<p>Generated by gaf from run demo. No respondent text appears anywhere on this page. This file is self-contained: no script, no network request, no external asset.</p>
+</footer>
+</main>
+</body>
+</html>

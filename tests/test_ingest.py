@@ -179,7 +179,7 @@ def test_missing_file_raises_a_named_error(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- #
 
 CODED_ROWS = (
-    (9, "AI will help people in many ways", "positive_impacts-problem-solving"),
+    (9, "AI is likely to ease routine chores", "positive_impacts-problem-solving"),
     (9, "reduce the effort needed for daily work", "positive_impacts-efficiency"),
     (12, "it will keep improving", "future-inevitability"),
 )

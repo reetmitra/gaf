@@ -37,8 +37,12 @@ __all__ = [
     "RouteRenderer",
 ]
 
-#: The three LLM roles. There are no others: slicing, quote checking, comparison and
-#: change tracking are deterministic code, not model calls.
+#: The three LLM roles that run *inside* the two loops. Slicing, quote checking,
+#: comparison and change tracking are deterministic code, not model calls. The Definer
+#: is a fourth role, outside both loops (ADR-0034); it is registered in
+#: `gaf.agents.prompts.loader.PROMPT_ROLES` and deliberately not here, because this is a
+#: Wave-0 shape module and the three named here are still the three that code, judge
+#: and refactor.
 ROLES: tuple[str, ...] = ("coder", "judge", "refactorer")
 
 

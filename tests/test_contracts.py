@@ -301,6 +301,68 @@ def test_mock_registry_is_free_and_the_live_coders_come_from_different_providers
     }
 
 
+def test_every_registry_entry_names_a_model_id_its_provider_could_serve() -> None:
+    """A provider and a model id that disagree is a live run that dies on its first call.
+
+    The prefixes are the providers' own naming conventions, not this package's: OpenAI
+    ships `gpt-*`, Google `gemini-*`, Anthropic `claude-*`, and the deterministic
+    stand-ins in `gaf.llm.mock` answer to `mock-*` (ADR-0048).
+    """
+    from gaf.config import DEFAULT_LIVE_REGISTRY
+
+    prefixes = {
+        "mock": "mock-",
+        "openai": "gpt-",
+        "gemini": "gemini-",
+        "anthropic": "claude-",
+    }
+    for registry in (MOCK_REGISTRY, DEFAULT_LIVE_REGISTRY):
+        for spec in registry.all_specs():
+            assert spec.model.startswith(prefixes[spec.provider]), (spec.role, spec.model)
+    # The epistemic-diversity mechanism, not a preference: it must survive a re-binding.
+    assert DEFAULT_LIVE_REGISTRY.distinct_coder_providers()
+
+
+def test_the_live_registry_carries_the_prices_adr_0048_read_and_the_date_it_read_them() -> None:
+    """Pinned to ADR-0048, so a silent drift fails here rather than in a run report.
+
+    `ModelSpec.cost_usd` is the only place a rate lives, so these four pairs are what
+    `stats.llm.cost_usd` would print on a live run. Moving one is a decision to record,
+    not an edit to make: change the ADR and this test together, or neither.
+    """
+    from gaf.config import DEFAULT_LIVE_REGISTRY
+
+    priced = {
+        (spec.role, spec.provider, spec.model): (
+            spec.input_usd_per_mtok,
+            spec.output_usd_per_mtok,
+        )
+        for spec in DEFAULT_LIVE_REGISTRY.all_specs()
+    }
+    assert priced == {
+        ("coder_a", "openai", "gpt-4o-mini"): (0.15, 0.60),
+        ("coder_b", "gemini", "gemini-3.6-flash"): (0.75, 3.75),
+        ("judge", "anthropic", "claude-sonnet-5"): (2.00, 10.00),
+        ("refactorer", "anthropic", "claude-opus-5"): (5.00, 25.00),
+    }
+    assert all(spec.priced_on == "2026-09-23" for spec in DEFAULT_LIVE_REGISTRY.all_specs())
+
+
+def test_a_price_date_travels_with_a_live_spec_and_never_with_a_mock_one() -> None:
+    """`priced_on` is omitted from the JSON when empty, which is what keeps the offline
+    artefacts byte-identical: the golden manifest and the committed example both carry
+    `RunConfig.to_json()` in full, and a mock has no price to date (ADR-0048)."""
+    from gaf.config import DEFAULT_LIVE_REGISTRY
+
+    for spec in MOCK_REGISTRY.all_specs():
+        assert spec.priced_on == ""
+        assert "priced_on" not in spec.to_json()
+    for spec in DEFAULT_LIVE_REGISTRY.all_specs():
+        assert spec.to_json()["priced_on"] == "2026-09-23"
+    offline = RunConfig().to_json()["models"]
+    assert all("priced_on" not in spec for spec in offline.values())
+
+
 def test_model_registry_role_lookup() -> None:
     assert MOCK_REGISTRY.for_role("judge") is MOCK_REGISTRY.judge
     with pytest.raises(ValueError):
