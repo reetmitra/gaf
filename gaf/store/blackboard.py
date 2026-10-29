@@ -187,6 +187,8 @@ class LLMCallRecord:
     cache_hit: bool
     fail_safe: bool
     created_at: str
+    #: ``"refusal"`` or ``"max_tokens"`` when the model stopped early, else ``None``.
+    stop_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -521,6 +523,27 @@ class Blackboard:
         """How many distinct responses this run has coded so far."""
         row = self._conn.execute(
             "SELECT COUNT(DISTINCT response_id) FROM codings WHERE run_id = ?", (run_id,)
+        ).fetchone()
+        return int(row[0])
+
+    def completed_response_count(self, run_id: str) -> int:
+        """How many responses the fast loop *finished* for this run.
+
+        `coded_response_count` counts a response as soon as one coder's pass is written,
+        so a run halted at its spend cap part-way through a response (ADR-0053) would
+        count that half-made response too. A finished response is one with an
+        ``assignments_written`` row, which the loop emits last. A store with no fast-loop
+        run in it (a coding written some other way) falls back to the coder count.
+        """
+        started = self._conn.execute(
+            "SELECT COUNT(*) FROM audit WHERE run_id = ? AND event = 'run_started'", (run_id,)
+        ).fetchone()
+        if not int(started[0]):
+            return self.coded_response_count(run_id)
+        row = self._conn.execute(
+            "SELECT COUNT(DISTINCT subject) FROM audit "
+            "WHERE run_id = ? AND event = 'assignments_written'",
+            (run_id,),
         ).fetchone()
         return int(row[0])
 
@@ -869,7 +892,7 @@ class Blackboard:
         self._conn.execute(
             "INSERT INTO llm_calls(call_id, run_id, role, task, provider, model, prompt_version, "
             "subject, input_tokens, output_tokens, cost_usd, latency_ms, cache_hit, fail_safe, "
-            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "created_at, stop_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT(call_id) DO NOTHING",
             (
                 call_id,
@@ -887,6 +910,7 @@ class Blackboard:
                 int(result.cache_hit),
                 int(result.fail_safe),
                 stamp,
+                result.stop_reason,
             ),
         )
         self._conn.commit()
@@ -906,14 +930,15 @@ class Blackboard:
             cache_hit=result.cache_hit,
             fail_safe=result.fail_safe,
             created_at=stamp,
+            stop_reason=result.stop_reason,
         )
 
     def read_llm_calls(self, run_id: str, *, task: str | None = None) -> list[LLMCallRecord]:
         """Model calls for a run, in the order they were made."""
         sql = (
             "SELECT call_id, run_id, role, task, provider, model, prompt_version, subject, "
-            "input_tokens, output_tokens, cost_usd, latency_ms, cache_hit, fail_safe, created_at "
-            "FROM llm_calls WHERE run_id = ?"
+            "input_tokens, output_tokens, cost_usd, latency_ms, cache_hit, fail_safe, created_at, "
+            "stop_reason FROM llm_calls WHERE run_id = ?"
         )
         params: list[Any] = [run_id]
         if task is not None:
@@ -921,6 +946,62 @@ class Blackboard:
             params.append(task)
         sql += " ORDER BY rowid"
         return [_row_to_llm_call(row) for row in self._conn.execute(sql, params)]
+
+    def llm_spend(self, run_id: str) -> float:
+        """Total billed dollars recorded for a run: the number a spend cap counts.
+
+        A cache replay is recorded at zero cost, so summing every row and summing the
+        billed rows are the same figure.
+        """
+        row = self._conn.execute(
+            "SELECT COALESCE(SUM(cost_usd), 0.0) FROM llm_calls WHERE run_id = ?", (run_id,)
+        ).fetchone()
+        return float(row[0])
+
+    def llm_stop_reasons(self, run_id: str) -> dict[str, int]:
+        """Calls on which the model stopped early, by reason: ``{"refusal": 2, ...}``."""
+        rows = self._conn.execute(
+            "SELECT stop_reason, COUNT(*) FROM llm_calls "
+            "WHERE run_id = ? AND stop_reason IS NOT NULL GROUP BY stop_reason ORDER BY stop_reason",
+            (run_id,),
+        )
+        return {str(reason): int(count) for reason, count in rows}
+
+    def llm_usage(self, run_id: str) -> list[dict[str, Any]]:
+        """Spend by role and task: calls, tokens, dollars and cache hits (ADR-0053).
+
+        The query the cost estimate was built from. One row per ``(role, task, model)``
+        in a stable order. Tokens count **every** call, replays included — they are the
+        size of the workload, which is what an estimate for a different run is scaled
+        from — while ``cost_usd`` counts only what was billed, because a replay costs
+        nothing. ``billed_calls`` is the calls that reached a provider.
+        """
+        rows = self._conn.execute(
+            "SELECT role, task, model, COUNT(*), SUM(cache_hit), SUM(fail_safe), "
+            "SUM(input_tokens), SUM(output_tokens), SUM(cost_usd), "
+            "SUM(stop_reason IS NOT NULL) "
+            "FROM llm_calls WHERE run_id = ? GROUP BY role, task, model "
+            "ORDER BY role, task, model",
+            (run_id,),
+        )
+        usage: list[dict[str, Any]] = []
+        for role, task, model, calls, hits, fail_safes, tokens_in, tokens_out, cost, early in rows:
+            usage.append(
+                {
+                    "role": str(role),
+                    "task": str(task),
+                    "model": str(model),
+                    "calls": int(calls),
+                    "billed_calls": int(calls) - int(hits or 0),
+                    "cache_hits": int(hits or 0),
+                    "fail_safes": int(fail_safes or 0),
+                    "stopped_early": int(early or 0),
+                    "input_tokens": int(tokens_in or 0),
+                    "output_tokens": int(tokens_out or 0),
+                    "cost_usd": round(float(cost or 0.0), 6),
+                }
+            )
+        return usage
 
     # -- checkpoints ------------------------------------------------------ #
 
@@ -1206,6 +1287,7 @@ def _row_to_llm_call(row: tuple[Any, ...]) -> LLMCallRecord:
         cache_hit=bool(row[12]),
         fail_safe=bool(row[13]),
         created_at=str(row[14]),
+        stop_reason=None if row[15] is None else str(row[15]),
     )
 
 

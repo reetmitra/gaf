@@ -18,6 +18,7 @@ Everything runs offline: no key, no network, no provider SDK.
 
 from __future__ import annotations
 
+import importlib.util
 import itertools
 
 import numpy as np
@@ -169,6 +170,8 @@ def test_a_bad_dimension_is_refused_at_construction() -> None:
 
 def test_live_mode_fails_loudly_at_construction_without_the_sdk() -> None:
     """The `openai` extra is not installed here, and must be named in the error."""
+    if importlib.util.find_spec("openai") is not None:  # pragma: no cover
+        pytest.skip("openai is installed in this environment (uv sync --extra live)")
     with pytest.raises(MissingEmbeddingSDKError, match=r"uv sync --extra openai"):
         EmbeddingService(EmbeddingSpaceConfig(mode="openai", model="text-embedding-3-small", dim=1536))
 

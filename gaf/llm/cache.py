@@ -5,12 +5,16 @@ keyed on `LLMRequest.cache_key_parts()`. Those parts deliberately exclude run id
 timestamps, so the key is a fact about the *question* rather than about the occasion:
 re-running a batch against the same snapshot asks the same questions and pays nothing.
 
-Two deliberate additions to the key, both load-bearing:
+Three deliberate additions to the key, all load-bearing:
 
 * **the inner client's provider and model.** `cache_key_parts` describes the request,
   not the respondent. Coder A and coder B are given the same context on purpose — that
   is the epistemic-diversity mechanism — so a key without the provider would serve
   A's answer to B and silently collapse two coders into one.
+* **the role's thinking effort, when it has one** (`ModelSpec.effort`, ADR-0051). It
+  changes what the model does with the same prompt, so a reply made at `low` must not
+  be replayed to a role now set to `high`. It joins the key only when set, so a spec
+  with no effort — every mock, local and earlier-registry key — is unchanged.
 * **a schema version**, so a change to what is stored invalidates old entries instead of
   being read back as the wrong shape.
 
@@ -54,6 +58,9 @@ def cache_key(request: LLMRequest, spec: ModelSpec) -> str:
         CACHE_SCHEMA_VERSION,
         spec.provider,
         spec.model,
+        # Only when set: a spec with no effort keys exactly as it did before the field
+        # existed, so every cache and golden fixture written earlier still hits.
+        *(() if spec.effort is None else (f"effort={spec.effort}",)),
         *request.cache_key_parts(),
     )
     hasher = hashlib.blake2b(digest_size=16)

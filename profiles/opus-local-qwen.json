@@ -1,0 +1,26 @@
+{
+  "description": "Cheaper rehearsal variant of opus-qwen.json: the same Opus 5.5 roles and efforts, but coder B is a Qwen served by Ollama on this machine instead of the hosted Qwen. WHERE RESPONDENT TEXT GOES: to Anthropic only (coder A, the judge, the refactorer and the Definer); coder B and the embeddings stay on this machine. It still sends text to Anthropic, so it needs the PI's confirmation of that processor before any run on real survey data, exactly as opus-qwen.json does. It rehearses the Opus code paths and costs, not the coder B behaviour the PI will see. Key: ANTHROPIC_API_KEY. Pull first: ollama pull qwen3.5:9b embeddinggemma",
+  "priced_from": {
+    "anthropic": "claude-opus-5-5 at $4 in / $20 out per million tokens: https://platform.claude.com/docs/en/about-claude/pricing, read 2026-10-04",
+    "local": "no charge: the model runs on this machine (ADR-0049)"
+  },
+  "models": {
+    "coder_a": {
+      "provider": "anthropic", "model": "claude-opus-5-5", "effort": "medium",
+      "max_output_tokens": 8192,
+      "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0, "priced_on": "2026-10-04"
+    },
+    "coder_b": {"provider": "local", "model": "qwen3.5:9b"},
+    "judge": {
+      "provider": "anthropic", "model": "claude-opus-5-5", "effort": "low",
+      "max_output_tokens": 4096,
+      "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0, "priced_on": "2026-10-04"
+    },
+    "refactorer": {
+      "provider": "anthropic", "model": "claude-opus-5-5", "effort": "high",
+      "max_output_tokens": 16000,
+      "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0, "priced_on": "2026-10-04"
+    }
+  },
+  "embedding": {"mode": "local", "model": "embeddinggemma", "dim": 768}
+}

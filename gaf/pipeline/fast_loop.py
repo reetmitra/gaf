@@ -76,6 +76,7 @@ from gaf.config import RunConfig
 from gaf.embed.protocol import Embedder, Route
 from gaf.embed.service import EmbeddingService
 from gaf.llm.base import CallLog, LLMClient
+from gaf.llm.budget import BudgetExceededError, SpendBudget
 from gaf.llm.cache import CachingLLMClient
 from gaf.llm.mock import MockCoderClient, MockJudgeClient
 from gaf.models import Assignment, Candidate, Code, Codebook, Response
@@ -87,6 +88,7 @@ from gaf.pipeline.decision_matrix import (
 )
 from gaf.pipeline.prep import PreparedResponse
 from gaf.pipeline.router import ORIGINS, AcceptanceResult, IntegrationDecision
+from gaf.pipeline.run_metrics import compute_run_metrics
 from gaf.store.blackboard import AssignmentRecord, Blackboard
 from gaf.store.snapshot import Snapshot
 
@@ -301,8 +303,24 @@ class RunStats:
     #: since a human looked rather than how far into this particular process it is
     #: (R1 I1).
     responses_since_checkpoint: int = 0
+    #: The spend cap this run ran under and what became of it, or ``None`` when no
+    #: `--max-usd` was given. Absent from `to_json` in that case, so a run without the
+    #: flag writes the same stats it always did (ADR-0053).
+    budget: dict[str, Any] | None = None
+    #: Coder agreement, judge siding, latency and spend by role and task, computed from
+    #: the blackboard at the end of the run (`gaf.pipeline.run_metrics`, ADR-0053).
+    #: Empty for a run written before the block existed; `gaf report` recomputes it.
+    run_metrics: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:
+        document = self._base_json()
+        if self.budget is not None:
+            document["budget"] = dict(self.budget)
+        if self.run_metrics:
+            document["run_metrics"] = dict(self.run_metrics)
+        return document
+
+    def _base_json(self) -> dict[str, Any]:
         return {
             "run_id": self.run_id,
             "offline": self.offline,
@@ -972,6 +990,7 @@ def run_fast_loop(
     halt_on_checkpoint: bool = False,
     seeded_from: dict[str, Any] | None = None,
     responses_since_checkpoint_at_start: int = 0,
+    budget: SpendBudget | None = None,
 ) -> FastLoopResult:
     """Code a corpus: prep, two coders, checks, the router, integration, the store.
 
@@ -1013,6 +1032,16 @@ def run_fast_loop(
     codebook still gets a human look" counts from the last look rather than from the
     start of whichever process happens to be running (R1 I1).
 
+    `budget` is the spend cap, when the caller set one (`gaf run --max-usd`, ADR-0053).
+    The clients must already be guarded by it (`gaf.llm.budget.guard_agents`): the guard
+    refuses a call that would start with the cap reached, and this loop turns that refusal
+    into a clean halt. **The response in flight is not coded**: every model call precedes
+    the first codebook change, so the working codebook is exactly as the last complete
+    response left it, the half-made response is left out of the outcomes (and so is coded
+    in full by a resumed run, mostly from the cache), and the run closes normally with
+    `RunStats.budget` and a ``run_halted_spend_cap`` audit row saying where and why it
+    stopped. With `budget=None` nothing below differs from a run that never heard of it.
+
     The run ends with S6 over the final codebook and M4 over its leaves, folded into the
     same report, so that "the codebook this run produced is well formed" is answered by
     the same mechanism as everything else.
@@ -1035,6 +1064,7 @@ def run_fast_loop(
         retrieval_top_k=config.retrieval_top_k,
         seeded_from=seeded_from,
         responses_since_checkpoint_at_start=responses_since_checkpoint_at_start,
+        **({"budget": budget.to_json()} if budget is not None else {}),
     )
 
     working = codebook if codebook is not None else Codebook()
@@ -1049,29 +1079,49 @@ def run_fast_loop(
     processed: list[int] = []
     trace: list[HandoverEvaluation] = []
     halted_at_batch: int | None = None
+    spend_halt: dict[str, Any] | None = None
 
     for number, batch in enumerate(batches(ordered, config.batch_size)):
         if number and config.snapshot_policy == "per_batch":
             snapshot = recorder.snapshot(working, parent_id=snapshot.snapshot_id, reason="batch")
             snapshot_ids.append(snapshot.snapshot_id)
         at_batch_start = working
+        coded_in_batch = 0
         for response in batch:
-            outcome, working = _code_response(
-                response,
-                snapshot,
-                working,
-                config=config,
-                components=components,
-                recorder=recorder,
-                seen=seen,
-            )
+            try:
+                outcome, working = _code_response(
+                    response,
+                    snapshot,
+                    working,
+                    config=config,
+                    components=components,
+                    recorder=recorder,
+                    seen=seen,
+                )
+            except BudgetExceededError as refusal:
+                if budget is None:
+                    raise
+                spend_halt = _halt_on_spend_cap(
+                    response,
+                    refusal,
+                    budget=budget,
+                    recorder=recorder,
+                    call_log=components.call_log,
+                    n_coded=len(processed),
+                    n_total=len(ordered),
+                )
+                break
             seen.setdefault(outcome.content_hash, response.id)
             outcomes.append(outcome)
             report.extend(outcome.report)
             processed.append(response.id)
+            coded_in_batch += 1
             admissions.extend((response.id, name) for name in outcome.created)
             for record in outcome.assignments:
                 rows.setdefault(record.assignment_id, record)
+
+        if spend_halt is not None and not coded_in_batch:
+            break  # nothing new to evaluate: the cap was reached before this batch began
 
         # The batch boundary: is the slow loop due? Reported, never acted on unless the
         # caller asked to halt — the human gate needs a terminal and a batch run must
@@ -1089,6 +1139,8 @@ def run_fast_loop(
             responses_since_checkpoint=responses_since_checkpoint_at_start + len(processed),
         )
         trace.append(evaluation)
+        if spend_halt is not None:
+            break  # a short batch, closed like any other, then the run ends
         if halt_on_checkpoint and evaluation.checkpoint_due:
             halted_at_batch = evaluation.batch
             break
@@ -1119,6 +1171,8 @@ def run_fast_loop(
         responses_uncoded=len(ordered) - len(processed),
         seeded_from=seeded_from,
         responses_since_checkpoint=responses_since_checkpoint_at_start + len(processed),
+        budget=_budget_record(budget, spend_halt, uncoded=len(ordered) - len(processed)),
+        run_metrics=compute_run_metrics(board, config.run_id, offline=config.offline),
     )
     recorder.emit(
         "run_completed",
@@ -1136,6 +1190,63 @@ def run_fast_loop(
         stats=stats,
         outcomes=outcomes,
     )
+
+
+# --------------------------------------------------------------------------- #
+# The spend cap
+# --------------------------------------------------------------------------- #
+
+
+def _halt_on_spend_cap(
+    response: Response,
+    refusal: BudgetExceededError,
+    *,
+    budget: SpendBudget,
+    recorder: _Recorder,
+    call_log: CallLog,
+    n_coded: int,
+    n_total: int,
+) -> dict[str, Any]:
+    """Record a halt for the spend cap, and return what the run's stats say about it.
+
+    Whatever the half-made response paid for is written first: the refused call was
+    never made, but the ones before it were, and a cost that is not in `llm_calls` is a
+    cost the cap cannot count on a resumed run. Any call still pending at this point is a
+    judge call, because each coder's call is drained as soon as it returns.
+    """
+    recorder.drain(call_log, role="judge", subject=subject_for(response.id))
+    halt = {
+        "response_id": response.id,
+        "role": refusal.role,
+        "task": refusal.task,
+        "responses_coded": n_coded,
+        "responses_remaining": n_total - n_coded,
+    }
+    recorder.emit(
+        "run_halted_spend_cap",
+        scope="run",
+        subject=recorder.run_id,
+        reason="max_usd",
+        **halt,
+        **budget.to_json(),
+    )
+    return halt
+
+
+def _budget_record(
+    budget: SpendBudget | None, spend_halt: dict[str, Any] | None, *, uncoded: int
+) -> dict[str, Any] | None:
+    """`RunStats.budget`: the cap, the spend, and whether and where the run stopped."""
+    if budget is None:
+        return None
+    record = budget.to_json()
+    record["halted"] = spend_halt is not None
+    record["responses_uncoded"] = uncoded
+    if spend_halt is not None:
+        record["halted_at_response"] = spend_halt["response_id"]
+        record["halted_role"] = spend_halt["role"]
+        record["halted_task"] = spend_halt["task"]
+    return record
 
 
 # --------------------------------------------------------------------------- #
@@ -1207,6 +1318,8 @@ def _stats(
     responses_uncoded: int = 0,
     seeded_from: dict[str, Any] | None = None,
     responses_since_checkpoint: int = 0,
+    budget: dict[str, Any] | None = None,
+    run_metrics: dict[str, Any] | None = None,
 ) -> RunStats:
     """Fold the per-response outcomes into the run report's numbers. Pure."""
     proposed: Counter[str] = Counter()
@@ -1272,4 +1385,6 @@ def _stats(
         responses_uncoded=responses_uncoded,
         seeded_from=dict(seeded_from) if seeded_from is not None else None,
         responses_since_checkpoint=responses_since_checkpoint,
+        budget=budget,
+        run_metrics=dict(run_metrics or {}),
     )

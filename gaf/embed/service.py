@@ -13,6 +13,10 @@ Implements `gaf.embed.protocol.Embedder` in two modes, selected by
   the system moves to the live space at once and the space id changes with it.
 * **``"openai"``** — live embeddings. The SDK is an optional extra, imported lazily and
   never touched on the offline path.
+* **``"local"``** — an embedding model served on this machine through an
+  OpenAI-compatible ``/embeddings`` endpoint (Ollama by default; see
+  `gaf.local_endpoint`). No SDK and no key; no respondent text leaves the machine, and
+  the weights are pinned by the server, so the space cannot drift under a run (ADR-0049).
 
 **Space versioning is load-bearing.** `space_id` is *derived* from the mode, the model
 and the dimensionality, so changing any of them changes the id by construction rather
@@ -41,6 +45,7 @@ from gaf.config import EmbeddingSpaceConfig
 __all__ = [
     "DEFAULT_OPENAI_MODEL",
     "LEXICAL_ALGORITHM_VERSION",
+    "LOCAL_BATCH_SIZE",
     "OPENAI_INSTALL_HINT",
     "STOPWORDS",
     "EmbeddingService",
@@ -66,6 +71,10 @@ _DEFAULT_SPACE_LABEL = EmbeddingSpaceConfig().space_id
 
 #: Texts sent per live embedding request.
 _OPENAI_BATCH_SIZE = 128
+
+#: Texts sent per local embedding request. Smaller than the hosted batch: a laptop
+#: embeds a long batch no faster than several short ones, and a short one fails cheaper.
+LOCAL_BATCH_SIZE = 64
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
@@ -169,7 +178,7 @@ def derive_space_id(config: EmbeddingSpaceConfig) -> str:
     The id is *derived*, never simply copied from `EmbeddingSpaceConfig.space_id`, so
     that changing the mode, the model or the dimensionality changes the id by
     construction. The canonical forms are ``lexical-<algorithm>-<dim>`` and
-    ``openai-<model>-<dim>``; the default `EmbeddingSpaceConfig` yields
+    ``openai-<model>-<dim>`` and ``local-<model>-<dim>``; the default `EmbeddingSpaceConfig` yields
     ``"lexical-v1-512"``, which is exactly its declared default.
 
     An explicit non-default `config.space_id` is honoured as a **label** and kept as a
@@ -179,6 +188,13 @@ def derive_space_id(config: EmbeddingSpaceConfig) -> str:
     """
     if config.mode == "lexical":
         core = f"lexical-{LEXICAL_ALGORITHM_VERSION}-{config.dim}"
+    elif config.mode == "local":
+        if not config.model:
+            raise ValueError(
+                "EmbeddingSpaceConfig(mode='local') needs a model, e.g. "
+                "'qwen3-embedding:0.6b' with dim=1024; there is no default local model"
+            )
+        core = f"local-{config.model}-{config.dim}"
     else:
         core = f"{config.mode}-{config.model or DEFAULT_OPENAI_MODEL}-{config.dim}"
     label = (config.space_id or "").strip()
@@ -215,9 +231,12 @@ class EmbeddingService:
         self._memo: dict[str, np.ndarray] = {}
         self._api_key = api_key
         self._live_client: Any = None
+        self._local_url: str | None = None
         if self.config.mode == "openai":
             # Fail at construction, not halfway through a paid run.
             self._live_client = self._build_openai_client()
+        elif self.config.mode == "local":
+            self._local_url = self._resolve_local_endpoint()
         elif self.config.mode != "lexical":  # pragma: no cover - guarded by the Literal
             raise ValueError(f"unknown embedding mode {self.config.mode!r}")
 
@@ -237,6 +256,8 @@ class EmbeddingService:
         """The live model name, or the algorithm version when running offline."""
         if self.config.mode == "lexical":
             return f"lexical-{LEXICAL_ALGORITHM_VERSION}"
+        if self.config.mode == "local":
+            return str(self.config.model)
         return self.config.model or DEFAULT_OPENAI_MODEL
 
     def __repr__(self) -> str:
@@ -273,6 +294,12 @@ class EmbeddingService:
         if self.config.mode == "lexical":
             for text in texts:
                 self._memo[text] = lexical_vector(text, self.config.dim)
+            return
+        if self.config.mode == "local":
+            for start in range(0, len(texts), LOCAL_BATCH_SIZE):
+                chunk = texts[start : start + LOCAL_BATCH_SIZE]
+                for text, vector in zip(chunk, self._local_embed(chunk), strict=True):
+                    self._memo[text] = vector
             return
         for start in range(0, len(texts), _OPENAI_BATCH_SIZE):
             chunk = texts[start : start + _OPENAI_BATCH_SIZE]
@@ -319,14 +346,42 @@ class EmbeddingService:
             kwargs["dimensions"] = self.config.dim
         response = client.embeddings.create(**kwargs)
         ordered = sorted(response.data, key=lambda item: item.index)
-        vectors: list[np.ndarray] = []
-        for item in ordered:
-            vector = np.asarray(item.embedding, dtype=np.float64)
-            if vector.shape != (self.config.dim,):
-                raise ValueError(
-                    f"space {self._space_id!r} expects dim {self.config.dim}, "
-                    f"provider returned {vector.shape[0]}"
-                )
-            norm = float(np.linalg.norm(vector))
-            vectors.append(vector if norm == 0.0 else vector / norm)
-        return vectors
+        return [self._checked(item.embedding) for item in ordered]
+
+    def _checked(self, raw: Sequence[float]) -> np.ndarray:
+        """One provider vector, dimension-checked and L2-normalised."""
+        vector = np.asarray(raw, dtype=np.float64)
+        if vector.shape != (self.config.dim,):
+            raise ValueError(
+                f"space {self._space_id!r} expects dim {self.config.dim}, "
+                f"provider returned {vector.shape[0]}"
+            )
+        norm = float(np.linalg.norm(vector))
+        return vector if norm == 0.0 else vector / norm
+
+    # -- local backend ---------------------------------------------------- #
+
+    def _resolve_local_endpoint(self) -> str:
+        """The local server's ``/embeddings`` URL, checked to be on this machine.
+
+        Only the URL is checked here, not the server: constructing a service must stay
+        free of I/O so a config can be built and echoed without a server running.
+        `gaf.cli` probes the server and the model before a run spends any time.
+        """
+        from gaf.local_endpoint import local_base_url
+
+        return f"{local_base_url()}/embeddings"
+
+    def _local_embed(self, texts: list[str]) -> list[np.ndarray]:
+        from gaf.local_endpoint import LocalEndpointError, post_json
+
+        assert self._local_url is not None  # set in __init__ for mode "local"
+        reply = post_json(self._local_url, {"model": self.model, "input": list(texts)})
+        data = reply.get("data") if isinstance(reply, dict) else None
+        if not isinstance(data, list) or len(data) != len(texts):
+            raise LocalEndpointError(
+                f"{self._local_url} returned {0 if not isinstance(data, list) else len(data)} "
+                f"embeddings for {len(texts)} texts"
+            )
+        ordered = sorted(data, key=lambda item: int(item.get("index", 0)))
+        return [self._checked(item["embedding"]) for item in ordered]

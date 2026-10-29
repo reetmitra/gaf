@@ -1,0 +1,53 @@
+{
+  "description": "The PI's rulings on the India Process pairings export, 4 Oct 2026 (ADR-0050); the label merge is provisional and the PI may overrule it.",
+  "top_level": [
+    "efficiency"
+  ],
+  "label_merges": [
+    {
+      "from": "adoption-challenges-saftey",
+      "to": "adoption-challenges-safety",
+      "provisional": true,
+      "reason": "misspelling of 'safety'; the correctly spelt token is used by the five safety-* labels"
+    }
+  ],
+  "label_merges_held": [
+    {
+      "labels": ["applications-research", "applications-search"],
+      "level": "label",
+      "reason": "both are correct words and each is a code with its own definition; merging would combine two codes the PI defined separately"
+    },
+    {
+      "labels": ["safety-home", "safety-women"],
+      "level": "label",
+      "reason": "two different subcodes of safety, not one code spelt twice"
+    },
+    {
+      "labels": ["research", "search"],
+      "level": "token",
+      "reason": "the same pair as applications-research and applications-search, seen at token level"
+    },
+    {
+      "labels": ["assistance", "assistant"],
+      "level": "token",
+      "reason": "different words in two defined codes (applications-financial_assistance, applications-personal_assistant)"
+    },
+    {
+      "labels": ["deskilling", "upskilling"],
+      "level": "token",
+      "reason": "opposite meanings, filed under negative_impacts and positive_impacts"
+    },
+    {
+      "labels": ["education", "reduction"],
+      "level": "token",
+      "reason": "unrelated words that happen to be two edits apart"
+    },
+    {
+      "labels": ["impact", "impacts"],
+      "level": "token",
+      "reason": "a family named impact beside families named negative_impacts and positive_impacts: a naming question for the PI, not a typo in one label"
+    }
+  ],
+  "multi_place_ambiguous": true,
+  "manual_placements_file": "runs/manual-placements.json"
+}

@@ -126,6 +126,17 @@ class LLMResult:
     fail_safe: bool = False
     attempts: int = 1
 
+    @property
+    def stop_reason(self) -> str | None:
+        """Why the model stopped early (``"refusal"``, ``"max_tokens"``), else ``None``.
+
+        A client that sees such a stop records it as ``data["_stop_reason"]`` beside the
+        task's fail-safe default (ADR-0051); read here, it is what `llm_calls.stop_reason`
+        stores, so refusals and truncations can be counted in SQL rather than inferred.
+        """
+        reason = self.data.get("_stop_reason") if isinstance(self.data, dict) else None
+        return str(reason) if reason else None
+
     def to_json(self) -> dict[str, Any]:
         return {
             "task": self.task.value,

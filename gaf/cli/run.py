@@ -36,6 +36,16 @@ previous run's store is not there to say whether a checkpoint was taken, the com
 says so on stdout and in ``run.json``, and counts every response that run coded as
 still owed a look.
 
+``--max-usd`` (with ``--live``) is a hard stop on money (ADR-0053). Before each model
+call that is not a cache replay, the run checks whether the billed spend recorded for it
+has already reached the cap, and if so makes no further call. It then halts the way
+``--halt-on-checkpoint`` does: the response in flight is left out, the run closes
+normally with every artefact written, **the exit code is 0**, and the stats and the
+report say why it stopped and the command that resumes it. The total includes the spend
+of every run this one was resumed from, so a resumed run continues one budget rather
+than starting a fresh one. The cap can be overshot by at most the one call in flight when
+the total crossed it. With no flag nothing changes.
+
 Serves **transparency**: every artefact a later `gaf report`, `gaf check`, `gaf
 analyse` or `gaf checkpoint` reads is written here, in the open, including the
 audit log that nothing else in the system is allowed to edit after the fact.
@@ -51,6 +61,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import gaf
+from gaf.cli._budget import budget_from_args, cumulative_spend
 from gaf.cli._common import (
     EXIT_OK,
     CliError,
@@ -69,6 +80,7 @@ from gaf.config import RunConfig
 from gaf.ids import content_hash
 from gaf.ingest.corpus import corpus_content_hash, load_corpus_with_report
 from gaf.ingest.xlsx import SpreadsheetFormatError
+from gaf.llm.budget import SpendBudget, guard_agents
 from gaf.models import Code, Codebook, Response
 from gaf.pipeline.fast_loop import run_fast_loop
 from gaf.report.run_report import RUN_JSON_NAME, RunArtefact, render_run_report
@@ -298,6 +310,77 @@ def _report_halt(artefact: RunArtefact, *, out: Path, corpus_path: Path) -> None
     )
 
 
+def _describe_budget(budget: SpendBudget, config: RunConfig) -> None:
+    """The cap and what it already counts, before the run spends anything."""
+    _out(
+        f"Spend cap: ${budget.cap_usd:.4f}. Already billed: ${budget.baseline_usd:.4f}; "
+        f"${budget.remaining_usd:.4f} left. Checked before each model call that is not a "
+        "cache replay, so the run can overshoot by at most one call."
+    )
+    for source in budget.baseline_sources:
+        if source.get("unreadable"):
+            _out(
+                f"  WARNING: no ledger could be read in {source['run']}; its spend, if "
+                "any, is not counted against the cap."
+            )
+        else:
+            _out(f"  counted from {source['run']}: ${float(source['usd']):.4f}")
+    if config.embedding.mode == "openai":
+        _out(
+            "  WARNING: this run embeds with a hosted OpenAI model. Embedding calls are not "
+            "model calls in llm_calls, so the cap does not count them. Use a local or "
+            "lexical embedding space to keep the cap whole."
+        )
+    _out("")
+
+
+def _report_spend_halt(
+    artefact: RunArtefact, *, out: Path, corpus_path: Path, args: argparse.Namespace
+) -> None:
+    """Why the run stopped for money, where, and the command that continues it."""
+    budget = artefact.stats.budget or {}
+    _out("")
+    _out("=" * 78)
+    _out("HALTED at the spend cap.")
+    _out("=" * 78)
+    _out("")
+    _out(f"  cap                  ${float(budget.get('cap_usd', 0.0)):.4f}")
+    _out(
+        f"  billed               ${float(budget.get('cumulative_usd', 0.0)):.4f}  "
+        f"(this run ${float(budget.get('run_usd', 0.0)):.4f}, earlier runs in the chain "
+        f"${float(budget.get('baseline_usd', 0.0)):.4f})"
+    )
+    _out(f"  responses coded      {artefact.stats.n_responses}")
+    _out(
+        f"  responses remaining  {artefact.stats.responses_uncoded} still to code; response "
+        f"{budget.get('halted_at_response')} was in progress and is not counted as coded"
+    )
+    _out(f"  stopped before       a {budget.get('halted_role')} / {budget.get('halted_task')} call")
+    _out("")
+    _out(
+        "  This is the designed behaviour, not an error, and the exit code is 0. The cap is "
+        "checked before each call, so the total can be over it by at most one call."
+    )
+    flags = ""
+    if not args.offline:
+        flags += " --live"
+        if getattr(args, "profile", None):
+            flags += f" --profile {args.profile}"
+    _out("")
+    _out("  To continue with a higher cap (the new --max-usd is the cumulative total):")
+    _out("")
+    _out(
+        f"    gaf run --corpus {corpus_path} --seed-codebook {out / 'codebook.json'} "
+        f"--skip-coded {out} --out {out}-resumed{flags} --max-usd <USD>"
+    )
+    _out("")
+    _out(
+        "  Repeat any --cache-dir and --batch-size you used. Calls the stopped run already "
+        "paid for are in the response cache, so the response that was in progress is "
+        "re-coded without paying for them again."
+    )
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     """The fast loop over a corpus, with every artefact written to --out."""
     corpus_path = Path(args.corpus)
@@ -360,6 +443,16 @@ def cmd_run(args: argparse.Namespace) -> int:
         _out(f"  ({basis})")
         _out("")
 
+    # Before the previous run's database can be replaced below: its spend is part of this
+    # run's budget, and a refusal here costs nothing.
+    budget = budget_from_args(
+        args,
+        config=config,
+        baseline=cumulative_spend(Path(args.skip_coded)) if args.skip_coded else None,
+    )
+    if budget is not None:
+        _describe_budget(budget, config)
+
     database = cast(Path, config.db_path)
     if database.exists():
         # A run directory is one run's output. Re-running must not append to the
@@ -367,6 +460,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         database.unlink()
 
     components = _components(config)
+    if budget is not None:
+        guard_agents(budget, (components.coder_a, components.coder_b, components.judge))
     with Blackboard(database) as board:
         if "seeded_from" in provenance:
             # Its own row, written before the run begins so the log reads in the order
@@ -386,6 +481,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             halt_on_checkpoint=bool(args.halt_on_checkpoint),
             seeded_from=provenance.get("seeded_from"),
             responses_since_checkpoint_at_start=carried_forward,
+            budget=budget,
         )
         artefact = RunArtefact.from_result(result, config=config, provenance=provenance)
         write_run_dir(out, artefact, board)
@@ -406,6 +502,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         "gaf.sqlite",
     ):
         _out(f"  {out / name}")
+    if artefact.stats.budget and artefact.stats.budget.get("halted"):
+        _report_spend_halt(artefact, out=out, corpus_path=corpus_path, args=args)
+        return EXIT_OK
     if artefact.stats.halted_at_batch is not None:
         _report_halt(artefact, out=out, corpus_path=corpus_path)
         return EXIT_OK

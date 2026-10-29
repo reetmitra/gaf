@@ -121,7 +121,7 @@ decision matrix; `gaf analyse` adds `analysis/`.
 | [`codebook.json`](examples/demo-run/codebook.json) | the codebook itself — codes, descriptions, parents, evidence, and the snapshot that admitted each code |
 | [`assignments.json`](examples/demo-run/assignments.json) | one row per (response, code) application, with its span |
 | [`findings.json`](examples/demo-run/findings.json) | every check finding: id, severity, scope, subject, one sentence, and a machine-readable payload |
-| [`stats.json`](examples/demo-run/stats.json) | the run report's numbers, as data — including the per-batch decision trace |
+| [`stats.json`](examples/demo-run/stats.json) | the run report's numbers, as data — including the per-batch decision trace and, from ADR-0053, a `run_metrics` block: coder A against coder B agreement, how often the judge backed coder A, latency, and spend by role and task (the committed example predates it; `make example` regenerates it) |
 | [`corpus.json`](examples/demo-run/corpus.json) | the coded corpus, with the survey question attached to every record |
 | `timeline.json` / `.md` / `.svg` | when each code was born, what became of it, and what the coders saw at every batch boundary, read from the run's own audit log |
 | `reorganisation_trail.json` / `.md` | one entry per checkpoint the slow loop opened: before, after, the human's verdicts, and the lineage of every code name that no longer exists. Code names, ids, counts and drop markers only — an operation's payload is filtered to keys that cannot hold text, and the keys withheld are named (ADR-0039) |
@@ -142,8 +142,8 @@ codebook to map this one onto.
 
 One CLI, nine commands: `gaf ingest | run | check | analyse | validate | report |
 checkpoint | codebook | views`. `ingest` reads a response workbook or CSV into the
-canonical corpus JSON, `run` is the fast loop (with flags for seeding a codebook and for
-halting at the loop handover), `check` audits an artefact and is the only command that
+canonical corpus JSON, `run` is the fast loop (with flags for seeding a codebook, for
+halting at the loop handover and, with `--live`, for a hard spend cap, `--max-usd`), `check` audits an artefact and is the only command that
 turns an ERROR into a non-zero exit, `analyse` is the deterministic tail — matrix, Ward's
 HCA, saturation, patterns, affinity, growth and an optional crosswalk — `validate` is
 agreement against a human golden set plus the lexical vocabulary check, `report` renders
@@ -219,12 +219,17 @@ is less labour per checkpoint and more leverage per decision
 ```
 Makefile              demo, check, analyse, provenance, scrub, and the lint/type/test gate
 pyproject.toml        core deps only; provider SDKs are optional extras
-.env.example          the three keys a live run would use; never needed offline
+.env.example          the three keys a live run would use, the local-server settings and
+                      the hosted OpenAI-compatible endpoint's; never needed offline
 CONTRIBUTING.md       how to work on this repository
 docs/                 methods, validation dossier, runbook, coding rules, ADR log
 examples/demo-run/    a committed offline run — read it without installing anything
 results/              real-run results as Markdown, exported without respondent text
-scripts/              export_results.py — the exporter behind `make results`
+scripts/              export_results.py — the exporter behind `make results`;
+                      compare_embeddings.py — embedding spaces scored on a human coding
+profiles/             model profiles for `--live --profile` (local-ollama.json: every role
+                      on this machine, ADR-0049; opus-qwen.json: the PI's Opus 5.5 + hosted
+                      Qwen line-up, and opus-local-qwen.json, its rehearsal; ADR-0051/0052)
 data/                 gitignored except data/synthetic/; real corpora live outside
 tests/                the offline suite, its fixtures, and the golden-set regression
 gaf/
@@ -234,8 +239,12 @@ gaf/
   ids.py              content hashing and deterministic id minting
   store/              the blackboard: SQLite schema, snapshots, append-only audit log
   ingest/             workbook/CSV readers, tagged-pairing organiser, definitions reader,
-                      corpus assembly, question attachment
-  llm/                client protocol, three providers, deterministic mocks, disk cache
+                      the PI's rulings file, the pre-registered split, corpus assembly,
+                      question attachment
+  llm/                client protocol, three hosted providers, a local one and a hosted
+                      OpenAI-compatible one, deterministic mocks, disk cache
+  local_endpoint.py   where a locally served model lives, and the refusal to go remote
+  compat_endpoint.py  where a hosted OpenAI-compatible model lives (https and a key, no default)
   embed/              the embedding service and the matcher (cosine, Hungarian, routing)
   agents/             the four LLM roles (Coder, Judge, Refactorer in the loops; the
                       Definer outside them) and their versioned prompt templates
@@ -304,9 +313,11 @@ path remains unexercised, and the budget and approval for it are still pending.
   verbatim; a results export withholds a colliding definition by code name, but a
   document built directly by `gaf codebook organise` does not. See ADR-0032, ADR-0034
   and ADR-0038.
-- **The live model path has never been run.** Provider SDKs are optional extras that no
+- **The hosted live path has never been run.** Provider SDKs are optional extras that no
   test and no CI job installs, `--live` is opt-in, and every number here comes from an
-  offline run. Read the cost note in [`docs/RUNBOOK.md`](docs/RUNBOOK.md) first: offline,
+  offline run. The same code path has run once on models served on this machine, over 10
+  responses, which showed it works end to end and that the thresholds must be recalibrated
+  in a real embedding space before a paid run (ADR-0049). Read the cost note in [`docs/RUNBOOK.md`](docs/RUNBOOK.md) first: offline,
   M3 accounts for the large majority of frontier calls, and whether a real embedding model
   changes that is an open empirical question (ADR-0022).
 

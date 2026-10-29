@@ -39,7 +39,7 @@ alters the bytes it was given.
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -575,7 +575,17 @@ HIGHLIGHT_ID_HEADERS: tuple[str, ...] = ("id", "highlight_id", "highlight id")
 
 
 #: The outcomes of placing one highlight, in the order a report prints them.
-HIGHLIGHT_OUTCOMES: tuple[str, ...] = ("exact", "fuzzy", "resolved", "ambiguous", "unlocated")
+#: ``multi_placed`` and ``manual`` exist only when the PI's rulings switch them on
+#: (ADR-0050); a placement run without rulings never produces either.
+HIGHLIGHT_OUTCOMES: tuple[str, ...] = (
+    "exact",
+    "fuzzy",
+    "resolved",
+    "multi_placed",
+    "manual",
+    "ambiguous",
+    "unlocated",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -618,6 +628,10 @@ class HighlightsReport:
     counts here are the evidence for that placement, and the unlocated list is the
     first thing to read: on the real sample it is the highlights that belong to
     responses the corpus file does not contain.
+
+    Every count is of **highlights**, so ``total`` is the number of pairings read. A
+    highlight placed in several responses (``multi_placed``) is one highlight with
+    several mapping rows and several `Assignment` rows; ``per_response`` counts rows.
     """
 
     path: str
@@ -636,22 +650,46 @@ class HighlightsReport:
     #: How many responses hold at least one exact or fuzzy highlight. This is the set
     #: `resolved` was decided against, and the denominator a reader needs to judge it.
     coded_response_count: int = 0
+    #: Highlights placed in **every** candidate inside the coded set, when the PI's
+    #: rulings switch that on (ADR-0050); `multi_placements` is the mapping rows that
+    #: made, one per response. Both are zero, and absent from `to_json`, when the rule
+    #: is off.
+    multi_placed: int = 0
+    multi_placements: int = 0
+    multi_place_enabled: bool = False
+    #: Highlights placed by the PI's own answer (a highlight id -> response id file):
+    #: ``(highlight id, response id, the outcome it had before)`` for each one applied,
+    #: and ``(highlight id, reason)`` for each requested id that could not be.
+    manual_applied: tuple[tuple[str, int, str], ...] = ()
+    manual_unapplied: tuple[tuple[str, str], ...] = ()
+    manual_requested: int = 0
+
+    @property
+    def manual(self) -> int:
+        return len(self.manual_applied)
 
     @property
     def mapped(self) -> int:
-        return self.exact + self.fuzzy + self.resolved
+        return self.exact + self.fuzzy + self.resolved + self.multi_placed + self.manual
 
     def summary(self) -> str:
+        extra = ""
+        if self.multi_placed:
+            extra += (
+                f", {self.multi_placed} multi-placed ({self.multi_placements} placements)"
+            )
+        if self.manual:
+            extra += f", {self.manual} placed by hand"
         return (
             f"{self.total} highlights: {self.mapped} mapped to a response "
             f"({self.exact} exact, {self.fuzzy} fuzzy, {self.resolved} resolved against "
-            f"the {self.coded_response_count} responses already coded), "
+            f"the {self.coded_response_count} responses already coded{extra}), "
             f"{self.ambiguous} ambiguous (excluded), "
             f"{self.unlocated} unlocated (not in this corpus)"
         )
 
     def to_json(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "path": self.path,
             "total": self.total,
             "mapped": self.mapped,
@@ -664,6 +702,18 @@ class HighlightsReport:
             "per_response": {str(k): v for k, v in sorted(self.per_response.items())},
             "mappings": [m.to_json() for m in self.mappings],
         }
+        # Present only when a ruling asked for it, so a placement run without rulings
+        # writes exactly the file it always did.
+        if self.multi_place_enabled:
+            payload["multi_place_enabled"] = True
+            payload["multi_placed"] = self.multi_placed
+            payload["multi_placements"] = self.multi_placements
+        if self.manual_requested:
+            payload["manual"] = self.manual
+            payload["manual_requested"] = self.manual_requested
+            payload["manual_applied"] = [list(item) for item in self.manual_applied]
+            payload["manual_unapplied"] = [list(item) for item in self.manual_unapplied]
+        return payload
 
 
 def place_highlights(
@@ -672,6 +722,8 @@ def place_highlights(
     *,
     fuzzy_threshold: float = 0.85,
     path: str = "",
+    multi_place: bool = False,
+    manual_placements: Mapping[str, int] | None = None,
 ) -> tuple[list[Assignment], HighlightsReport]:
     """Place code-text pairings onto a corpus by locating their text. Source-agnostic.
 
@@ -688,10 +740,25 @@ def place_highlights(
     ``ambiguous`` and is excluded, as is everything ``unlocated``; both are counted and
     listed, never guessed at.
 
+    **Two opt-in additions, both off by default** (ADR-0050), so a call that passes
+    neither returns exactly what it always did:
+
+    * `multi_place` — an ambiguous highlight with **two or more** candidates in the
+      coded set is placed in *every* one of them, outcome ``multi_placed``, one mapping
+      row per response. The PI ruled that a fragment may be coded in more than one
+      place and that these "should be included". A highlight with no candidate in the
+      coded set stays ambiguous: nothing says which of the others the PI meant.
+    * `manual_placements` — highlight id -> response id, applied **after both passes**
+      with outcome ``manual``. It replaces whatever the highlight was placed as, and
+      the report records what that was. An id that matches no highlight, a response
+      that is not in the corpus, or text that cannot be given a span there, is listed
+      as unapplied rather than guessed at.
+
     The coded set is computed from the whole first pass, so the outcome does not depend
     on the order the rows arrive in. Nothing here consults the export's own highlight
-    ids: ADR-0029 §2 measured them and found they follow the order the codes were
-    *applied* in, not document order.
+    ids to *decide* a placement: ADR-0029 §2 measured them and found they follow the
+    order the codes were *applied* in, not document order. They are used as labels,
+    which is all a manual placement needs.
 
     Returns the placed highlights as `Assignment` rows — the row-oriented shape every
     downstream comparison consumes — plus the report. The same segment coded twice
@@ -756,12 +823,11 @@ def place_highlights(
         if m.outcome in ("exact", "fuzzy") and m.response_id is not None
     }
 
-    assignments: list[Assignment] = []
-    mappings: list[HighlightMapping] = []
-    per_response: dict[int, int] = {}
-    counts = dict.fromkeys(HIGHLIGHT_OUTCOMES, 0)
-
+    # One entry per highlight; each holds the mapping rows it became (one, except for a
+    # `multi_placed` highlight, which holds one per response it was placed in).
+    decided: list[list[HighlightMapping]] = []
     for mapping in first_pass:
+        rows = [mapping]
         if mapping.outcome == "ambiguous":
             inside = sorted(set(mapping.candidates) & coded_set)
             if len(inside) == 1:
@@ -781,28 +847,99 @@ def place_highlights(
                     needle, texts[target], fuzzy_threshold
                 )
                 if span is not None:
-                    mapping = replace(
-                        mapping,
-                        outcome="resolved",
-                        response_id=target,
-                        span=span,
-                        score=float(target_score),
+                    rows = [
+                        replace(
+                            mapping,
+                            outcome="resolved",
+                            response_id=target,
+                            span=span,
+                            score=float(target_score),
+                        )
+                    ]
+            elif multi_place and len(inside) >= 2:
+                needle = normalise(mapping.content)
+                placed: list[HighlightMapping] = []
+                for target in inside:
+                    _found, target_score, span = locate_quote(
+                        needle, texts[target], fuzzy_threshold
                     )
-        counts[mapping.outcome] += 1
-        if mapping.response_id is not None:
-            assignments.append(
-                Assignment(
-                    response_id=mapping.response_id,
-                    segment=mapping.content,
-                    code=mapping.tag.strip(),
-                )
+                    if span is not None:
+                        placed.append(
+                            replace(
+                                mapping,
+                                outcome="multi_placed",
+                                response_id=target,
+                                span=span,
+                                score=float(target_score),
+                            )
+                        )
+                # Fewer than two spans leaves nothing "multi" about it: the highlight
+                # stays ambiguous, exactly as it would with the rule off.
+                if len(placed) >= 2:
+                    rows = placed
+        decided.append(rows)
+
+    manual_applied: list[tuple[str, int, str]] = []
+    manual_unapplied: list[tuple[str, str]] = []
+    requested = dict(manual_placements or {})
+    if requested:
+        known = {rows[0].highlight_id for rows in decided}
+        manual_unapplied.extend(
+            (hid, "no highlight in the export has this id")
+            for hid in sorted(requested)
+            if hid not in known
+        )
+        for index, rows in enumerate(decided):
+            base = rows[0]
+            if base.highlight_id not in requested:
+                continue
+            target = requested[base.highlight_id]
+            if target not in texts:
+                manual_unapplied.append((base.highlight_id, "that response is not in the corpus"))
+                continue
+            # Threshold 0: the PI's answer decides *which response*; the locator only
+            # supplies the nearest span there, and the score it earned is kept as it is.
+            _found, target_score, span = locate_quote(
+                normalise(base.content), texts[target], 0.0
             )
-            per_response[mapping.response_id] = per_response.get(mapping.response_id, 0) + 1
-        mappings.append(mapping)
+            if span is None:
+                manual_unapplied.append(
+                    (base.highlight_id, "the text cannot be given a span in that response")
+                )
+                continue
+            manual_applied.append((base.highlight_id, target, base.outcome))
+            decided[index] = [
+                replace(
+                    base,
+                    outcome="manual",
+                    response_id=target,
+                    span=span,
+                    score=float(target_score),
+                )
+            ]
+
+    assignments: list[Assignment] = []
+    mappings: list[HighlightMapping] = []
+    per_response: dict[int, int] = {}
+    counts = dict.fromkeys(HIGHLIGHT_OUTCOMES, 0)
+
+    for rows in decided:
+        counts[rows[0].outcome] += 1
+        for mapping in rows:
+            if mapping.response_id is not None:
+                assignments.append(
+                    Assignment(
+                        response_id=mapping.response_id,
+                        segment=mapping.content,
+                        code=mapping.tag.strip(),
+                    )
+                )
+                per_response[mapping.response_id] = per_response.get(mapping.response_id, 0) + 1
+            mappings.append(mapping)
 
     report = HighlightsReport(
         path=path,
-        total=len(mappings),
+        total=len(decided),
         exact=counts["exact"],
         fuzzy=counts["fuzzy"],
         ambiguous=counts["ambiguous"],
@@ -811,6 +948,12 @@ def place_highlights(
         mappings=tuple(mappings),
         resolved=counts["resolved"],
         coded_response_count=len(coded_set),
+        multi_placed=counts["multi_placed"],
+        multi_placements=sum(len(rows) for rows in decided if rows[0].outcome == "multi_placed"),
+        multi_place_enabled=multi_place,
+        manual_applied=tuple(manual_applied),
+        manual_unapplied=tuple(manual_unapplied),
+        manual_requested=len(requested),
     )
     return assignments, report
 

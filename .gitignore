@@ -16,6 +16,11 @@ data/*
 
 # Runtime artefacts
 runs/
+# The PI's manual placements (highlight id -> response id). Ids only, no text, but they
+# are his answers about his own data: kept local, normally under runs/ (ADR-0050). The
+# rulings file he reads and may overrule (rulings/india-process.json) IS tracked.
+manual-placements*.json
+rulings/*.local.json
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

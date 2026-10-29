@@ -24,11 +24,20 @@ RESULTS_LABEL ?= India Process sample, responses 1-20
 # in one command. Every variable below is overridable; the defaults are where the real
 # files sit on the researcher's machine. Nothing here runs live.
 FULL_CORPUS_CSV ?= ../Grounded AI Futures/data/IndiaProcess(1-200)-FinalCleaned.csv
-FULL_TAGGED_CSV ?= ../Grounded AI Futures/data/CodebookIndiaProcess(1-20)CodesExamples.csv
+# The PI ruled the .xlsx the canonical tagged export (ADR-0050). The .csv beside it, and
+# the .xlsx of the same name in ../Grounded AI Futures/codebook/, hold the same 342
+# pairings in the order they were applied; this one groups them by tag.
+FULL_TAGGED_EXPORT ?= ../Grounded AI Futures/data/CodebookIndiaProcess(1-20)CodesExamples.xlsx
 FULL_DEFINITIONS_MD ?= ../Grounded AI Futures/codebook/AI_Perceptions_Codebook1.md
+# The PI's rulings on that export (label merges, top-level codes, multi-placement of
+# ambiguous highlights). Empty means none: `make results-full` then reproduces
+# runs/human200 exactly. Set it for the v2 organisation (`make human-v2`).
+FULL_RULINGS ?=
 FULL_QUESTION_VARIANT ?= v2
 FULL_RUN_DIR ?= runs/process200
 FULL_HUMAN_DIR ?= runs/human200
+HUMAN_V2_DIR ?= runs/human200-v2
+HUMAN_V2_RULINGS ?= rulings/india-process.json
 FULL_SEEDED_DIR ?= runs/process200-seeded
 FULL_HALTED_DIR ?= runs/process200-halted
 FULL_RESUMED_DIR ?= runs/process200-resumed
@@ -36,7 +45,7 @@ FULL_RESULTS_OUT ?= results/india-process-1-200
 FULL_RESULTS_LABEL ?= India Process, responses 1-200
 FULL_GUARD_SHINGLE ?= 20
 
-.PHONY: help install test lint typecheck check-all scrub demo check analyse views example provenance results
+.PHONY: help install test lint typecheck check-all scrub demo check analyse views example provenance results human-v2 split
 
 help:
 	@echo "make install    — uv sync (core + dev)"
@@ -53,6 +62,8 @@ help:
 	@echo "make provenance — scan every tracked file for real respondent text (needs the real corpus on this machine)"
 	@echo "make results    — export a real run as Markdown with no respondent text (RESULTS_RUN=runs/process RESULTS_OUT=results/<name>)"
 	@echo "make results-full — the whole real-data sequence, raw inputs to results/, offline, one command"
+	@echo "make human-v2   — organise the PI's xlsx export with his rulings into $(HUMAN_V2_DIR) (the baseline $(FULL_HUMAN_DIR) is untouched)"
+	@echo "make split      — write the pre-registered calibration / held-out split and its corpus files from $(HUMAN_V2_DIR)/golden.json"
 
 install:
 	uv sync --all-groups
@@ -172,7 +183,8 @@ results:
 # exporter's guard is what decides whether a file may land there.
 results-full:
 	CORPUS_CSV="$(FULL_CORPUS_CSV)" \
-	TAGGED_CSV="$(FULL_TAGGED_CSV)" \
+	TAGGED_EXPORT="$(FULL_TAGGED_EXPORT)" \
+	RULINGS="$(FULL_RULINGS)" \
 	DEFINITIONS_MD="$(FULL_DEFINITIONS_MD)" \
 	QUESTION_VARIANT="$(FULL_QUESTION_VARIANT)" \
 	RUN_DIR="$(FULL_RUN_DIR)" \
@@ -184,3 +196,21 @@ results-full:
 	RESULTS_LABEL="$(FULL_RESULTS_LABEL)" \
 	GUARD_SHINGLE="$(FULL_GUARD_SHINGLE)" \
 	bash scripts/run_full_results.sh
+
+# -- the PI's rulings, and the pre-registered split ----------------------- #
+#
+# `human-v2` is step 2 of results-full with the rulings switched on, written to a NEW
+# directory: runs/human200 is the baseline and is never overwritten. The rulings file
+# holds labels and flags, never respondent text, so it is tracked (rulings/); the
+# optional manual-placement file it names lives under runs/ and is gitignored.
+human-v2:
+	uv run gaf codebook organise --tagged "$(FULL_TAGGED_EXPORT)" \
+		--corpus "$(FULL_RUN_DIR)/corpus.json" --definitions "$(FULL_DEFINITIONS_MD)" \
+		--rulings "$(HUMAN_V2_RULINGS)" --out "$(HUMAN_V2_DIR)"
+
+# Writes ids only to split.json, and the three corpus subsets (each filtered by id from
+# the corpus, never sliced) beside it. Deterministic: same golden.json, same split.
+split:
+	uv run python scripts/make_split.py --golden "$(HUMAN_V2_DIR)/golden.json" \
+		--corpus "$(FULL_RUN_DIR)/corpus.json" --out "$(HUMAN_V2_DIR)/split.json" \
+		--corpus-dir runs

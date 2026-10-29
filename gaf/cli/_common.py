@@ -30,8 +30,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 
@@ -40,6 +41,7 @@ from gaf.agents.judge import JudgeAgent
 from gaf.analysis.matrix import assignments_from_codebook
 from gaf.config import (
     DEFAULT_LIVE_REGISTRY,
+    EFFORT_LEVELS,
     AnalysisConfig,
     CheckpointPolicy,
     CodingRules,
@@ -49,13 +51,14 @@ from gaf.config import (
     ModelSpec,
     RunConfig,
 )
-from gaf.embed.service import EmbeddingService, MissingEmbeddingSDKError
+from gaf.embed.service import EmbeddingService, MissingEmbeddingSDKError, derive_space_id
 from gaf.ingest.corpus import load_corpus_with_report
 from gaf.ingest.xlsx import SpreadsheetFormatError, read_coded_xlsx
-from gaf.llm import anthropic_client, gemini_client, openai_client
+from gaf.llm import anthropic_client, compat_client, gemini_client, local_client, openai_client
 from gaf.llm.base import CallLog, LLMClient
 from gaf.llm.cache import CachingLLMClient
 from gaf.llm.mock import MockJudgeClient
+from gaf.local_endpoint import LocalEndpointError, local_base_url, require_model
 from gaf.models import Assignment, Codebook, Response
 from gaf.pipeline.fast_loop import LoopComponents, offline_components
 from gaf.report.run_report import RUN_JSON_NAME, RunArtefact
@@ -275,6 +278,13 @@ _LIVE_PROVIDERS: dict[str, tuple[Any, str, str]] = {
         anthropic_client.INSTALL_HINT,
         "ANTHROPIC_API_KEY",
     ),
+    "local": (local_client.LocalClient, local_client.INSTALL_HINT, "GAF_LOCAL_BASE_URL"),
+    # A hosted endpoint: respondent text leaves the machine, so never "local" (ADR-0052).
+    "openai_compatible": (
+        compat_client.OpenAICompatibleClient,
+        compat_client.INSTALL_HINT,
+        "GAF_COMPAT_BASE_URL and GAF_COMPAT_API_KEY",
+    ),
 }
 
 _MISSING_SDK_ERRORS = (
@@ -320,11 +330,77 @@ def _live_client(spec: ModelSpec, config: RunConfig) -> LLMClient:
     except _MISSING_SDK_ERRORS as exc:
         raise CliError(f"role {spec.role!r}: {exc}") from exc
     except Exception as exc:  # the SDK's own credential and configuration errors
+        install = f" and install the provider extra with `{install_hint}`" if install_hint else ""
         raise CliError(
             f"role {spec.role!r}: could not build a {spec.provider} client for model "
-            f"{spec.model!r}: {exc}. Set {env_var} in the environment (see .env.example) "
-            f"and install the provider extra with `{install_hint}`."
+            f"{spec.model!r}: {exc}. Set {env_var} in the environment (see .env.example)"
+            f"{install}."
         ) from exc
+
+
+def model_family(model: str) -> str:
+    """The maker's family of a model id served locally or by a hosted endpoint.
+
+    ``"qwen3.5:9b"`` → ``"qwen"``, ``"gemma4:12b"`` → ``"gemma"``, ``"gpt-oss:20b"`` →
+    ``"gpt"``, ``"hf.co/org/Llama-3.1-8B-GGUF"`` → ``"llama"``, ``"qwen/qwen3.8-max"`` →
+    ``"qwen"``: the leading run of letters of the last path segment. Two sizes or
+    versions of one family share a family. Used by the coder-diversity rule.
+    """
+    tail = model.rsplit("/", 1)[-1].lower()
+    match = re.match(r"[a-z]+", tail)
+    return match.group(0) if match else tail
+
+
+#: Providers that name a server rather than a maker: ``"local"`` (ADR-0049) and the
+#: hosted ``"openai_compatible"`` (ADR-0052). A model reached through one is told apart
+#: by its model family, not by the provider name.
+_SERVER_PROVIDERS = frozenset({"local", "openai_compatible"})
+
+#: The family behind each provider that is also a maker, so a model reached through a
+#: server provider can be compared with it (``anthropic/claude-...`` on OpenRouter is
+#: still Claude).
+_PROVIDER_FAMILIES = {"openai": "gpt", "gemini": "gemini", "anthropic": "claude"}
+
+
+def coder_family(spec: ModelSpec) -> str:
+    """The model family `spec` binds: its id's family for a server provider, else the maker's."""
+    if spec.provider in _SERVER_PROVIDERS:
+        return model_family(spec.model)
+    return _PROVIDER_FAMILIES.get(spec.provider, spec.provider)
+
+
+def coders_are_distinct(models: ModelRegistry) -> bool:
+    """The two coders come from different makers.
+
+    For hosted models the provider *is* the maker, so the providers must differ. A
+    ``"local"`` or ``"openai_compatible"`` provider is a server, not a maker, so whenever
+    either coder is bound to one the two coders must instead come from different model
+    families (ADR-0049, ADR-0052): two Qwen sizes, or a local Qwen beside a hosted one,
+    are one family. Opus beside a hosted Qwen is distinct.
+    """
+    a, b = models.coder_a, models.coder_b
+    if a.provider in _SERVER_PROVIDERS or b.provider in _SERVER_PROVIDERS:
+        return coder_family(a) != coder_family(b)
+    return models.distinct_coder_providers()
+
+
+def check_local_models(config: RunConfig) -> None:
+    """Before a run starts, confirm the local server is up and has every local model.
+
+    A no-op when nothing in the run is local. Failing here costs a second; failing on
+    the first coder call after the corpus has been segmented and stored costs a run.
+    """
+    local_models = [s.model for s in config.models.all_specs() if s.provider == "local"]
+    if config.embedding.mode == "local" and config.embedding.model:
+        local_models.append(config.embedding.model)
+    if not local_models:
+        return
+    try:
+        base = local_base_url()
+        for model in dict.fromkeys(local_models):
+            require_model(base, model)
+    except LocalEndpointError as exc:
+        raise CliError(str(exc)) from exc
 
 
 def live_components(config: RunConfig, *, call_log: CallLog | None = None) -> LoopComponents:
@@ -351,12 +427,19 @@ def live_components(config: RunConfig, *, call_log: CallLog | None = None) -> Lo
             "gaf.config.DEFAULT_LIVE_REGISTRY is the suggested triple — before running "
             "with --live."
         )
-    if not config.models.distinct_coder_providers():
+    if not coders_are_distinct(config.models):
+        a, b = config.models.coder_a, config.models.coder_b
         raise CliError(
             "the two coders must come from different providers — epistemic diversity "
             "and the cost argument are the same mechanism (docs/ARCHITECTURE.md). "
-            f"Both are bound to {config.models.coder_a.provider!r}."
+            + (
+                f"Both are bound to {a.provider!r}."
+                if a.provider == b.provider and a.provider not in _SERVER_PROVIDERS
+                else f"Both are the model family {coder_family(a)!r} ({a.provider} "
+                f"{a.model!r}, {b.provider} {b.model!r}); ADR-0049, ADR-0052."
+            )
         )
+    check_local_models(config)
     log = call_log or CallLog()
     coder_a = _cached(_live_client(config.models.coder_a, config), config)
     coder_b = _cached(_live_client(config.models.coder_b, config), config)
@@ -428,9 +511,94 @@ def _config_from_args(args: argparse.Namespace, *, run_id: str, output_dir: Path
         config = config.with_(cache_dir=None)
     elif getattr(args, "cache_dir", None):
         config = config.with_(cache_dir=Path(args.cache_dir))
+    profile = getattr(args, "profile", None)
+    if profile and config.offline:
+        raise CliError("--profile names live models; add --live to use it", code=EXIT_USAGE)
     if not config.offline:
-        config = config.with_(models=DEFAULT_LIVE_REGISTRY)
+        if profile:
+            models, embedding = load_profile(Path(profile))
+            config = config.with_(models=models)
+            if embedding is not None:
+                config = config.with_(embedding=embedding)
+        else:
+            config = config.with_(models=DEFAULT_LIVE_REGISTRY)
     return config
+
+
+_ROLES = ("coder_a", "coder_b", "judge", "refactorer")
+
+
+def load_profile(path: Path) -> tuple[ModelRegistry, EmbeddingSpaceConfig | None]:
+    """Read a model profile: the four role bindings and, optionally, an embedding space.
+
+    The shape is the ``models`` and ``embedding`` blocks of a run's echoed config, so a
+    profile can be copied out of any run directory. Each role's ``role`` field is filled
+    from its key. A profile replaces `DEFAULT_LIVE_REGISTRY` for one run and is recorded
+    in that run's config echo like any other registry (ADR-0049).
+    """
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CliError(f"cannot read profile {str(path)!r}: {exc}") from exc
+    models_raw = raw.get("models") if isinstance(raw, dict) else None
+    if not isinstance(models_raw, dict) or set(models_raw) != set(_ROLES):
+        raise CliError(
+            f"profile {str(path)!r} must have a 'models' object with exactly the roles "
+            f"{', '.join(_ROLES)}"
+        )
+    known_spec = set(ModelSpec.__dataclass_fields__)
+    specs: dict[str, ModelSpec] = {}
+    for role in _ROLES:
+        entry = models_raw[role]
+        if not isinstance(entry, dict) or not {"provider", "model"} <= set(entry):
+            raise CliError(f"profile {str(path)!r}: role {role!r} needs a provider and a model")
+        unknown = set(entry) - known_spec
+        if unknown:
+            raise CliError(
+                f"profile {str(path)!r}: role {role!r} has unknown field(s) "
+                f"{', '.join(sorted(unknown))}"
+            )
+        fields = {**entry, "role": role}
+        if fields["provider"] not in _LIVE_PROVIDERS:
+            raise CliError(
+                f"profile {str(path)!r}: role {role!r} names provider "
+                f"{fields['provider']!r}; known: {', '.join(sorted(_LIVE_PROVIDERS))}"
+            )
+        effort = fields.get("effort")
+        if effort is not None:
+            # `output_config.effort` exists on the Anthropic API only (ADR-0051); on any
+            # other provider the field would be recorded in the echo and do nothing.
+            if fields["provider"] != "anthropic":
+                raise CliError(
+                    f"profile {str(path)!r}: role {role!r} sets 'effort', which only the "
+                    f"anthropic provider has; {fields['provider']!r} would ignore it"
+                )
+            if effort not in EFFORT_LEVELS:
+                raise CliError(
+                    f"profile {str(path)!r}: role {role!r} has effort {effort!r}; "
+                    f"one of {', '.join(EFFORT_LEVELS)}"
+                )
+        specs[role] = ModelSpec(**fields)
+    embedding: EmbeddingSpaceConfig | None = None
+    embedding_raw = raw.get("embedding")
+    if embedding_raw is not None:
+        if not isinstance(embedding_raw, dict):
+            raise CliError(f"profile {str(path)!r}: 'embedding' must be an object")
+        known = set(EmbeddingSpaceConfig.__dataclass_fields__)
+        unknown = set(embedding_raw) - known
+        if unknown:
+            raise CliError(
+                f"profile {str(path)!r}: 'embedding' has unknown field(s) "
+                f"{', '.join(sorted(unknown))}"
+            )
+        try:
+            embedding = EmbeddingSpaceConfig(**embedding_raw)
+            if "space_id" not in embedding_raw:
+                # Echo the space the run is actually in, not the lexical default label.
+                embedding = replace(embedding, space_id=derive_space_id(embedding))
+        except ValueError as exc:
+            raise CliError(f"profile {str(path)!r}: 'embedding': {exc}") from exc
+    return ModelRegistry(**specs), embedding
 
 
 def _run_config_from_json(echo: dict[str, Any]) -> RunConfig:
@@ -521,6 +689,26 @@ def _add_mode(parser: argparse.ArgumentParser) -> None:
         dest="offline",
         action="store_false",
         help="build real provider clients from RunConfig.models (needs the provider extras and keys)",
+    )
+    parser.add_argument(
+        "--max-usd",
+        type=float,
+        metavar="USD",
+        help=(
+            "with --live: stop before the first model call that would start once the billed "
+            "spend of this run has reached USD. Counts the dollars recorded for this run, "
+            "including earlier runs it was resumed from; cache replays are free and never "
+            "count. Overshoots by at most the one call in flight when the cap was crossed "
+            "(ADR-0053)"
+        ),
+    )
+    parser.add_argument(
+        "--profile",
+        metavar="JSON",
+        help=(
+            "with --live: a model profile (four role bindings and, optionally, an embedding "
+            "space) to use instead of the default live registry; see profiles/"
+        ),
     )
 
 

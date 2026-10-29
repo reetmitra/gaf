@@ -5,7 +5,7 @@
 # embedding fallback, no API key and no network. Nothing here passes --live.
 #
 #   make results-full
-#   CORPUS_CSV=... TAGGED_CSV=... DEFINITIONS_MD=... ./scripts/run_full_results.sh
+#   CORPUS_CSV=... TAGGED_EXPORT=... DEFINITIONS_MD=... ./scripts/run_full_results.sh
 #
 # Everything verbatim stays under runs/, which is gitignored. The only thing this
 # script writes outside runs/ is $RESULTS_OUT, and the exporter's own guard is what
@@ -20,7 +20,12 @@ set -euo pipefail
 
 # ---------------------------------------------------------------- inputs (override me)
 : "${CORPUS_CSV:=../Grounded AI Futures/data/IndiaProcess(1-200)-FinalCleaned.csv}"
-: "${TAGGED_CSV:=../Grounded AI Futures/data/CodebookIndiaProcess(1-20)CodesExamples.csv}"
+# The canonical tagged export is the .xlsx (ADR-0050). Its rows are grouped by tag, so
+# step 3d below, which asks whether the export's row order is the coding order, is no
+# longer asking about the order the codes were applied in; the .csv keeps that order.
+: "${TAGGED_EXPORT:=../Grounded AI Futures/data/CodebookIndiaProcess(1-20)CodesExamples.xlsx}"
+# Optional: the PI's rulings file (label merges, top-level codes, multi-placement).
+: "${RULINGS:=}"
 : "${DEFINITIONS_MD:=../Grounded AI Futures/codebook/AI_Perceptions_Codebook1.md}"
 : "${QUESTION_VARIANT:=v2}"
 
@@ -37,10 +42,10 @@ set -euo pipefail
 
 step() { printf '\n=== %s ===\n' "$1"; }
 
-for input in "$CORPUS_CSV" "$TAGGED_CSV" "$DEFINITIONS_MD"; do
+for input in "$CORPUS_CSV" "$TAGGED_EXPORT" "$DEFINITIONS_MD"; do
     if [ ! -f "$input" ]; then
         echo "missing input: $input" >&2
-        echo "set CORPUS_CSV / TAGGED_CSV / DEFINITIONS_MD to where the real files are" >&2
+        echo "set CORPUS_CSV / TAGGED_EXPORT / DEFINITIONS_MD to where the real files are" >&2
         exit 2
     fi
 done
@@ -50,8 +55,10 @@ uv run gaf ingest --input "$CORPUS_CSV" --question-variant "$QUESTION_VARIANT" \
     --out "$RUN_DIR/corpus.json"
 
 step "2. organise his tagged export onto it, with his definitions"
-uv run gaf codebook organise --tagged "$TAGGED_CSV" --corpus "$RUN_DIR/corpus.json" \
-    --definitions "$DEFINITIONS_MD" --out "$HUMAN_DIR"
+rulings_args=()
+if [ -n "$RULINGS" ]; then rulings_args=(--rulings "$RULINGS"); fi
+uv run gaf codebook organise --tagged "$TAGGED_EXPORT" --corpus "$RUN_DIR/corpus.json" \
+    --definitions "$DEFINITIONS_MD" ${rulings_args[@]+"${rulings_args[@]}"} --out "$HUMAN_DIR"
 
 step "3a. his coding against his own rules"
 uv run gaf check all --codebook "$HUMAN_DIR/codebook.json" --data "$RUN_DIR/corpus.json" \

@@ -40,6 +40,7 @@ from gaf.checks.structural import (
     check_s2b,
     check_s3,
 )
+from gaf.cli._budget import apply_cap, capped
 from gaf.cli._common import (
     EXIT_FINDINGS,
     EXIT_OK,
@@ -360,8 +361,10 @@ def cmd_check(args: argparse.Namespace) -> int:
         embedder = _embedder_for(config)
         other = load_codebook_arg(Path(args.codebook2) if args.codebook2 else None)
         judge = _judge_for(config) if corpus is not None else None
-        semantic, semantic_scope = semantic_report(
-            artefact, corpus, config=config, other=other, embedder=embedder, judge=judge
+        apply_cap(args, config, judge)  # --max-usd (ADR-0053)
+        semantic, semantic_scope = capped(
+            semantic_report,
+            artefact, corpus, config=config, other=other, embedder=embedder, judge=judge,
         )
         report.extend(semantic)
         scope["embedding space"] = embedder.space_id

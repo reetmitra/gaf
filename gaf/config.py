@@ -24,6 +24,7 @@ from typing import Any, Literal
 __all__ = [
     "DEFAULT_LIVE_REGISTRY",
     "DEFAULT_QUESTION_VARIANT",
+    "EFFORT_LEVELS",
     "LIVE_REGISTRY_PRICED_ON",
     "MOCK_REGISTRY",
     "QUESTION_V2",
@@ -140,8 +141,16 @@ class CodingRules:
 # Models
 # --------------------------------------------------------------------------- #
 
-Provider = Literal["mock", "openai", "gemini", "anthropic"]
+#: ``"local"`` is a model served on this machine (ADR-0049); ``"openai_compatible"`` is a
+#: hosted endpoint that speaks the same protocol — a different provider *because* it is
+#: not local, so that respondent text leaving the machine is never a "local" run (ADR-0052).
+Provider = Literal["mock", "openai", "gemini", "anthropic", "local", "openai_compatible"]
 Role = Literal["coder_a", "coder_b", "judge", "refactorer"]
+
+#: How long an Anthropic model thinks before it answers (``output_config.effort``). On the
+#: models whose thinking cannot be turned off this is the only depth control (ADR-0051).
+Effort = Literal["low", "medium", "high", "xhigh", "max"]
+EFFORT_LEVELS: tuple[Effort, ...] = ("low", "medium", "high", "xhigh", "max")
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +169,11 @@ class ModelSpec:
     #: only believed — and these decay: see ADR-0048 for the four sources and the one
     #: rate with a known step on 1 January 2027.
     priced_on: str = ""
+    #: Anthropic only: sent as ``output_config.effort`` when set, and not sent at all when
+    #: `None`, which leaves the model's own default (``medium`` on Opus 5.5). Thinking
+    #: tokens are billed as output and count against `max_output_tokens`, so a role with a
+    #: higher effort needs a higher limit. ADR-0051.
+    effort: Effort | None = None
 
     def cost_usd(self, input_tokens: int, output_tokens: int) -> float:
         return (
@@ -173,6 +187,9 @@ class ModelSpec:
             # compares verbatim and the golden manifest commits in full — is unchanged
             # for every offline run. ADR-0048.
             del data["priced_on"]
+        if self.effort is None:
+            # Same reason: a spec with no effort echoes exactly as it did before ADR-0051.
+            del data["effort"]
         return data
 
 
@@ -285,7 +302,7 @@ class EmbeddingSpaceConfig:
     """
 
     space_id: str = "lexical-v1-512"
-    mode: Literal["lexical", "openai"] = "lexical"
+    mode: Literal["lexical", "openai", "local"] = "lexical"
     dim: int = 512
     model: str | None = None
 

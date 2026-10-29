@@ -16,7 +16,9 @@ is reproducible and auditable, and only the definitions themselves need a model.
   that differs from an existing family by hyphen where that family uses underscore.
   Every consolidation is recorded with the rows it touched. Singular/plural and
   spelling near-misses are **flagged and never merged**: merging them is a judgment
-  about meaning, and this layer does not make those;
+  about meaning, and this layer does not make those. The one exception is a merge the
+  PI has ruled on, passed in as `gaf.ingest.rulings.Rulings` (ADR-0050): it is applied
+  as a consolidation marked ``ruling`` and, when he called it provisional, ``provisional``;
 * **frequencies and a total order** — by frequency descending, then name;
 * **two verbatim examples per leaf**, chosen by a rule written down below;
 * **researcher notes as data** rather than prose, so a later stage can act on them.
@@ -45,6 +47,7 @@ from gaf.models import Code, Codebook, Evidence, split_name
 from gaf.textnorm import normalise, normalise_for_match
 
 if TYPE_CHECKING:
+    from gaf.ingest.rulings import Rulings
     from gaf.ingest.xlsx import HighlightsReport
 
 __all__ = [
@@ -193,15 +196,24 @@ class Consolidation:
     #: "did this name exist only because of a consolidation?" needs that difference;
     #: `gaf.ingest.definitions.attach_definitions` is the one that does.
     target_also_written: bool = False
+    #: True for a rewrite the PI ruled on (`gaf.ingest.rulings.LabelMerge`) rather than
+    #: one of the trivial rules, and whether he called it provisional. Both are left
+    #: out of `to_json` for a trivial rewrite, so a run without rulings is unchanged.
+    ruling: bool = False
+    provisional: bool = False
 
     def to_json(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "from": self.from_label,
             "to": self.to,
             "rule": self.rule,
             "rows": list(self.rows),
             "target_also_written": self.target_also_written,
         }
+        if self.ruling:
+            payload["ruling"] = True
+            payload["provisional"] = self.provisional
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -545,6 +557,54 @@ def _consolidate(
     return canonical_of, consolidations
 
 
+def _apply_label_merges(
+    canonical_of: dict[str, str],
+    consolidations: list[Consolidation],
+    counts: Mapping[str, int],
+    rows: Mapping[str, Sequence[int]],
+    rulings: Rulings,
+) -> tuple[list[Consolidation], list[dict[str, Any]]]:
+    """Apply the PI's label merges on top of the trivial consolidation, in place.
+
+    A merge names a label **as the export spells it once the trivial rules have run**,
+    so the order is fixed: case, whitespace and family separator first, then the
+    ruling. Every raw label whose canonical form is a merge's source is rewritten onto
+    its target, and the rewrite replaces any trivial one for that label (the rule string
+    keeps both: ``case+label_merge``). The target need not be written anywhere in the
+    export -- a misspelling whose correct form was never used is renamed.
+
+    Returns the new consolidation list (sorted as `_consolidate` sorts it) and one trail
+    entry per merge in the file's own order, applied or not: a ruling naming a label the
+    export does not hold is a fact the PI should see, not an error.
+    """
+    by_from = {c.from_label: c for c in consolidations}
+    trail: list[dict[str, Any]] = []
+    for merge in rulings.label_merges:
+        members = sorted(label for label, target in canonical_of.items() if target == merge.source)
+        entry: dict[str, Any] = {
+            **merge.to_json(),
+            "applied": bool(members),
+            "target_also_written": merge.target in counts,
+            "rows": sorted(row for label in members for row in rows[label]),
+            "segments": sum(counts[label] for label in members),
+        }
+        trail.append(entry)
+        for label in members:
+            canonical_of[label] = merge.target
+            earlier = by_from.get(label)
+            by_from[label] = Consolidation(
+                from_label=label,
+                to=merge.target,
+                rule="label_merge" if earlier is None else f"{earlier.rule}+label_merge",
+                rows=tuple(sorted(rows[label])),
+                target_also_written=merge.target in counts,
+                ruling=True,
+                provisional=merge.provisional,
+            )
+    ordered = sorted(by_from.values(), key=lambda c: (c.to, c.from_label))
+    return ordered, trail
+
+
 # --------------------------------------------------------------------------- #
 # Example selection
 # --------------------------------------------------------------------------- #
@@ -580,7 +640,10 @@ def _choose_examples(segments: Sequence[tuple[int, str]]) -> tuple[tuple[str, ..
 
 
 def organise_tagged(
-    pairs: Iterable[TaggedPair], *, rules: CodingRules | None = None
+    pairs: Iterable[TaggedPair],
+    *,
+    rules: CodingRules | None = None,
+    rulings: Rulings | None = None,
 ) -> OrganisedCodebook:
     """Turn code-text pairings into a two-level codebook, counting everything excluded.
 
@@ -588,6 +651,12 @@ def organise_tagged(
     ``max_codes_per_segment`` is consulted here, for the S4 note. Nothing is dropped
     silently: an empty segment is a note, a consolidated label is a record, and a code
     with one segment says so.
+
+    `rulings` carries the PI's decisions (`gaf.ingest.rulings.Rulings`, ADR-0050) and is
+    ``None`` by default, in which case nothing below changes. With it: his label merges
+    are applied after the trivial consolidation and recorded as consolidations marked
+    ``ruling``; a label he ruled a top-level code is not noted as a bare one; and
+    ``meta["rulings"]`` records each ruling and what it did, applied or not.
 
     Note categories, all of them data rather than prose:
 
@@ -628,6 +697,11 @@ def organise_tagged(
         segments_of.setdefault(label, []).append((pair.row, pair.content))
 
     canonical_of, consolidations = _consolidate(counts, rows_of)
+    merge_trail: list[dict[str, Any]] = []
+    if rulings is not None and rulings.label_merges:
+        consolidations, merge_trail = _apply_label_merges(
+            canonical_of, consolidations, counts, rows_of, rulings
+        )
 
     merged_counts: dict[str, int] = {}
     merged_rows: dict[str, list[int]] = {}
@@ -639,7 +713,8 @@ def organise_tagged(
         merged_segments.setdefault(target, []).extend(segments_of.get(label, []))
 
     parents = _build_tree(merged_counts, merged_rows, merged_segments)
-    notes.extend(_structure_notes(parents))
+    ruled_top_level = frozenset(rulings.top_level) if rulings is not None else frozenset()
+    notes.extend(_structure_notes(parents, ruled_top_level=ruled_top_level))
     notes.extend(_near_miss_notes(sorted(merged_counts)))
     notes.extend(_segment_notes(merged_segments, limit=resolved.max_codes_per_segment))
     notes.extend(
@@ -653,14 +728,58 @@ def organise_tagged(
     )
     notes.sort(key=lambda note: (note.category, note.subject, note.message))
 
+    meta: dict[str, Any] = {"source": TAGGED_SOURCE}
+    if rulings is not None:
+        meta["rulings"] = _rulings_trail(rulings, parents, merge_trail, set(merged_counts))
     return OrganisedCodebook(
         parents=tuple(parents),
         consolidations=tuple(consolidations),
         notes=tuple(notes),
         pair_count=len(pairs),
         segment_count=sum(merged_counts.values()),
-        meta={"source": TAGGED_SOURCE},
+        meta=meta,
     )
+
+
+def _rulings_trail(
+    rulings: Rulings,
+    parents: Sequence[OrganisedCode],
+    merge_trail: Sequence[dict[str, Any]],
+    labels: set[str],
+) -> dict[str, Any]:
+    """What each ruling was and what it did to *this* export, as plain data.
+
+    Labels, counts and file row numbers only -- never a segment -- so the trail may be
+    read aloud, shared, or written beside the codebook it explains. Placement-side
+    rulings (multi-placement, manual placements) are added by the caller that placed
+    the highlights, because only it knows what they did.
+    """
+    top_level: list[dict[str, Any]] = []
+    for label in rulings.top_level:
+        family = next((p for p in parents if p.name == label), None)
+        top_level.append(
+            {
+                "label": label,
+                "present": family is not None,
+                "count": 0 if family is None else family.count,
+                "subcodes": 0 if family is None else len(family.children),
+            }
+        )
+    held: list[dict[str, Any]] = []
+    for item in rulings.label_merges_held:
+        entry = item.to_json()
+        if item.level == "label":
+            entry["both_present"] = all(label in labels for label in item.labels)
+        held.append(entry)
+    return {
+        "path": rulings.path,
+        "content_hash": rulings.content_hash,
+        "description": rulings.description,
+        "top_level": top_level,
+        "label_merges": [dict(entry) for entry in merge_trail],
+        "label_merges_held": held,
+        "multi_place_ambiguous": rulings.multi_place_ambiguous,
+    }
 
 
 def _build_tree(
@@ -719,8 +838,15 @@ def _build_tree(
     return parents
 
 
-def _structure_notes(parents: Sequence[OrganisedCode]) -> list[CodeNote]:
-    """Shared subcodes, single-segment leaves, multi-hyphen subcodes, bare top levels."""
+def _structure_notes(
+    parents: Sequence[OrganisedCode], *, ruled_top_level: frozenset[str] = frozenset()
+) -> list[CodeNote]:
+    """Shared subcodes, single-segment leaves, multi-hyphen subcodes, bare top levels.
+
+    A top-level code the PI has ruled on (`ruled_top_level`) is not noted as bare: the
+    note says it "may want splitting, or it may be a deliberate single-level category",
+    and he has said which. The ruling is recorded in ``meta["rulings"]`` instead.
+    """
     notes: list[CodeNote] = []
     by_sub: dict[str, list[str]] = {}
     for parent in parents:
@@ -743,7 +869,7 @@ def _structure_notes(parents: Sequence[OrganisedCode]) -> list[CodeNote]:
 
     any_children = any(parent.children for parent in parents)
     for parent in parents:
-        if any_children and parent.is_leaf:
+        if any_children and parent.is_leaf and parent.name not in ruled_top_level:
             notes.append(
                 CodeNote(
                     category="bare_top_level_code",
@@ -943,12 +1069,21 @@ def to_codebook(
             )
     placed: dict[str, list[Evidence]] = {}
     placed_counts: dict[str, int] = {}
+    counted_multi: set[tuple[str, str]] = set()
     if placements is not None:
         for mapping in placements.mappings:
             name = organised.canonical(mapping.tag)
             if mapping.response_id is None or mapping.span is None:
                 continue
-            placed_counts[name] = placed_counts.get(name, 0) + 1
+            # A highlight placed in several responses (ADR-0050) is one *segment* and
+            # several pieces of evidence: `placed_segments` counts the segment once, so
+            # it can never exceed `segment_count` and `unplaced_segments` stays honest.
+            if mapping.outcome == "multi_placed":
+                if (name, mapping.highlight_id) not in counted_multi:
+                    counted_multi.add((name, mapping.highlight_id))
+                    placed_counts[name] = placed_counts.get(name, 0) + 1
+            else:
+                placed_counts[name] = placed_counts.get(name, 0) + 1
             placed.setdefault(name, []).append(
                 Evidence(
                     response_id=mapping.response_id,
@@ -958,6 +1093,13 @@ def to_codebook(
                     score=mapping.score,
                 )
             )
+
+    ruling_trail = organised.meta.get("rulings")
+    ruled: frozenset[str] = frozenset()
+    if isinstance(ruling_trail, Mapping):
+        ruled = frozenset(
+            str(item["label"]) for item in ruling_trail.get("top_level") or () if item["present"]
+        )
 
     codes: dict[str, Code] = {}
     for parent in organised.parents:
@@ -971,6 +1113,7 @@ def to_codebook(
             placed_counts=placed_counts,
             one_source=one_source,
             per_code_sources=per_code_sources,
+            ruled_top_level=parent.name in ruled,
         )
         for child in parent.children:
             child_id = code_id(child.name)
@@ -997,6 +1140,7 @@ def _code(
     placed_counts: Mapping[str, int],
     one_source: str,
     per_code_sources: Mapping[str, str],
+    ruled_top_level: bool = False,
 ) -> Code:
     """One `Code`, with evidence and placement counts only where segments live.
 
@@ -1007,6 +1151,10 @@ def _code(
     never collects its children's.
     """
     meta: dict[str, Any] = {"source": TAGGED_SOURCE}
+    if ruled_top_level:
+        # The PI ruled this a top-level code (ADR-0050): a reader of the codebook, or a
+        # check that cares whether a family has subcodes, can see that it is deliberate.
+        meta["ruled_top_level"] = True
     evidence: list[Evidence] = []
     if code.is_leaf or code.carries_own_segments:
         total = code.own_count
@@ -1114,12 +1262,66 @@ def _render_markdown(book: OrganisedCodebook, *, include_examples: bool) -> str:
     if book.consolidations:
         lines += [f"**consolidations** ({len(book.consolidations)})", ""]
         for consolidation in book.consolidations:
+            rule = consolidation.rule
+            if consolidation.ruling:
+                rule += ", PI ruling" + (", provisional" if consolidation.provisional else "")
             lines.append(
                 f"- `{consolidation.from_label}` -> `{consolidation.to}` "
-                f"({consolidation.rule}; rows {', '.join(str(r) for r in consolidation.rows)})"
+                f"({rule}; rows {', '.join(str(r) for r in consolidation.rows)})"
             )
         lines.append("")
+    trail = book.meta.get("rulings")
+    if isinstance(trail, Mapping):
+        lines += _render_rulings(trail)
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_rulings(trail: Mapping[str, Any]) -> list[str]:
+    """The rulings section: what was decided, and what it did to this export.
+
+    Labels, counts and ids only. The same facts are in ``meta["rulings"]`` as data.
+    """
+    lines = ["**rulings applied** (the PI's decisions on this export, ADR-0050)", ""]
+    if trail.get("description"):
+        lines += [f"{trail['description']}", ""]
+    for item in trail.get("top_level") or ():
+        state = (
+            f"top-level code, {item['count']} segment(s), {item['subcodes']} subcode(s)"
+            if item.get("present")
+            else "not in this export"
+        )
+        lines.append(f"- top level: `{item['label']}` -- {state}")
+    for item in trail.get("label_merges") or ():
+        status = "provisional" if item.get("provisional") else "final"
+        outcome = (
+            f"{item['segments']} segment(s) at row(s) {', '.join(str(r) for r in item['rows'])}"
+            if item.get("applied")
+            else "label not in this export, nothing rewritten"
+        )
+        lines.append(f"- label merge ({status}): `{item['from']}` -> `{item['to']}` -- {outcome}")
+    for item in trail.get("label_merges_held") or ():
+        lines.append(
+            f"- held, not merged: `{item['labels'][0]}` ~ `{item['labels'][1]}` ({item['level']})"
+        )
+    placing = trail.get("placement")
+    if isinstance(placing, Mapping):
+        multi = placing.get("multi_place_ambiguous") or {}
+        lines.append(
+            "- multi-placement of ambiguous highlights: "
+            + (
+                f"on -- {multi.get('highlights', 0)} highlight(s) placed in "
+                f"{multi.get('placements', 0)} response(s)"
+                if multi.get("enabled")
+                else "off"
+            )
+        )
+        manual = placing.get("manual_placements") or {}
+        lines.append(
+            f"- manual placements: {manual.get('applied', 0)} applied of "
+            f"{manual.get('requested', 0)} requested"
+        )
+    lines.append("")
+    return lines
 
 
 def _render_mermaid(book: OrganisedCodebook) -> str:

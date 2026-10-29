@@ -1027,6 +1027,11 @@ def test_analyse_accepts_a_codebook_as_well_as_assignments(demo: Path, tmp_path:
 
 
 def test_report_rebuilds_both_artefacts_from_run_json(demo: Path, tmp_path: Path):
+    # The run statistics are read from the run's ledger (ADR-0053), which a later
+    # `gaf checkpoint` on this module-scoped run may have added a Refactorer call to. So
+    # bring the in-place report up to date first; what is compared is a rebuild into a
+    # different directory against it.
+    assert run_cli("report", "--run", str(demo)) == EXIT_OK
     out = tmp_path / "rendered"
     assert run_cli("report", "--run", str(demo), "--out", str(out)) == EXIT_OK
     assert (out / "report.txt").read_text(encoding="utf-8") == (

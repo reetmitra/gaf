@@ -1,0 +1,10 @@
+{
+  "description": "Every role on models served by Ollama on this machine. No key, no cost, no respondent text leaves the machine (ADR-0049). The two coders come from different makers (Alibaba's Qwen, Google's Gemma); the judge and refactorer share Gemma's lineage, which is weaker than a third maker and is recorded as such. Pull first: ollama pull qwen3.5:9b gemma4:12b embeddinggemma",
+  "models": {
+    "coder_a": {"provider": "local", "model": "qwen3.5:9b"},
+    "coder_b": {"provider": "local", "model": "gemma4:12b"},
+    "judge": {"provider": "local", "model": "gemma4:12b"},
+    "refactorer": {"provider": "local", "model": "gemma4:12b", "max_output_tokens": 8192}
+  },
+  "embedding": {"mode": "local", "model": "embeddinggemma", "dim": 768}
+}

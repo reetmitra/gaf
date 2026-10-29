@@ -107,7 +107,7 @@ The rest are small and answerable in a sentence each; they are listed in the
 numbered files where they arise, and repeated here so nothing is lost:
 
 2. **40 of the definitions quote a response.** They are withheld from this directory rather than published. Reword them, or confirm they stay local and are never exported — either answer is fine, but the exporter cannot make that call.
-3. **Which export is canonical, the `.csv` or the `.xlsx`?** They hold the same pairings in different row order with different columns. The `.csv` was used here and the row numbers in the notes are its rows.
+3. **Answered on 4 October 2026: the `.xlsx` is the canonical export.** The `.csv`, the `.xlsx` in `data/` and the `.xlsx` in `codebook/` hold the same 342 pairings and the same 117 tags; the `data/` workbook groups them by tag and has extra count and model columns. This directory was produced from the `.csv`, so the row numbers in its notes are the `.csv`'s, not the workbook's. Later runs use the workbook (`runs/human200-v2`, ADR-0050).
 4. **24 highlights are still ambiguous** — their text occurs verbatim in more than one response and more than one candidate is in the coded set. They are excluded rather than guessed.
 5. **6 highlights could not be located at all.** They belong to responses outside this corpus, or the text was edited after it was highlighted.
 6. **The bare top-level code** — a family, or a sub-code of something? The structural check flags every use after the first.
@@ -120,7 +120,7 @@ numbered files where they arise, and repeated here so nothing is lost:
 ```bash
 # every command offline: mock clients, the lexical embedder, no key, no network
 uv run gaf ingest --input <corpus.csv> --question-variant v2 --out RUN/corpus.json
-uv run gaf codebook organise --tagged <tagged.csv> --corpus RUN/corpus.json \
+uv run gaf codebook organise --tagged <tagged export, .csv or .xlsx> --corpus RUN/corpus.json \
     --definitions <codebook.md> --out HUMAN
 uv run gaf check all --codebook HUMAN/codebook.json --data RUN/corpus.json \
     --out HUMAN/golden_checks.json

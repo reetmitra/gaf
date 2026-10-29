@@ -11,6 +11,12 @@ Serves **interpretive depth**: the human gate sits at codebook-refactor level, w
 the task is generative and the division of labour — machine proposes, human decides —
 is fixed in advance, rather than at the per-item decision level the Vaccaro et al.
 meta-analysis finds harmful.
+
+``--max-usd`` caps the spend (ADR-0053). The Refactorer's call is recorded in the run's
+own blackboard, so the cap counts what the run and the runs it was resumed from have
+already billed, and a command that would start with the cap reached is refused before it
+writes a thing (exit code 4). The checkpoint makes one model call, so it can overshoot by
+at most that call.
 """
 
 from __future__ import annotations
@@ -22,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from gaf.agents.refactorer import RefactorerAgent
+from gaf.cli._budget import add_max_usd, budget_from_args, cumulative_spend, spend_cap_error
 from gaf.cli._common import (
     EXIT_OK,
     CliError,
@@ -34,6 +41,7 @@ from gaf.cli._common import (
     _run_config_from_json,
 )
 from gaf.llm.base import CallLog
+from gaf.llm.budget import BudgetExceededError, guard_agents
 from gaf.llm.mock import MockRefactorerClient
 from gaf.store.blackboard import Blackboard
 
@@ -96,6 +104,9 @@ def cmd_checkpoint(args: argparse.Namespace) -> int:
         else _cached(_live_client(config.models.refactorer, config), config)
     )
     agent = RefactorerAgent(client, config=config, call_log=CallLog())
+    budget = budget_from_args(args, config=config, baseline=cumulative_spend(run_dir))
+    if budget is not None:
+        guard_agents(budget, (agent,))
     embedder = _embedder_for(config)
 
     interactive = _interactive(args.interactive)
@@ -112,17 +123,20 @@ def cmd_checkpoint(args: argparse.Namespace) -> int:
         )
     _out("")
 
-    with Blackboard(database) as board:
-        result = slow_loop.run_checkpoint(
-            board=board,
-            config=config,
-            codebook=artefact.codebook,
-            snapshot_id=snapshot_id,
-            agent=agent,
-            embedder=embedder,
-            gate=gate,
-            trigger=args.trigger,
-        )
+    try:
+        with Blackboard(database) as board:
+            result = slow_loop.run_checkpoint(
+                board=board,
+                config=config,
+                codebook=artefact.codebook,
+                snapshot_id=snapshot_id,
+                agent=agent,
+                embedder=embedder,
+                gate=gate,
+                trigger=args.trigger,
+            )
+    except BudgetExceededError as refusal:
+        raise spend_cap_error(refusal, before="the Refactorer call") from refusal
     _out(_describe_checkpoint(result))
     return EXIT_OK
 
@@ -154,4 +168,5 @@ def add_checkpoint_parser(sub: argparse._SubParsersAction[argparse.ArgumentParse
     checkpoint.add_argument(
         "--trigger", default="manual", help="why this checkpoint opened (default: %(default)s)"
     )
+    add_max_usd(checkpoint)
     checkpoint.set_defaults(handler=cmd_checkpoint)

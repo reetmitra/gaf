@@ -21,7 +21,10 @@ table are annotated where the reader's eye already is.
 generation timestamp, not a duration — so two offline runs of the same corpus render
 byte-identical text, exactly as ADR-0007 requires of the codebook itself. The only
 numbers that could vary between two live runs are the ones the model provider reports
-(tokens, cost, latency), and those are labelled as such.
+(tokens, cost, latency), and those are labelled as such. The one exception is the
+wall-clock time per response (ADR-0053), which is read from the audit log and printed
+for live runs only: offline it would be this machine's speed, and two identical
+offline runs would stop being identical.
 
 Vocabulary is grounded theory's throughout (ADR-0005): codes, families, clusters,
 themes, initial coding, constant comparison, theoretical saturation.
@@ -513,12 +516,26 @@ def _seeded_caveat(seeded_from: Mapping[str, Any]) -> str:
     )
 
 
+def _spend_halt_caveat(budget: Mapping[str, Any]) -> str:
+    """A run that stopped for money says so before any number is read (ADR-0053)."""
+    return (
+        f"This run STOPPED EARLY at its spend cap of {_money(float(budget.get('cap_usd', 0.0)))} "
+        f"({_money(float(budget.get('cumulative_usd', 0.0)))} billed). "
+        f"{budget.get('responses_uncoded', 0)} response(s) were not coded, including "
+        f"response {budget.get('halted_at_response', '?')}, which was in progress and is "
+        "not counted as coded. Every number below describes the responses that were "
+        "coded; the run can be resumed from where it stopped."
+    )
+
+
 def _caveats(stats: RunStats, provenance: Mapping[str, Any] | None = None) -> list[str]:
     """Printed above every number, because ADR-0019 says a reader must meet it first."""
     recorded = list(stats.caveats)
     seeded_from = (provenance or {}).get("seeded_from")
     if isinstance(seeded_from, Mapping):
         recorded.insert(0, _seeded_caveat(seeded_from))
+    if stats.budget and stats.budget.get("halted"):
+        recorded.insert(0, _spend_halt_caveat(stats.budget))
     lines = _heading("CAVEATS — read these before the numbers")
     lines.append("")
     if not recorded:
@@ -731,6 +748,262 @@ def _model_calls(stats: RunStats) -> list[str]:
                 "stand-in embedder escalating, not the coding being ambiguous."
             )
         )
+    return lines
+
+
+def _pct(share: Any) -> str:
+    return "n/a" if share is None else f"{float(share) * 100:.1f}%"
+
+
+def _spend_cap(stats: RunStats) -> list[str]:
+    budget = stats.budget
+    if not budget:
+        return []
+    lines = _heading("SPEND CAP")
+    lines.append("")
+    lines.append(_field("cap", _money(float(budget.get("cap_usd", 0.0)))))
+    lines.append(_field("billed earlier", _money(float(budget.get("baseline_usd", 0.0)))))
+    lines.append(_field("billed this run", _money(float(budget.get("run_usd", 0.0)))))
+    lines.append(_field("cumulative", _money(float(budget.get("cumulative_usd", 0.0)))))
+    for source in budget.get("baseline_sources") or ():
+        lines.append(_field("  counted from", f"{source.get('run')}  {_money(float(source.get('usd', 0.0)))}"))
+    if budget.get("halted"):
+        lines.append(
+            _field(
+                "result",
+                f"HALTED at response {budget.get('halted_at_response')} "
+                f"({budget.get('halted_role')}, {budget.get('halted_task')}); "
+                f"{budget.get('responses_uncoded', 0)} response(s) left uncoded",
+            )
+        )
+    else:
+        lines.append(_field("result", "cap not reached"))
+    lines.append("")
+    lines.extend(
+        _paragraph(
+            "The cap is checked before each model call that is not a cache replay and "
+            "never during one, so the run can overshoot by at most the single call in "
+            "flight when the total crossed the cap (ADR-0053)."
+        )
+    )
+    return lines
+
+
+def _coder_agreement(metrics: Mapping[str, Any]) -> list[str]:
+    block = metrics.get("coder_agreement")
+    if not block:
+        return []
+    lines = _heading("CODER AGREEMENT — coder A against coder B (M1)")
+    lines.append("")
+    lines.extend(_paragraph(f"Unit: {block['unit']}."))
+    lines.append("")
+    grey, dispute = block["grey_zone"], block["disputed_or_unmatched"]
+    rows = [
+        ["agreed outright", str(block["agreed_outright"]["count"]), _pct(block["agreed_outright"]["share"])],
+        [
+            "grey zone",
+            str(grey["count"]),
+            _pct(grey["share"]),
+        ],
+        ["  ruled on by the judge", str(grey["judged"]), ""],
+        ["  unresolved (no judge)", str(grey["unresolved_no_judge"]), ""],
+        ["disputed or unmatched", str(dispute["count"]), _pct(dispute["share"])],
+        ["  disputed (below tau_low)", str(dispute["disputed"]), ""],
+        ["  coder A only", str(dispute["unmatched_a"]), ""],
+        ["  coder B only", str(dispute["unmatched_b"]), ""],
+        ["all comparisons", str(block["comparisons"]), ""],
+    ]
+    lines.extend(_table(["outcome", "count", "share"], rows, align_right={1, 2}))
+    routing = block["routing"]
+    lines.append("")
+    lines.append(
+        _field(
+            "routed by M2",
+            f"{routing['candidates']} candidate(s): merge {_pct(routing['merge']['share'])}, "
+            f"create {_pct(routing['create']['share'])}, "
+            f"grey zone to the judge {_pct(routing['grey_zone']['share'])}",
+        )
+    )
+    return lines
+
+
+def _judge_siding(metrics: Mapping[str, Any]) -> list[str]:
+    block = metrics.get("judge_siding")
+    if not block:
+        return []
+    lines = _heading("JUDGE SIDING — whom the judge backed between the coders")
+    lines.append("")
+    lines.append(_field("rulings", block["decisions"]))
+    rows = [
+        ["coder A (DROP: B's candidate removed)", str(block["coder_a"]["count"]), _pct(block["coder_a"]["share"])],
+        ["coder B", str(block["coder_b"]["count"]), _pct(block["coder_b"]["share"])],
+        ["neither (KEEP: both readings kept)", str(block["neither"]["count"]), _pct(block["neither"]["share"])],
+    ]
+    lines.extend(_table(["backed", "count", "share"], rows, align_right={1, 2}))
+    lines.append("")
+    threshold = _pct(block["threshold"])
+    if not block["decisions"]:
+        lines.append(_field("flag", "none: the judge ruled on no disagreement in this run"))
+    elif block["flag"]:
+        lines.append(
+            _field(
+                "flag",
+                f"coder A share {_pct(block['coder_a']['share'])} exceeds {threshold}: possible "
+                "self-preference or position bias",
+            )
+        )
+    else:
+        lines.append(
+            _field("flag", f"none (coder A share {_pct(block['coder_a']['share'])}, threshold {threshold})")
+        )
+    if block["decisions"] and not block["reliable"]:
+        lines.extend(
+            _paragraph(
+                f"Only {block['decisions']} ruling(s): too few for the share to mean "
+                "much, whichever way it falls."
+            )
+        )
+    lines.append("")
+    lines.extend(_paragraph(f"Basis: {block['basis']}"))
+    return lines
+
+
+def _fmt(value: Any, unit: str) -> str:
+    return "n/a" if value is None else f"{value}{unit}"
+
+
+def _spend_by_role(metrics: Mapping[str, Any]) -> list[str]:
+    block = metrics.get("spend")
+    if not block:
+        return []
+    lines = _heading("SPEND BY ROLE AND TASK")
+    lines.append("")
+    rows = [
+        [
+            row["role"],
+            row["task"],
+            row["model"],
+            str(row["calls"]),
+            str(row["cache_hits"]),
+            f"{row['input_tokens']:,}",
+            f"{row['output_tokens']:,}",
+            _money(float(row["cost_usd"])),
+        ]
+        for row in block["by_role_task"]
+    ]
+    rows.append(
+        [
+            "total",
+            "",
+            "",
+            str(block["calls"]),
+            str(block["cache_hits"]),
+            f"{block['input_tokens']:,}",
+            f"{block['output_tokens']:,}",
+            _money(float(block["cost_usd"])),
+        ]
+    )
+    lines.extend(
+        _table(
+            ["role", "task", "model", "calls", "cached", "tokens in", "tokens out", "USD"],
+            rows,
+            align_right={3, 4, 5, 6, 7},
+        )
+    )
+    lines.append("")
+    per_response = block.get("usd_per_response")
+    lines.append(
+        _field(
+            "per response coded",
+            "n/a" if per_response is None else f"{_money(float(per_response))}  ({block['responses']} response(s))",
+        )
+    )
+    if block.get("stop_reasons"):
+        lines.append(_field("stopped early", _counts(dict(block["stop_reasons"]))))
+    lines.append("")
+    lines.extend(
+        _paragraph(
+            "Tokens count every call, cache replays included, because they size the "
+            "workload; dollars count only calls that reached a provider."
+        )
+    )
+    return lines
+
+
+def _latency(metrics: Mapping[str, Any]) -> list[str]:
+    block = metrics.get("latency")
+    if not block:
+        return []
+    lines = _heading("LATENCY — provider-reported model time")
+    lines.append("")
+    if not block["measured"]:
+        lines.extend(
+            _paragraph(
+                "Not measured: no call in this run recorded a model time (an offline "
+                "run's calls take none, and a cache replay is not timed)."
+            )
+        )
+        return lines
+    call = block["per_call_ms"]
+    lines.append(
+        _field(
+            "per call",
+            f"{call['n']} call(s); mean {_fmt(call['mean'], ' ms')}, median "
+            f"{_fmt(call['median'], ' ms')}, 90th percentile {_fmt(call['p90'], ' ms')}, "
+            f"max {_fmt(call['max'], ' ms')}",
+        )
+    )
+    response = block["per_response_model_s"]
+    lines.append(
+        _field(
+            "per response",
+            f"{response['n']} response(s); mean {_fmt(response['mean'], ' s')}, median "
+            f"{_fmt(response['median'], ' s')}, 90th percentile {_fmt(response['p90'], ' s')}, "
+            f"max {_fmt(response['max'], ' s')}  (model time only)",
+        )
+    )
+    wall = block.get("wall_clock")
+    if wall:
+        clock = wall["per_response_s"]
+        lines.append(
+            _field(
+                "wall clock",
+                f"mean {_fmt(clock['mean'], ' s')} per response, median "
+                f"{_fmt(clock['median'], ' s')}, max {_fmt(clock['max'], ' s')}; "
+                f"whole run {_fmt(wall['run_total_s'], ' s')}",
+            )
+        )
+    rows = [
+        [
+            row["role"],
+            row["task"],
+            str(row["n"]),
+            _fmt(row["mean"], ""),
+            _fmt(row["median"], ""),
+            _fmt(row["p90"], ""),
+            _fmt(row["max"], ""),
+        ]
+        for row in block["by_role_task_ms"]
+    ]
+    if rows:
+        lines.append("")
+        lines.extend(
+            _table(
+                ["role", "task", "calls", "mean ms", "median ms", "p90 ms", "max ms"],
+                rows,
+                align_right={2, 3, 4, 5, 6},
+            )
+        )
+    return lines
+
+
+def _run_metrics(stats: RunStats) -> list[str]:
+    metrics = stats.run_metrics
+    if not metrics:
+        return []
+    lines: list[str] = []
+    for section in (_coder_agreement, _judge_siding, _spend_by_role, _latency):
+        lines.extend(section(metrics))
     return lines
 
 
@@ -964,6 +1237,8 @@ def render_run_report(artefact: RunArtefact) -> str:
     lines.extend(_configuration(artefact))
     lines.extend(_coding(stats))
     lines.extend(_model_calls(stats))
+    lines.extend(_spend_cap(stats))
+    lines.extend(_run_metrics(stats))
     lines.extend(_codebook_section(artefact))
     lines.extend(_saturation(artefact))
     lines.extend(_decision_matrix(artefact))

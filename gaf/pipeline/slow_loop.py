@@ -1912,7 +1912,7 @@ def run_checkpoint(
             "against a snapshot the run has already frozen."
         )
     log = board.audit(config.run_id)
-    at_response_count = board.coded_response_count(config.run_id)
+    at_response_count = board.completed_response_count(config.run_id)
     corpus_ids = [response.id for response in board.read_responses()]
     report = CheckReport()
 

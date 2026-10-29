@@ -1,0 +1,30 @@
+{
+  "description": "The PI's live line-up (ADR-0051, ADR-0052). WHERE RESPONDENT TEXT GOES: to Anthropic (Claude Opus 5.5 on coder A, the judge, the refactorer and the Definer, which reuses the refactorer slot) and to the hosted Qwen endpoint named by GAF_COMPAT_BASE_URL (coder B). Embeddings stay on this machine (Ollama embeddinggemma, 768-d). Needs the PI's confirmation of both data processors before any run on real survey data. CONFIRM ON THE DAY: coder B's model id string for the chosen host ('qwen3.8-max' on Alibaba Cloud Model Studio; OpenRouter ids carry a 'qwen/' prefix) and its two rates. Effort: coder A medium, judge low, refactorer high; max_output_tokens leaves room for thinking, which is billed as output. Keys: ANTHROPIC_API_KEY, GAF_COMPAT_BASE_URL, GAF_COMPAT_API_KEY. Pull first: ollama pull embeddinggemma",
+  "priced_from": {
+    "anthropic": "claude-opus-5-5 at $4 in / $20 out per million tokens: https://platform.claude.com/docs/en/about-claude/pricing, read 2026-10-04",
+    "openai_compatible": "qwen3.8-max at about $2 in / $6 out per million tokens: third-party pages, introductory pricing, NOT yet verified on the host's own price page; re-read it on the day and edit both rates if they differ"
+  },
+  "models": {
+    "coder_a": {
+      "provider": "anthropic", "model": "claude-opus-5-5", "effort": "medium",
+      "max_output_tokens": 8192,
+      "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0, "priced_on": "2026-10-04"
+    },
+    "coder_b": {
+      "provider": "openai_compatible", "model": "qwen3.8-max",
+      "max_output_tokens": 4096,
+      "input_usd_per_mtok": 2.0, "output_usd_per_mtok": 6.0, "priced_on": "2026-10-04"
+    },
+    "judge": {
+      "provider": "anthropic", "model": "claude-opus-5-5", "effort": "low",
+      "max_output_tokens": 4096,
+      "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0, "priced_on": "2026-10-04"
+    },
+    "refactorer": {
+      "provider": "anthropic", "model": "claude-opus-5-5", "effort": "high",
+      "max_output_tokens": 16000,
+      "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0, "priced_on": "2026-10-04"
+    }
+  },
+  "embedding": {"mode": "local", "model": "embeddinggemma", "dim": 768}
+}

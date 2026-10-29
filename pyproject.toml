@@ -24,8 +24,10 @@ dependencies = [
 # Live model runs are opt-in. Nothing in tests or CI may import these.
 openai = ["openai>=1.40"]
 gemini = ["google-genai>=0.3"]
-anthropic = ["anthropic>=0.34"]
-live = ["openai>=1.40", "google-genai>=0.3", "anthropic>=0.34"]
+# 1.x (httpx2) is the line that takes `output_config` (effort) and has no `temperature`
+# parameter on `messages.*` — the shape Opus 5.5 needs. ADR-0051.
+anthropic = ["anthropic>=1.11,<2"]
+live = ["openai>=1.40", "google-genai>=0.3", "anthropic>=1.11,<2"]
 
 [dependency-groups]
 dev = [

@@ -56,6 +56,7 @@ audit trail.
 | [ADR-0046](#adr-0046--a-family-tagged-both-ways-keeps-its-own-segments-and-a-description-never-travels-without-its-source) | A family tagged both ways keeps its own segments, and a description never travels without its source | accepted (fix pass F1; ADR-0032 made structural) |
 | [ADR-0047](#adr-0047--the-provenance-guard-scans-at-the-exporters-twenty-characters-keeps-short-cells-subtracts-the-instrument-and-counts-respondents) | The provenance guard scans at the exporter's twenty characters, keeps short cells, subtracts the instrument and counts respondents | accepted (fix pass F2, from the R2 privacy audit) |
 | [ADR-0048](#adr-0048--the-default-live-registry-names-models-that-exist-at-prices-read-on-a-stated-date) | The default live registry names models that exist, at prices read on a stated date | accepted (PI feedback pass; amends `gaf/config.py`, the ADR-0015 precedent) |
+| [ADR-0049](#adr-0049--models-served-on-this-machine-are-a-provider-and-local-means-the-words-stay-here) | Models served on this machine are a provider, and "local" means the words stay here | proposed (local-models branch; amends `gaf/config.py` additively) |
 
 ---
 
@@ -2707,3 +2708,709 @@ Re-pricing is another ADR and another commit, and the pinned test is what will f
 for a registry, and this entry does not add one. The live path remains unexercised by any
 test, by design (`CONTRIBUTING.md`, "The offline rule"), so these bindings are verified
 against the providers' documentation and not against the providers.
+
+---
+
+## ADR-0049 — Models served on this machine are a provider, and "local" means the words stay here
+
+**Status:** proposed (branch `local-models`, 25 September 2026; amends the frozen contract
+`gaf/config.py` additively, on the ADR-0015 and ADR-0048 precedent)
+
+**Context.** Three things were true at once. The live run was still waiting for the PI's
+approval, so the live path — real replies through `parse_json_object`, the whitelists and
+the fail-safes, and a real embedding space under M1–M3 — had never run against a model at
+all. ADR-0019 and ADR-0022 left one question open that only a real embedding space can
+answer: whether M3's code↔evidence fit check can discriminate, and so whether the judge
+stays 64–80% of the bill. And the live run itself could not choose an embedding space:
+`--live` swapped in `DEFAULT_LIVE_REGISTRY` and left `RunConfig.embedding` at the lexical
+fallback, with no flag for either (ADR-0048, "What remains open").
+
+Models that run on the laptop this pipeline is developed on answer all three without a key, a bill
+or a decision about sending respondents' words to a new company. On the Apple M4 Pro with
+24 GB this project runs on, Ollama serves 9–12B chat models and every current open
+embedding model through the same OpenAI-compatible endpoints the hosted providers use.
+The largest open families do not fit: Kimi K2.6 and K3 are trillion-parameter mixtures
+whose smallest usable builds need hundreds of gigabytes, and Ollama offers them only as
+*cloud* models, which are hosted and therefore not local in the sense below.
+
+**Decision.**
+
+1. **`"local"` joins `Provider`, and `"local"` joins `EmbeddingSpaceConfig.mode`.** Both
+   are additive `Literal` members; no default, no existing value and no serialised byte of
+   an offline run moves. A local model is priced at zero because nothing is billed; its
+   token counts are still recorded, because they are what the same prompts would cost on
+   a hosted model.
+
+2. **One module decides where "local" is, and refuses anywhere else.**
+   `gaf/local_endpoint.py` reads `GAF_LOCAL_BASE_URL` (default Ollama,
+   `http://localhost:11434/v1`) and raises unless the host is a loopback address or
+   `GAF_LOCAL_ALLOW_REMOTE=1` is set. The provider's name is a privacy claim — no
+   respondent's words leave the machine — and a hosted Kimi, Qwen or DeepSeek endpoint
+   speaks the same protocol, so the claim has to be enforced where the URL is read, not
+   assumed from the name. Sending the corpus to a new provider stays the PI's decision.
+   `GAF_LOCAL_API_KEY`, when set, is sent as the bearer token, so the same client can
+   reach a hosted OpenAI-compatible endpoint under that override — for trying a model
+   such as Kimi on the synthetic corpus, never the real one without approval.
+
+3. **`LocalClient` is `OpenAIClient` with a standard-library transport.** Same request in
+   JSON-object mode, same parse, same whitelist, same fail-safe, same `LLMError` on a dead
+   server; no SDK and no extra. It removes `<think>` blocks before parsing, because a
+   reasoning model's scratch work routinely contains braces and would capture
+   `parse_json_object`'s outermost-`{…}` rescue, and it asks the server not to think.
+
+4. **Two local coders must come from different model families.** Every local model has
+   the provider `"local"` — the server, not the maker — so `distinct_coder_providers()`
+   would refuse every all-local registry. The epistemic-diversity rule is about training
+   lineage, so for two local coders it is applied to the maker's family instead
+   (`qwen3.5:9b` against `gemma4:12b` passes; `qwen3.5:9b` against `qwen3:8b` does not).
+   `ModelRegistry.distinct_coder_providers` itself is unchanged; the CLI's
+   `coders_are_distinct` wraps it.
+
+5. **`--profile JSON` replaces the default live registry for one run, and may carry an
+   embedding space.** Its shape is the `models` and `embedding` blocks of a run's echoed
+   config, so any run's configuration can be copied out and re-run. It requires `--live`.
+   The run records the profile's registry and derived space id like any other, so a
+   profile run is exactly as auditable as a default one. `profiles/local-ollama.json`
+   ships as the example, and every shipped profile is tested to load with distinct coders.
+
+6. **A local run checks its server and every model before it starts**, and names the
+   `ollama pull` that would fix a missing one, so a typo costs a second rather than a
+   segmented corpus.
+
+**Measured, 25 September 2026.** Embedding spaces scored against the PI's coding (295
+highlights, 131 codes; `scripts/compare_embeddings.py`, aggregates only): every real local
+model puts the PI's code first 2.5–3.5× as often as `lexical-v1-512` on names alone (0.29–0.42
+against 0.12). With descriptions, `embeddinggemma` led (top-1 0.65, fit AUC 0.92) and cut
+the share of wrong pairs passing at a 90%-recall cut from 1.00 to 0.25. A 10-response pilot
+with `profiles/local-ollama.json` made 115 calls with 0 fail-safes, at $0, in 1,051 s. The
+M3 fit escalations of the offline run (103 of 104) fell to 0 of 67. But the grey zones
+of M1 and M2 took their place (39 disputes, 56 of 64 routes), so judge calls per response
+went from 10.3 to 9.5. The thresholds were set for the lexical space. ADR-0019's
+calibration step, in the chosen space, is what moves the judge's share, not the space
+alone. The run also produced 60 codes from 10 responses (the PI used 47 on them), which
+is over-splitting from a τ_high that almost nothing in this space reaches.
+
+**Consequences.**
+
+*What it buys.* The live code path can be exercised end to end, on the real corpus, today,
+for nothing, with the words never leaving the machine. An embedding space can be chosen by
+measuring it against the PI's own coding (`scripts/compare_embeddings.py`) instead of by a
+leaderboard. And `--profile` closes ADR-0048's open item: a triple, or an embedding space,
+can now be changed without editing a frozen contract.
+
+*What it costs.* A third additive amendment to `gaf/config.py`. A local model is a weaker
+coder than the hosted triple, so a local run's agreement numbers are evidence about the
+*pipeline* with a small model in it, not about what the approved triple would find; the
+two must never be pooled or compared as if they were the same instrument. On a 24 GB
+laptop the judge and refactorer have to share a family with one coder, which weakens the
+third-lineage principle for local runs, and the profile says so in its description.
+
+*What remains open.* Local models are slow: minutes per response where a hosted model
+takes seconds. Whether a local embedding space is good enough to be the canonical one for
+the live run is a decision for the PI, with the comparison in hand; this entry
+makes it possible to choose, and does not choose.
+
+---
+
+## ADR-0050 — The PI's rulings on his export: the workbook is canonical, ambiguous highlights go into every coded candidate, a typo is merged provisionally, and one file records what each ruling changed
+
+**Status:** accepted (live-run-oct04, 4 October 2026; extends ADR-0029 and ADR-0031 by
+opt-in additions; corrects one sentence of ADR-0031; amends no frozen contract)
+
+**Context.** The PI answered the questions the 22 September feedback left open. In
+substance: the `.xlsx` is the canonical tagged export, not the `.csv`; `efficiency` is a
+top-level code; the near-miss label pairs are likely typos and he asked to see the list;
+and the ambiguous highlights should be included, since a fragment may be coded in more than
+one place. Each answer moves a count, and the organiser (`gaf codebook organise`) had
+nowhere to put a decision of his: it flags what looks odd and merges only trivial variants
+(ADR-0031, `gaf.ingest.tagged`). This entry records the decisions, the mechanism that
+carries them, and a measurement that contradicts a sentence in ADR-0031.
+
+**Three files, compared by counts only.** The `.xlsx` in `data/` (12 September), the
+`.xlsx` of the same name in `codebook/` (11 September, different hash) and the `.csv`
+beside the first all hold the same **342 pairings and the same 117 distinct tags**. No tag
+is in one and not another, and no row's content differs, before or after the encoding
+repair. They differ in order and columns only. The `codebook/` workbook and the `.csv` are
+in the order the codes were applied (the csv has 338 contiguous tag runs). The canonical
+`data/` workbook groups the rows by tag (117 runs, one per tag, segment order inside a tag
+unchanged), carries three extra columns (`count`, `Claude1`, `Claude2`) and fifteen rows
+with neither tag nor content, which the reader already skipped. `read_tagged_pairs` reads
+columns by header name, so it reads the canonical workbook as 342 pairings with no change.
+Switching the file alone moves no count: `golden.json` and `codebook.json` are
+byte-identical to the csv's. What does change: every source row number cited in earlier
+notes was the csv's; index-based highlight ids are different labels for the same highlights;
+and the pipeline's "is the export's row order the coding order?" check (step 3d of
+`scripts/run_full_results.sh`) asks a question the grouped workbook can no longer answer.
+
+**Decision.**
+
+1. **The `.xlsx` in `data/` is the canonical tagged export.** `Makefile` (`FULL_TAGGED_EXPORT`,
+   renamed from `FULL_TAGGED_CSV`), the runbook and the full-results script point at it.
+   The baseline run `runs/human200`, built from the csv, is kept as it is and is
+   reproducible; the new organisation goes to `runs/human200-v2`.
+
+2. **One rulings file, read by `organise` (`--rulings PATH`).** It is JSON, names labels and
+   flags and never respondent text, and so is tracked (`rulings/india-process.json`, with
+   a one-line `description`). Keys: `top_level`, `label_merges` (each with a `provisional`
+   flag), `label_merges_held`, `multi_place_ambiguous`, `manual_placements` and
+   `manual_placements_file`. Unknown keys are refused: a mistyped key in a file that
+   changes a coding must not be read as "no ruling". **Without `--rulings`, every output is
+   byte-identical to before** (checked on the csv against a baseline from the unmodified
+   tree). **With it, every ruling applied is recorded beside the count it moved:** in
+   `organised.json` (`meta.rulings`), in the markdown renderings, in the printed counts,
+   and in `rulings_applied.json`, which carries labels, counts and ids and no text.
+   `gaf codebook define` re-reads the same file and refuses if it changed since `organise`,
+   because it re-derives the organisation and would otherwise describe codes the directory
+   does not hold.
+
+3. **`efficiency` is a top-level code.** It already was one structurally (no hyphen, so a
+   family of its own with no subcodes). What was open was the *note*: `bare_top_level_code`
+   called it something that "may want splitting", and the results exporter turned that into
+   a question for him. A label in `top_level` is no longer noted as bare, is recorded in the
+   trail with its count and subcode count, and carries `meta.ruled_top_level` in
+   `codebook.json`. Nothing needed re-parenting. The structural check S3 still warns on
+   every use after the first (10 warnings on the baseline, 12 on the new run, the same
+   warning on `efficiency` repeated); teaching it to read `ruled_top_level` is open.
+
+4. **A label merge is a recorded, provisional consolidation.** It is applied after the
+   trivial rules (case, whitespace, family separator), rewrites a label onto the canonical
+   spelling (the correctly spelt one, else the more frequent), is stored as a
+   consolidation with `ruling: true` and `provisional: <flag>`, and may rename a label
+   whose correct form was never written. A definition keyed by the old spelling is carried
+   to the new label if that label has no definition of its own, so a ruling can never
+   replace a definition he wrote. *The reading of "the eight pairs are typos" matters.* The
+   eight pairs the organiser finds are two label pairs and six token pairs. **Only one,
+   `safety` against `saftey`, is a misspelling.** The others are different words two edits
+   apart: `deskilling` and `upskilling` have opposite meanings and sit in the families
+   `negative_impacts` and `positive_impacts`; `education` and `reduction` are unrelated; `safety-home` and
+   `safety-women` are two subcodes of one family; `assistance` and `assistant` are in two
+   separately defined codes; `research` and `search` are two defined codes; `impact` against
+   `impacts` is a family beside two other families. Merging all eight literally would
+   collapse codes he defined separately and rewrite family names. So the rulings file
+   **applies one merge, provisionally, and lists the other seven under
+   `label_merges_held`** with a reason each, recorded in the trail as "held, not merged".
+   The pair is shown to him in the private review pack with the canonical spelling a merge
+   would take, for his answer by number; promoting a held pair is a one-entry change.
+
+5. **Ambiguous highlights: an opt-in rule that places a highlight in every coded
+   candidate.** "Ambiguous" means the same highlighted text occurs in more than one
+   response, so the tool cannot tell which was meant. It does not mean one fragment
+   carrying two codes, which was always supported. With `multi_place_ambiguous: true`, a
+   highlight that is still ambiguous after both passes and has **two or more candidates
+   in the coded set** is placed in *every* such candidate, outcome `multi_placed`: one
+   mapping row per response, one highlight, so `placed_segments` counts it once and the
+   evidence carries a verified quote in each response. A highlight with no candidate in
+   the coded set stays excluded, and one with exactly one is `resolved` as before. The
+   coded set is a fact about pass one and the outcome does not depend on row order. The
+   rule is off by default; `HIGHLIGHT_OUTCOMES` gains `multi_placed` and `manual`, and the
+   placement report gains keys for them only when a ruling switched them on.
+
+6. **A manual placement is applied after both passes, with outcome `manual`.** The mapping
+   is `{highlight id: response id}`, inline in the rulings or in a file
+   (`manual_placements_file`, or `--manual-placements`). The real file holds ids only, but
+   it is the PI's answer about his own data, so it lives under `runs/` (gitignored by
+   convention; `.gitignore` also names `manual-placements*.json`). **A file that is absent
+   is a no-op**; one that is present and malformed stops the command. It replaces whatever
+   the highlight was placed as and records what that was; the response named gets the
+   locator's nearest span at threshold 0 and the score it earned, unrounded. An id that
+   matches no highlight, a response not in the corpus, or text that cannot be given a span
+   is listed as not applied with the reason, never guessed at. The coded set is not
+   recomputed from manual placements.
+
+**Measured, 4 October 2026** (the canonical workbook on the 200-response corpus; counts
+only). Of the 24 highlights still ambiguous after pass two, split by candidates inside the
+coded set of 39:
+
+| candidates in the coded set | highlights | candidates outside it |
+|---|---|---|
+| 0 | 17 | 2 to 14 |
+| 1 | 0 (those 7 were already `resolved`) | |
+| 2 | 6 | 1, 1, 1, 2, 4, 6 |
+| 3 | 1 | 23 |
+
+**This contradicts ADR-0031**, whose measurement paragraph says the 24 "have more than one
+candidate inside the coded set in every case". Seventeen have none. The sentence was not
+reproduced when the 24 were counted. The multi-placement rule therefore recovers **7
+highlights in 15 placements**, not 24, and leaves 17 excluded. Sixteen of those 17 have
+both response 133 and response 571 among their candidates, neither of which is in the coded
+set, and 571 contains the wording of 133, 339 and 217 almost entirely. The likely reading
+is that the PI coded one of them and none of his highlights in it is unique enough to place
+by text. That is a question for him, asked by number in the review pack, and the manual
+placement above is how his answer enters.
+
+Before and after (baseline `runs/human200` against `runs/human200-v2`): exact 304 and 304,
+fuzzy 1 and 1, resolved 7 and 7, multi-placed none and 7 (15 placements), manual none and
+0, ambiguous 24 and 17, unlocated 6 and 6, mapped 312 and 319, coded set 39 and 39,
+`golden.json` rows 312 and 327 (the 15 added rows are all in already-coded responses),
+codes in the golden set 109 and 109, families 15 and 15, leaves 117 and 117, near-miss
+notes 8 and 7, bare-top-level notes 1 and 0, definitions matched 131 of 131 in both.
+
+**Pre-registered split (P2.1), recorded here because it is drawn from this golden set.**
+`runs/human200-v2/split.json` holds ids, the seed (20261004) and the method, and nothing
+else; its sha256 is `0e77def6913194319797b25c866195ded2628227877396c6d383f10b3fd27939`. The
+calibration fold is 20 responses: the ten pilot ids, which are fixed in it, and ten more
+drawn by stratifying the others on distinct codes per response in three tercile bands,
+each band taking the same calibration share. The held-out fold is the other 19. Responses
+are chosen by id from the coded set, never by slicing the corpus. The split is
+deterministic and re-running it writes the same bytes. It is **not** untouched by the
+embedding choice: the 25 September comparison of eight embedding spaces scored all 295
+highlights over all 39 coded responses, including the 19 held out. That is a selection
+among eight spaces, not a fit, and the results page says so.
+
+**Consequences.**
+
+*What this buys.* Every decision the PI has made about his export is in one file he can
+read and overrule, applied in one place, and recorded in the output next to what it
+changed. The default is unchanged to the byte, so no earlier result moves. Seven more
+highlights (fifteen placements) enter the evidence, with a stated reason and a distinct
+outcome name.
+
+*What it costs.* `multi_placed` is a weaker claim than `exact`, as `resolved` is: it says a
+fragment belongs to each coded response its text occurs in, an inference from the coding's
+coverage and not from the text. A multi-placed highlight puts the same code into two or
+three responses, so the occurrence matrix and every agreement figure over the golden set
+count it in each; a result quoted over the golden set should say that 15 of its 327 rows
+are placements of 7 highlights. The two readings of "ambiguous" are easy to confuse, which
+is why the review pack opens with three lines separating them.
+
+*What remains open.* The seven held pairs await his answer. The 17 highlights whose
+candidates are all outside the coded set await it too; if he says he coded response 571 or
+133, the coded set becomes 40, `golden.json` grows by about 16 rows, and the pre-registered
+split has to be extended and its hash re-recorded before any paid run. S3 still warns on
+`efficiency`. The results exporter's README text still asks which export is canonical, asks
+about the bare top-level code, and repeats ADR-0031's sentence about the 24; it also
+reads only `exact`, `fuzzy` and `resolved` when it totals the mapped highlights, and will
+understate a run that has `multi_placed` or `manual`.
+
+---
+
+## ADR-0051 — The Anthropic client speaks the 5-series: no sampling, effort per role, text blocks only, and an early stop is a fail-safe
+
+**Status:** proposed (branch `live-run-oct`, 4 October 2026; amends the frozen contract
+`gaf/config.py` additively, on the ADR-0015, ADR-0048 and ADR-0049 precedent)
+
+**Context.** The PI chose Claude Opus 5.5 (`claude-opus-5-5`, $4 in / $20 out per million
+tokens) for coder A, the judge and the refactorer; the Definer reuses the refactorer slot.
+The Anthropic client could not call it. It was written for the request shape of the
+Claude 4 era, and the 5-series changed that shape in ways that fail loudly or, worse,
+quietly:
+
+* **Sampling parameters are an HTTP 400.** On Opus 5.5 — and on Opus 5, Opus 4.7 and 4.8,
+  Sonnet 5 and 5.5, and Fable 5 and 5.1 — any `temperature`, `top_p` or `top_k` is
+  rejected, the default value included. The client sent `temperature` on every call.
+* **Thinking is always on and cannot be disabled.** Its depth is set by
+  `output_config.effort` (`low`, `medium`, `high`, `xhigh`, `max`); Opus 5.5's default is
+  `medium`, one level below Opus 5's. Thinking tokens are billed as output and count
+  against `max_tokens`, so a limit sized for a reply with no thinking can cut the reply
+  off before it starts.
+* **A reply opens with `thinking` blocks** before the `text` block.
+* **A refusal is HTTP 200** with `stop_reason: "refusal"` and a `stop_details.category`
+  (`cyber`, `bio`, `reasoning_extraction`, …). Opus 5.5 runs a broader classifier set
+  than Opus 5. Prefill is rejected (the client never used it).
+* **The SDK pin was too old.** `pyproject.toml` asked for `anthropic>=0.34`; the lock had
+  resolved 1.2.0. The current line is 1.x on `httpx2`, in which `messages.create` and
+  `messages.stream` have no `temperature` argument at all (passing one is a `TypeError`)
+  and take `output_config`. On 4 October 2026 the newest release on PyPI was 1.11.0.
+
+None of this could be found offline: no test and no CI job builds a provider client.
+
+**Decision.**
+
+1. **The SDK pin moves to `anthropic>=1.11,<2`**, in both the `anthropic` and `live`
+   extras, and the lock to 1.11.0. It stays an optional extra that CI never installs. The
+   OpenAI and Gemini clients and their tests are unaffected (`openai` 3.6.0 and
+   `google-genai` 2.21.0 resolve beside it).
+
+2. **Sampling parameters go only to the lines that accept them, by an explicit rule on
+   the model id.** `accepts_sampling_params(model)` in `gaf/llm/anthropic_client.py` is
+   true for the Claude 2 and 3 families and for Claude 4.0 to 4.6 (Opus, Sonnet, Haiku;
+   bare or date-suffixed), and false for everything else — Opus 4.7 and later, Sonnet 5
+   and later, Fable, Mythos, **and any id it does not recognise**. The default is to omit
+   because the costs are lopsided: an omitted temperature fails nothing, while a sent one
+   is a 400 on every model released since Opus 4.7. The older lines keep their old
+   behaviour, `temperature` from the spec, sent through `extra_body` because the 1.x SDK
+   dropped the argument. The rule is a function, not a `ModelSpec` field, because it is a
+   fact about Anthropic's API rather than a choice a run makes: a field would be a second
+   knob that could contradict the model id, and it would add a key to every run's config
+   echo. A consequence to read correctly: an Opus 5.5 spec still echoes
+   `"temperature": 0.0`, which on the 5-series means "not sent".
+
+3. **`ModelSpec` gains `effort`**, an optional `Literal` of the five levels, default
+   `None`, and `to_json()` omits it when it is `None` — the ADR-0048 pattern, so no byte
+   of an offline run, the golden manifest or the committed example moves, and
+   `_run_config_from_json` round-trips it by name. When set, it is sent as
+   `output_config={"effort": ...}`; when unset, nothing is sent and the model's own
+   default applies. A profile sets it per role, and `load_profile` refuses an unknown
+   level and refuses `effort` on any provider but `anthropic`, where it would be recorded
+   and do nothing. `profiles/opus-qwen.json` uses **coder A `medium`** (coding is the
+   judgement the study measures, at the model's default), **judge `low`** (a one-word
+   verdict on a short prompt, and the judge is 55 to 60% of the estimated bill), and
+   **refactorer `high`** (one or two calls per checkpoint, each proposing edits a human
+   will rule on; the Definer inherits it).
+
+4. **`max_output_tokens` leaves room for thinking, through the profile**: coder A 8,192,
+   judge 4,096, refactorer 16,000. They are ceilings, not costs; they were not set higher
+   because a large ceiling buys nothing on these prompts and may count against an
+   output-rate limit on a low tier.
+
+5. **Only `text` blocks are read.** `thinking` blocks (empty under the default display)
+   are skipped. Usage is recorded as before; output tokens include the thinking, which is
+   billed as output, so `cost_usd` is the bill.
+
+6. **A `refusal` or `max_tokens` stop on a JSON task is a fail-safe, recorded, and not
+   retried inside the call.** The transport raises `IncompleteReplyError`, carrying the
+   billed tokens and the refusal category; `complete_json` catches it inside the retried
+   callable, so it does not count as a transport failure, and returns the task's
+   non-destructive default (`FAIL_SAFE_DEFAULTS`: no codes, KEEP, CREATE, APPLIES, an
+   empty edit script) with `fail_safe = True`. The result says why in three places:
+   `llm_calls.fail_safe`, `data["_stop_reason"]` (and `_stop_category` for a refusal),
+   and, for the judge and the refactorer, a `reasoning` of the form "fail-safe: the model
+   stopped with refusal (bio)", which reaches the store with the verdict. The billed
+   tokens are still counted. It is not retried in the call because a refusal is a
+   property of the input and a truncation at the same ceiling is likely to repeat, while
+   each retry bills the thinking again; it is not raised, because one refused response
+   must not halt a 161-response run. It *is* retried on the next run: `CachingLLMClient`
+   never stores a fail-safe, so "the existing retry path" for an early stop is a re-run,
+   at the cost of that one call.
+
+7. **The server-side `fallbacks` beta is not used.** Anthropic recommends opting into it
+   for the 5-series, so that a refused request is re-run on another model inside the same
+   call. Here that would be a silent change of coder: the `llm_calls` row, the agreement
+   figures and the judge's lineage would all name Opus 5.5 for a reply another model
+   wrote. Who coded what is the study's independent variable, so a refusal stays a
+   visible fail-safe on the model the profile names, and its rate is a finding.
+
+8. **Every request streams** (`client.messages.stream(...)` and `get_final_message()`,
+   the SDK's documented pattern). The 1.x SDK refuses a non-streaming request it expects
+   to take more than ten minutes (above about 21,000 `max_tokens`), and a refactor at
+   `high` effort is the call most likely to run long. One code path, no timeout guard to
+   trip.
+
+9. **Tests, offline.** `tests/test_providers.py` pins the sampling rule on 22 ids, the
+   request shape (no `temperature` or `thinking` on Opus 5.5, `output_config` only when
+   effort is set, `extra_body` temperature on Sonnet 4.6), text-only reading, both early
+   stops on every task type (fail-safe, recorded, billed, one attempt), and the live
+   transport against a fake `anthropic` module that CI can run. One further test drives
+   the real 1.11 SDK over an in-process `httpx2.MockTransport` serving a streamed reply
+   with a thinking block, and checks the wire body itself; it skips where the SDK is
+   absent.
+
+**Consequences.**
+
+*What it buys.* The PI's frontier model can be called at all, at the effort each role
+needs, with a refusal or a truncation turning into the same non-destructive default a
+malformed reply already did, and counted where the audit can see it. The billed cost of
+thinking lands in `cost_usd`, so the smoke test measures the plan's largest uncertainty.
+
+*What it costs.* A fourth additive amendment to `gaf/config.py`. The config echo's
+`temperature` no longer means "what was sent" for the 5-series. Two things are recorded
+less precisely than they could be, because their owners' files are frozen or owned
+elsewhere: `llm_calls` has no `stop_reason` column (an additive `LLMResult.stop_reason`
+and column would make refusals countable by SQL rather than by the fail-safe count), and
+the response cache's key does not include `effort`, so a re-run under a different effort
+would replay replies made at the old one.
+
+*What remains open.* The refusal rate on this corpus is unknown until the smoke test; the
+survey responses are about AI futures, not about biology or security, so it is expected
+to be near zero. Prompt caching is unused: the coder's system prompt repeats on every
+call, and Opus 5.5 caches prefixes from 512 tokens at $0.20 per million on a read; it
+would cut coder-A input cost, and is left for after the first measured run because cache
+writes change the cost accounting. `effort` levels are argued, not measured; a sweep on
+the calibration fold would settle them.
+
+---
+
+## ADR-0052 — A hosted OpenAI-compatible model is its own provider, and never "local"
+
+**Status:** proposed (branch `live-run-oct`, 4 October 2026; amends the frozen contract
+`gaf/config.py` additively, on the ADR-0015, ADR-0048 and ADR-0049 precedent)
+
+**Context.** The PI chose the newest Qwen, Qwen3.8-Max, as coder B. It is served by
+Alibaba Cloud and by routers such as OpenRouter over the OpenAI Chat Completions
+protocol — the same protocol `LocalClient` already speaks to Ollama. So it could have
+been reached with no new code at all: point `GAF_LOCAL_BASE_URL` at the host, set
+`GAF_LOCAL_ALLOW_REMOTE=1` and put the key in `GAF_LOCAL_API_KEY`.
+
+That would have broken ADR-0049's central claim. There, `"local"` is a privacy claim —
+no respondent's words leave the machine — and the run's config echo, every `llm_calls`
+row and every report would have said `local` for a coder whose input went to a third
+party in another jurisdiction. `GAF_LOCAL_ALLOW_REMOTE` exists for a deliberate,
+recorded exception on the synthetic corpus, not as the configuration of a study's
+coder. Sending the corpus to a new processor is the PI's decision, and the record of the
+run has to name that processor.
+
+**Decision.**
+
+1. **`"openai_compatible"` joins `Provider`.** It is a hosted endpoint by definition; the
+   name is what every echo, row and report carries. `OpenAICompatibleClient`
+   (`gaf/llm/compat_client.py`) is `OpenAIClient` with the transport `LocalClient`
+   uses: the request-and-parse body was extracted from `LocalClient` into
+   `chat_completions_transport` in `gaf/llm/local_client.py` and both clients call it,
+   so JSON-object mode, `<think>` removal, the whitelist, the fail-safe and `LLMError`
+   on a dead server are one implementation, not two. Likewise the HTTP reading was
+   generalised in `gaf/local_endpoint.py` (`read_json`, with an `EndpointError` base that
+   `LocalEndpointError` now subclasses), with every local message and behaviour
+   unchanged.
+
+2. **Where the text goes is explicit and has no default.** `gaf/compat_endpoint.py`
+   reads `GAF_COMPAT_BASE_URL`, which is required and must be `https` (respondent text
+   does not cross the network in the clear), and `GAF_COMPAT_API_KEY`, which is required
+   and sent as a bearer token. Both are checked when the client is built, so a missing
+   one stops the run before anything is sent, with a message naming the variable. There
+   is nothing to install: standard library only. `GAF_LOCAL_*` is never read by this
+   provider, and `GAF_COMPAT_*` is never read by `local`.
+
+3. **Thinking off, harmlessly.** By default the body carries `"enable_thinking": false`,
+   the switch DashScope's compatible mode reads for a hybrid Qwen model (its JSON-object
+   mode requires thinking off). A host that does not know the field ignores it;
+   `GAF_COMPAT_THINKING_OFF=0` drops it for a host that rejects unknown fields instead.
+   Any `<think>` block that arrives anyway is removed before parsing, as for a local
+   model. Ollama's `reasoning_effort: "none"` is not sent: a router may map it onto
+   something else.
+
+4. **Two hosts are documented; the user chooses and verifies.** Preferred: Alibaba Cloud
+   Model Studio, international, `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`
+   (the Singapore region; the user confirms the region on the account). Fallback:
+   OpenRouter, `https://openrouter.ai/api/v1`, where model ids carry a maker prefix
+   (`qwen/…`). A router is a further processor: text passes through OpenRouter and on to
+   the upstream provider it selects, which the PI should know if the fallback is used.
+   The model id string is the host's and is confirmed on the day; it is recorded in every
+   `llm_calls` row and in the config echo.
+
+5. **The coder-diversity rule treats `openai_compatible` like `local`.** Both name a
+   server, not a maker, so whenever either coder is bound to one of them the two coders
+   must come from different model families (`coder_family`, from the model id for a
+   server provider and from the provider for a maker). Opus 5.5 beside a hosted Qwen
+   passes; two hosted Qwens fail; a local Qwen beside a hosted Qwen fails (one family on
+   two servers); and a Claude reached through a router (`anthropic/claude-…`) counts as
+   Claude. Two hosted makers keep the provider rule. `ModelRegistry` is unchanged.
+
+6. **The local loopback guard is unchanged, and a test says so**: with the hosted
+   endpoint configured, a hosted URL in `GAF_LOCAL_BASE_URL` is still refused for
+   `local` without `GAF_LOCAL_ALLOW_REMOTE=1`, and `LocalClient` still sends Ollama's field
+   and not the hosted one.
+
+7. **Profiles.** `profiles/opus-qwen.json` is the PI's line-up (Opus 5.5 on coder A, the
+   judge and the refactorer; `openai_compatible` `qwen3.8-max` on coder B; local
+   `embeddinggemma`, 768-d). `profiles/opus-local-qwen.json` is the cheaper rehearsal,
+   with coder B on Ollama (`qwen3.5:9b`). `profiles/local-ollama.json` stays the
+   all-local fallback. Each description states where respondent text goes. The Qwen rates
+   ($2 in / $6 out per million tokens, dated 4 October 2026) come from third-party pages
+   and are marked unverified in the profile; the user re-reads the host's own page on the
+   day. Every shipped profile is tested to load and to pass `live_components`'
+   validation.
+
+**Consequences.**
+
+*What it buys.* The PI's two-maker design runs with the second maker hosted, and the
+record of every run says in plain words that its text went to that host. "Local" keeps
+meaning local. The transport the local pilot already exercised is the one the hosted
+coder uses, so the pilot's evidence about parsing and fail-safes carries over.
+
+*What it costs.* A sixth `Provider` member (a fifth additive amendment to `gaf/config.py`, beside ADR-0051's) and a second endpoint module. A family is
+inferred from the leading letters of the model id, so an id with no maker in it would be
+its own family; the profile's description and this entry say which id is meant. There is
+no pre-flight probe of the hosted model (a hosted `/models` listing is not guaranteed), so
+a wrong id fails on the first coder-B call, after the retries — at the smoke test's scale
+that costs cents, which is what the smoke test is for.
+
+*What remains open.* The data-residency terms of the chosen host, and whether the PI's
+ethics approval covers them, are the PI's to confirm before any run on real data. The
+Qwen price is unverified until read on the host's own page.
+
+---
+
+## ADR-0053 — A spend cap that stops before a call, and the run statistics a reader asks for first
+
+**Status:** proposed (branch `live-run-oct`, 4 October 2026; amends the frozen `llm_calls`
+table additively, on the ADR-0015, ADR-0048 and ADR-0049 precedent; does not touch
+`gaf/config.py`, the judge prompt or any provider client)
+
+**Context.** The first paid run is on Monday 5 October and the meeting with the PI on
+Thursday 8 October. Three things were missing, each named in the live-run plan.
+
+* **There was no spend cap (blocker B4).** A live run with a key in the environment could
+  not be stopped from spending except by killing the process. The estimate for the whole
+  plan is $12 to $30 against a requested ceiling of $40, and Opus's thinking tokens, billed
+  as output, are the main uncertainty (ADR-0051). A bug in a threshold, a retry storm or a
+  wrong price would be paid for before anyone looked.
+* **Nothing measured whom the judge backs (B5).** The judge shares coder A's model, and the
+  dispute prompt (`judge_v1.py`) always shows coder A first. That is a standing risk of
+  self-preference or position bias, and the PI's second question is whether two different
+  models agree and how the judge settled the disagreements.
+* **The run report did not say how often the coders agreed, how long a response took, or
+  what each role cost.** `RunStats` held the counts the loop reconciles with
+  (`acceptance_by_origin`, `judge_calls`, a total cost), but not the figures the results
+  pack is built from. The cost estimate itself was made with a one-off query over
+  `llm_calls`.
+
+Reading the code before changing it settled four facts the design rests on.
+
+1. **`llm_calls` already records `latency_ms`.** Every live client times its call with
+   `perf_counter`; mock calls and cache replays record zero. No column or migration is
+   needed for latency.
+2. **The ledger lags the running process.** The fast loop writes `llm_calls` after each
+   call *site* (`_Recorder.drain`), so a check that re-read the table before each call would
+   be up to a call site behind.
+3. **A resumed run is a new run.** `gaf run --skip-coded DIR` writes a new directory with a
+   new database (and deletes any database already at its `--out`). Only `gaf checkpoint`
+   continues a run's own database. "The run's spend" therefore has to be followed through
+   the `skipped_from` link every resumed run already records.
+4. **The judge cannot choose between coders in the way the brief's wording suggests.** The
+   one place it arbitrates between coder A's and coder B's candidates is an M1 grey-zone
+   dispute, and its verdicts are `KEEP` (both readings stay) or `DROP` (*the second
+   candidate*, which is always coder B's, goes). It never backs B alone.
+
+**Decision.**
+
+1. **A guard in front of the model, behind the cache.** `BudgetedLLMClient`
+   (`gaf/llm/budget.py`) wraps a client; before each call it asks the `SpendBudget` whether
+   the cumulative billed cost has *reached* the cap (`>=`), and if so raises
+   `BudgetExceededError` and does not call. After the call it adds the result's `cost_usd`.
+   `guard_client` puts it *inside* `CachingLLMClient`, so a cache replay is answered from
+   disk, is never checked and never charged, and is still answered when the cap has been
+   reached; with `--no-cache` it wraps the bare client. `guard_agents` rebinds the public
+   `.client` of each agent, so one function covers every command without any client factory
+   knowing the cap exists. The exception is deliberately not an `LLMError`: that means "the
+   transport failed after retries", and a decision must not be swallowed as a fault.
+
+2. **The overshoot is at most one call, and the help text says so.** The cap is checked
+   before a call and never during one; nothing can recall a request already sent. The total
+   can therefore pass the cap by the cost of the one call in flight when it crossed.
+
+3. **What the cap counts.** Billed dollars only: `cost_usd` is `tokens x the ModelSpec
+   rate`, so the cap is exactly as accurate as the client's token counts and the profile's
+   prices. The running total is kept in memory (fact 2): a baseline read from the ledger
+   at the start plus each result's cost. The baseline is `Blackboard.llm_spend(run_id)` for
+   the run, plus that of every run it was resumed from, following `skipped_from` links with a
+   loop guard (`gaf/cli/_budget.py: cumulative_spend`); a directory with no readable ledger
+   is reported as unreadable, not counted as zero. So a resumed run, or a `gaf checkpoint`
+   after a halt, continues one budget, and the new `--max-usd` is the cumulative total.
+   Offline and mock runs cost zero and never trip it; local models are free by construction.
+   Hosted *embeddings* are not rows in `llm_calls` and are not counted; the run prints a
+   warning if the embedding mode is `openai` (the plan embeds locally).
+
+4. **A cap that could not see the spend is refused before anything is touched.** A
+   non-positive or non-finite amount is a usage error (exit 2). A live run under a cap
+   whose registry has a hosted role with both rates at zero is refused (`unpriced_hosted_roles`),
+   because that is the one way the cap fails silently. A resume under a cap the chain has
+   already reached is refused (exit 4) before the previous run's database can be replaced.
+
+5. **A halt reuses the checkpoint halt's shape.** `run_fast_loop(budget=...)` catches the
+   refusal around `_code_response`. The response in flight is **not coded**: every model call
+   in a response precedes the first codebook change (`_integrate`), so the working codebook is
+   exactly what the last complete response left. What the half-made response already paid for
+   is drained into `llm_calls` first. The run then closes normally (a short batch is evaluated
+   like any other, S6 and M4 run, a final snapshot is frozen) and records the reason:
+   `RunStats.budget` (cap, baseline, run, cumulative, the response and the call it stopped
+   before), a `run_halted_spend_cap` audit row, a STOPPED EARLY caveat at the top of the
+   report, and a halt message with the command that resumes it. `gaf run` exits **0**, as for
+   `--halt-on-checkpoint` (ADR-0035). The in-flight response is coded again on resume, mostly
+   from the cache. With no flag the `budget` key is absent from the stats and the audit
+   payloads; the codebook, assignments and findings are byte-identical (tested).
+
+6. **Which commands.** `--max-usd` is registered beside `--live` in `_add_mode`, so it is
+   accepted by `gaf run`, `gaf check semantic|all` (the M3 judge) and `gaf codebook define`
+   (the Definer); `gaf checkpoint` has its own copy because it has no `--live` (its mode comes
+   from the run's echoed config). The last three have nothing useful to show when stopped
+   part-way and exit **4**; a refused checkpoint writes nothing. `gaf analyse`, `report`,
+   `views` and `validate` make no model call.
+
+7. **The run statistics are computed from the blackboard, by one function, for every run.**
+   `gaf/pipeline/run_metrics.py: compute_run_metrics` reads the audit log and `llm_calls`
+   (the audit log keeps one row per decision where the `findings` table collapses repeats), so
+   the same code answers for a live run and for `runs/process200`. They go into
+   `RunStats.run_metrics`, and so into `stats.json`, `run.json`, the `run_completed` audit
+   row and a new section of the report. `gaf report` recomputes them from `gaf.sqlite` when it
+   is there, so a run written before this ADR has them and a later `gaf checkpoint`'s spend is
+   counted, and writes them alone to `run_metrics.json`. Counts, shares, ids and code names
+   only: no respondent text and none of the judge's reasoning.
+
+   * **(a) Coder agreement.** The unit is the M1 *comparison*: a matched pair of coder A and
+     coder B candidates, or a candidate only one coder proposed. Each lands in exactly one
+     outcome: agreed outright (cosine at or above tau_high), grey zone (split into ruled on
+     by the judge and unresolved because no judge was available), or disputed (below tau_low)
+     or unmatched (A only, B only). The router records a non-agreed pair as two candidate
+     rows; the arithmetic that recovers pairs from them is tested against the loop's own
+     counts. Beside it, how M2 routed the accepted candidates: merge, create, or the judge.
+   * **(b) Judge siding.** Among M1 grey-zone rulings: coder A (`DROP`, B's candidate removed),
+     coder B (zero by construction), and neither (`KEEP`, both readings kept), with counts,
+     shares and a `flag` when the coder A share is strictly above 0.65. Below 20 rulings the
+     block says the share is unreliable. The report states the asymmetry in words, because
+     "B: 0%" without it would be read as a finding. The judge prompt is not changed.
+   * **(c) Latency.** Per call, per role and task, and per response (the sum of that
+     response's calls), from the recorded `latency_ms`; cache replays and unmeasured calls
+     are left out, so an offline run says "not measured" rather than a mean of zero. For a
+     live run only, the wall-clock time per response and for the run from the audit log; an
+     offline run reports none, because two identical offline runs must render the same bytes
+     (`test_the_run_report_itself_is_deterministic`).
+   * **(d) Spend by role and task.** `Blackboard.llm_usage(run_id)`, the query the cost
+     estimate was built from: calls, billed calls, cache hits, fail-safes, calls stopped early,
+     tokens in and out, dollars, and dollars per response coded. Tokens count every call, replays
+     included (they size the workload); dollars count only what reached a provider.
+
+8. **`llm_calls.stop_reason`, additively.** A nullable column holding `refusal` or
+   `max_tokens` when the model stopped early, NULL otherwise, so refusals can be counted in
+   SQL rather than inferred from `fail_safe`. It is read from the `_stop_reason` key the
+   Anthropic client already writes into `LLMResult.data` (ADR-0051) through a read-only
+   `LLMResult.stop_reason` property, so no provider client changes. `apply_schema` adds the
+   column to an older database with a nullable `ALTER TABLE` (`SCHEMA_VERSION` 1 to 2); no row
+   is rewritten and a build that never heard of the column still reads the table.
+
+9. **The cache key carries the role's effort, when it has one.** `cache_key` adds
+   `effort=<level>` only when `ModelSpec.effort` is set (ADR-0051), so a reply made at `low`
+   is never replayed to a role now at `high`. With no effort the key is byte-identical to
+   before, so existing caches and golden fixtures still hit (the legacy hash is recomputed by
+   hand in a test).
+
+10. **One more small correction the cap needs.** `Blackboard.completed_response_count` counts
+    responses with an `assignments_written` row, and the slow loop uses it for a checkpoint's
+    `at_response_count` instead of `coded_response_count`, which counts a response as soon as
+    one coder's pass is written and would include the half-made response of a halted run. A
+    store with no fast-loop run falls back to the old count.
+
+**Measured, 4 October 2026.** Offline, no paid call. `gaf report` on a copy of
+`runs/process200` (200 responses) computes the block: 811 M1 comparisons, of which 729 (89.9%)
+agreed outright, none fell in the grey zone, and 82 (10.1%) were disputed (37 pairs) or
+unmatched (21 coder A only, 24 coder B only); M2 routed 848 candidates, 97.3% merge, 2.5%
+create and 2 (0.2%) to the judge; the judge ruled on no M1 dispute, so there is no siding to
+read. Spend by role and task reproduces the plan's inputs: 2,278 calls (1,878 replayed from
+the cache), 403,374 input tokens for coder A, which is 2,017 per response, and $0. Latency is
+"not measured", as it must be offline. With a fake client billed $0.10 per fresh call, a run
+under a cap stops at the cap at seven caps chosen to fall mid-response (0.05 to 4.05): in
+every case the dollars in `llm_calls` equal the dollars the guard counted, the cumulative
+total is at least the cap and under it plus one call, and the halted run's codebook and
+assignments are those of an uncapped run over exactly the responses it coded. Re-running
+under a cap of one cent against a warm cache spends $0 and completes. A resume chain of three
+runs counts the first two runs' spend. Gates after the change: `make lint` and `make
+typecheck` clean, 1,474 passed and 5 skipped (65 of them in `tests/test_run_controls.py`),
+coverage 97.14% against the floor of 93, `make provenance` passing.
+
+**Consequences.**
+
+*What it buys.* A paid run can be started with a number it cannot exceed by more than one
+call, and halted and resumed without losing or double-paying for work. The results pack can
+quote agreement, the judge's siding rate with its flag, time per response and spend per role
+from one place, for the cold evaluation run and for the 161 alike.
+
+*What it costs.* The cap is as good as the prices in the profile and the token counts the
+client reports; the smoke test is where the recorded total should be compared with the
+provider's own dashboard. The in-flight response of a halted run is paid for twice if the
+cache is off. `RunStats` and `stats.json` gain `run_metrics` for every run (the `budget` key
+only when the flag is used), `run_completed` payloads grow, and the committed
+`examples/demo-run/` predates both until `make example` regenerates it. `gaf report` now reads
+the ledger, so a report written after a `gaf checkpoint` differs from the one before it by
+that call's cost; this is intended, and one existing test now refreshes the in-place report
+before comparing a rebuild. Three CLI files outside the cap's own (`check.py`,
+`codebook.py`, and one argument in `_common.py`) carry a line or two that routes the flag.
+
+*What remains open.* Whether the siding flag can ever be read as bias: the judge shares coder
+A's model *and* sees A first *and* has a prompt whose only removal is of the second
+candidate, so self-preference, position and the prompt's own framing cannot be separated by
+this measure; separating them needs a second judge model or a swapped-order run, which would
+change the prompt and is the PI's decision. The 0.65 threshold is the plan's, not measured. A
+`max_output_tokens` or `temperature` that the request leaves unset is still not in the cache
+key; adding it would orphan every existing entry. Hosted embeddings are outside the cap. A run
+directory that has been moved takes its spend with it: the chain finds it by the path the
+resumed run recorded, and says so when it cannot.
+

@@ -555,6 +555,40 @@ def test_the_key_binds_the_provider_so_two_coders_never_share_an_answer() -> Non
     assert cache_key(request, MOCK_REGISTRY.coder_a) == key_a
 
 
+def test_a_spec_with_no_effort_keys_exactly_as_it_did_before_the_field_existed() -> None:
+    """Existing caches and golden fixtures must still hit (ADR-0051, ADR-0053)."""
+    import hashlib
+
+    request = coding_request(synthetic_corpus()[0].content, 3)
+    spec = MOCK_REGISTRY.coder_a
+    assert spec.effort is None
+    legacy = hashlib.blake2b(digest_size=16)
+    legacy.update(
+        "\x1f".join(("1", spec.provider, spec.model, *request.cache_key_parts())).encode("utf-8")
+    )
+    assert cache_key(request, spec) == legacy.hexdigest()
+
+
+def test_a_role_whose_effort_changes_never_replays_the_old_reply(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from dataclasses import replace
+
+    request = coding_request(synthetic_corpus()[0].content, 3)
+    spec = MOCK_REGISTRY.coder_a
+    keys = {
+        effort: cache_key(request, replace(spec, effort=effort))
+        for effort in (None, "low", "medium", "high")
+    }
+    assert len(set(keys.values())) == 4, "each effort level is its own question"
+    assert keys["low"] == cache_key(request, replace(spec, effort="low")), "and it is stable"
+
+    low = CachingLLMClient(MockCoderClient(replace(spec, effort="low")), tmp_path)
+    low.complete_json(request)
+    high = CachingLLMClient(MockCoderClient(replace(spec, effort="high")), tmp_path)
+    assert high.complete_json(request).cache_hit is False
+    again = CachingLLMClient(MockCoderClient(replace(spec, effort="low")), tmp_path)
+    assert again.complete_json(request).cache_hit is True
+
+
 def test_the_key_ignores_the_subject_because_it_is_content_addressed() -> None:
     """`cache_key_parts` excludes run ids and subjects on purpose."""
     text = synthetic_corpus()[0].content

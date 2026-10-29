@@ -22,7 +22,9 @@ import sqlite3
 
 __all__ = ["PRAGMAS", "SCHEMA_SQL", "SCHEMA_VERSION", "TABLES", "apply_schema"]
 
-SCHEMA_VERSION = 1
+#: 2 adds the nullable `llm_calls.stop_reason` (ADR-0053). Additive: `apply_schema`
+#: migrates a version-1 database in place, and nothing that read one stops working.
+SCHEMA_VERSION = 2
 
 #: Applied on every connection. `foreign_keys` is off by default in SQLite and must be
 #: switched on per-connection or the references below are decorative.
@@ -173,7 +175,8 @@ CREATE TABLE IF NOT EXISTS llm_calls (
     latency_ms     REAL NOT NULL DEFAULT 0.0,
     cache_hit      INTEGER NOT NULL DEFAULT 0,
     fail_safe      INTEGER NOT NULL DEFAULT 0,
-    created_at     TEXT NOT NULL
+    created_at     TEXT NOT NULL,
+    stop_reason    TEXT                 -- NULL unless the model stopped early: 'refusal', 'max_tokens'
 );
 
 -- Slow-loop checkpoints: the proposal, the human decision, the resulting snapshot. --
@@ -238,6 +241,19 @@ END;
 """
 
 
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Bring a database written by an older build up to the current shape, additively.
+
+    `CREATE TABLE IF NOT EXISTS` leaves an existing table alone, so a column added since
+    the database was written has to be added to it. Every step here is an ``ADD COLUMN``
+    of a nullable column: no row is rewritten, and a build that never heard of the column
+    still reads and writes the table.
+    """
+    columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(llm_calls)")}
+    if "stop_reason" not in columns:
+        conn.execute("ALTER TABLE llm_calls ADD COLUMN stop_reason TEXT")
+
+
 def apply_schema(conn: sqlite3.Connection) -> None:
     """Apply pragmas and DDL to `conn`, and stamp the schema version.
 
@@ -247,6 +263,7 @@ def apply_schema(conn: sqlite3.Connection) -> None:
     for pragma in PRAGMAS:
         conn.execute(pragma)
     conn.executescript(SCHEMA_SQL)
+    _migrate(conn)
     conn.execute(
         "INSERT INTO meta(key, value) VALUES('schema_version', ?) "
         "ON CONFLICT(key) DO UPDATE SET value = excluded.value",

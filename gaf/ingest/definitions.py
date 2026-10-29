@@ -20,7 +20,9 @@ are not the same code. `attach_definitions` does **no fuzzy matching**: the only
 it will reconcile are ones the *same trivial consolidation* `gaf.ingest.tagged` applies
 already brought together. A misspelt subcode stays undefined and is reported as such,
 because deciding that two nearly-identical names mean one thing is a judgment about
-meaning, and this layer does not make those.
+meaning, and this layer does not make those -- unless the PI has made that judgment
+himself, in a rulings file (ADR-0050): a definition keyed by a spelling he ruled onto
+another label goes to that label, if it has no definition of its own.
 
 These descriptions were drafted by a language model from the PI's own prompt
 (``codebook/inductive-codebook-prompt2.md``) and are imported **as given** -- see
@@ -287,10 +289,12 @@ def attach_definitions(
 
     folded_onto: dict[str, list[str]] = {}
     also_written: set[str] = set()
+    rewritten_to: dict[str, str] = {}
     if isinstance(target, OrganisedCodebook):
         names = set(target.names())
         for consolidation in target.consolidations:
             folded_onto.setdefault(consolidation.to, []).append(consolidation.from_label)
+            rewritten_to[consolidation.from_label] = consolidation.to
             if consolidation.target_also_written:
                 also_written.add(consolidation.to)
     else:
@@ -312,6 +316,20 @@ def attach_definitions(
                 )
             continue
         unmatched.append(name)
+
+    # A definition keyed by a spelling the PI has since ruled away (ADR-0050) belongs to
+    # the code that spelling became -- but only when that code has no definition of its
+    # own, so a ruling can never silently replace a definition he wrote for the target.
+    # Second, after every direct match, so the outcome does not depend on name order.
+    still_unmatched: list[str] = []
+    for name in unmatched:
+        destination = rewritten_to.get(name)
+        if destination is not None and destination in names and destination not in resolved:
+            resolved[destination] = described[name]
+            after_consolidation.append(ConsolidatedMatch(name=destination, from_labels=(name,)))
+            continue
+        still_unmatched.append(name)
+    unmatched = still_unmatched
 
     match = DefinitionsMatch(
         matched=len(resolved),

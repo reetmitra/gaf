@@ -27,6 +27,12 @@ forty-eight characters long. The Definer's output is guarded against exactly tha
 (`gaf.agents.definer`, guard D4); an imported description is not, because it is the
 researcher's own document and is not this build's to rewrite (ADR-0032).
 
+``--rulings PATH`` hands organise the PI's decisions about his own export (a typo merged,
+a code ruled top-level, ambiguous highlights placed in every candidate, a highlight he
+placed by hand) as one JSON file, `gaf.ingest.rulings` (ADR-0050). Without it nothing
+below changes; with it every ruling applied is recorded in ``organised.json`` and in
+``rulings_applied.json`` (labels, counts and ids only), beside the count it moved.
+
 Exit codes follow this package's convention: organising and defining ask *what does this
 coding contain and what did the guards find*, and findings are their deliverable, so
 they exit 0 whenever the work completes and non-zero only on bad arguments or input the
@@ -54,6 +60,7 @@ from gaf.agents.definer import (
 )
 from gaf.analysis.matrix import assignments_from_codebook
 from gaf.checks.contracts import CheckReport
+from gaf.cli._budget import apply_cap, capped
 from gaf.cli._common import (
     EXIT_OK,
     CliError,
@@ -72,6 +79,12 @@ from gaf.cli._common import (
 )
 from gaf.ids import content_hash
 from gaf.ingest.definitions import DEFINITION_SOURCE, attach_definitions, read_definitions_md
+from gaf.ingest.rulings import (
+    Rulings,
+    RulingsError,
+    load_manual_placements,
+    load_rulings,
+)
 from gaf.ingest.tagged import (
     OrganisedCodebook,
     TaggedPair,
@@ -97,6 +110,7 @@ __all__ = [
     "ORGANISED_JSON",
     "ORGANISED_MD",
     "PLACEMENT_JSON",
+    "RULINGS_APPLIED_JSON",
     "SHAREABLE_MD",
     "TREE_MMD",
     "add_codebook_parser",
@@ -116,11 +130,13 @@ CODEBOOK_JSON = "codebook.json"
 PLACEMENT_JSON = "placement.json"
 GOLDEN_JSON = "golden.json"
 DEFINER_FINDINGS_JSON = "definer_findings.json"
+#: The rulings the organiser applied and what each did: labels, counts and ids, no text.
+RULINGS_APPLIED_JSON = "rulings_applied.json"
 
 #: Which of the written files carry a respondent's words. Printed every time, because a
 #: directory nobody labelled is a directory somebody emails.
 _CARRY_TEXT = (ORGANISED_MD, ORGANISED_JSON, PLACEMENT_JSON, GOLDEN_JSON)
-_SAFE = (SHAREABLE_MD, TREE_MMD)
+_SAFE = (SHAREABLE_MD, TREE_MMD, RULINGS_APPLIED_JSON)
 
 #: Column the printed counts line up on.
 _LABEL_WIDTH = 32
@@ -272,6 +288,16 @@ def placements_from_json(payload: Mapping[str, Any]) -> HighlightsReport:
         mappings=tuple(mappings),
         resolved=int(payload.get("resolved", 0)),
         coded_response_count=int(payload.get("coded_response_count", 0)),
+        multi_placed=int(payload.get("multi_placed", 0)),
+        multi_placements=int(payload.get("multi_placements", 0)),
+        multi_place_enabled=bool(payload.get("multi_place_enabled", False)),
+        manual_applied=tuple(
+            (str(i), int(r), str(prior)) for i, r, prior in payload.get("manual_applied") or ()
+        ),
+        manual_unapplied=tuple(
+            (str(i), str(reason)) for i, reason in payload.get("manual_unapplied") or ()
+        ),
+        manual_requested=int(payload.get("manual_requested", 0)),
     )
 
 
@@ -372,6 +398,10 @@ def _write_organised(
     _write(out / SHAREABLE_MD, header + book.to_markdown(include_examples=False))
     _write(out / TREE_MMD, book.to_mermaid())
     _write(out / CODEBOOK_JSON, codebook.to_json_str())
+    trail = book.meta.get("rulings")
+    if isinstance(trail, Mapping):
+        _write_json(out / RULINGS_APPLIED_JSON, dict(trail))
+        written.append(RULINGS_APPLIED_JSON)
     if placements is not None:
         _write_json(out / PLACEMENT_JSON, placements.to_json())
         _write_json(
@@ -424,6 +454,7 @@ def cmd_codebook_organise(args: argparse.Namespace) -> int:
         raise CliError(f"{tagged} does not exist")
     out = Path(args.out)
     config = _config_from_args(args, run_id="codebook", output_dir=out)
+    rulings = _load_rulings_arg(args.rulings)
 
     try:
         pairs = read_tagged_pairs(tagged, sheet=args.sheet)
@@ -432,7 +463,7 @@ def cmd_codebook_organise(args: argparse.Namespace) -> int:
     if not pairs:
         raise CliError(f"{tagged} holds no code-text pairings")
 
-    organised = organise_tagged(pairs, rules=config.rules)
+    organised = organise_tagged(pairs, rules=config.rules, rulings=rulings)
     _banner("gaf codebook organise", str(tagged))
     _out("")
     _count("pairs read", organised.pair_count)
@@ -441,29 +472,35 @@ def cmd_codebook_organise(args: argparse.Namespace) -> int:
     _count("leaves", len(organised.leaves()))
     _count("consolidations", len(organised.consolidations))
     for consolidation in organised.consolidations:
+        kind = ", PI ruling" if consolidation.ruling else ""
+        kind += ", provisional" if consolidation.provisional else ""
         _out(
             f"    {consolidation.from_label} -> {consolidation.to} "
-            f"({consolidation.rule}, {len(consolidation.rows)} row(s))"
+            f"({consolidation.rule}{kind}, {len(consolidation.rows)} row(s))"
         )
     notes = organised.notes_by_category()
     _count("notes", len(organised.notes))
     for category, rows in notes.items():
         _count(category, len(rows), indent=4)
+    if rulings is not None:
+        _report_rulings(organised)
 
-    placements = _place(pairs, args, config=config, tagged=tagged)
+    placements, placing = _place(pairs, args, config=config, tagged=tagged, rulings=rulings)
     described, sources = _definitions(organised, args)
 
     out.mkdir(parents=True, exist_ok=True)
-    organised = with_descriptions(
-        organised,
-        {},
-        {
-            "tagged_path": str(tagged),
-            "tagged_content_hash": content_hash(tagged.read_bytes()),
-            "corpus_path": str(Path(args.corpus)) if args.corpus else None,
-            "definitions_path": str(Path(args.definitions)) if args.definitions else None,
-        },
-    )
+    extra: dict[str, Any] = {
+        "tagged_path": str(tagged),
+        "tagged_content_hash": content_hash(tagged.read_bytes()),
+        "corpus_path": str(Path(args.corpus)) if args.corpus else None,
+        "definitions_path": str(Path(args.definitions)) if args.definitions else None,
+    }
+    if rulings is not None:
+        trail = dict(organised.meta["rulings"])
+        if placing is not None:
+            trail["placement"] = placing
+        extra["rulings"] = trail
+    organised = with_descriptions(organised, {}, extra)
     written = _write_organised(
         out, organised, placements=placements, described=described, sources=sources
     )
@@ -473,35 +510,175 @@ def cmd_codebook_organise(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _load_rulings_arg(path: str | None) -> Rulings | None:
+    """The rulings file, or ``None`` when none was given. A bad one is a usage error."""
+    if not path:
+        return None
+    try:
+        return load_rulings(path)
+    except RulingsError as exc:
+        raise CliError(str(exc)) from exc
+
+
+def _rulings_from_meta(meta: Mapping[str, Any], document: Path) -> Rulings | None:
+    """The rulings an organised directory was built with, re-read and checked.
+
+    `define` re-derives the organisation from the pairings, so it must apply the same
+    rulings or it would describe codes the directory does not hold. The file is checked
+    against the hash recorded at organise time for the same reason the pairings are.
+    """
+    trail = meta.get("rulings")
+    if not isinstance(trail, Mapping) or not trail.get("path"):
+        return None
+    path = Path(str(trail["path"]))
+    if not path.exists():
+        raise CliError(
+            f"{document} was organised with the rulings in {path}, which is no longer there."
+        )
+    rulings = _load_rulings_arg(str(path))
+    assert rulings is not None
+    if rulings.content_hash != trail.get("content_hash"):
+        raise CliError(
+            f"{path} has changed since `gaf codebook organise` read it. Re-run organise: "
+            "describing one set of rulings against another would name codes the "
+            "directory does not hold."
+        )
+    return rulings
+
+
+def _report_rulings(organised: OrganisedCodebook) -> None:
+    """Print what each ruling was and did, from the trail the organiser recorded."""
+    trail = organised.meta["rulings"]
+    _out("")
+    _count("rulings", f"{trail['path']}  (hash {trail['content_hash']})")
+    if trail["description"]:
+        _out(f"    {trail['description']}")
+    for item in trail["top_level"]:
+        state = (
+            f"present, {item['count']} segment(s), {item['subcodes']} subcode(s)"
+            if item["present"]
+            else "not in this export"
+        )
+        _count(f"top level: {item['label']}", state, indent=4)
+    merges = trail["label_merges"]
+    _count(
+        "label merges applied",
+        f"{sum(1 for m in merges if m['applied'])} of {len(merges)}",
+        indent=4,
+    )
+    for item in merges:
+        status = "provisional" if item["provisional"] else "final"
+        _out(
+            f"      {item['from']} -> {item['to']}  ({status}, "
+            + (
+                f"{item['segments']} segment(s)"
+                if item["applied"]
+                else "label not in this export, nothing rewritten"
+            )
+            + ")"
+        )
+    if trail["label_merges_held"]:
+        _count("near-miss pairs held, not merged", len(trail["label_merges_held"]), indent=4)
+
+
+def _manual_placements(
+    rulings: Rulings | None, override: str | None
+) -> tuple[dict[str, int], str, bool]:
+    """The manual placements to apply: ``(mapping, source file, file found)``.
+
+    The rulings file's inline mapping first, then a file -- `--manual-placements` if it
+    was given, else the rulings' own ``manual_placements_file`` -- on top of it. A file
+    that is not there contributes nothing, which is what "optional" means; one that is
+    there and cannot be read stops the command.
+    """
+    if rulings is None and not override:
+        return {}, "", False
+    placements = dict(rulings.manual_placements) if rulings is not None else {}
+    source = override or (rulings.manual_placements_file if rulings is not None else "")
+    found = False
+    if source:
+        try:
+            from_file, found = load_manual_placements(source)
+        except RulingsError as exc:
+            raise CliError(str(exc)) from exc
+        placements.update(from_file)
+    return placements, source, found
+
+
 def _place(
-    pairs: Sequence[TaggedPair], args: argparse.Namespace, *, config: Any, tagged: Path
-) -> HighlightsReport | None:
-    """Place every segment onto the corpus, or say why placement did not happen."""
+    pairs: Sequence[TaggedPair],
+    args: argparse.Namespace,
+    *,
+    config: Any,
+    tagged: Path,
+    rulings: Rulings | None = None,
+) -> tuple[HighlightsReport | None, dict[str, Any] | None]:
+    """Place every segment onto the corpus, or say why placement did not happen.
+
+    Returns the report and, when rulings were given, the placement half of their trail.
+    """
     if not args.corpus:
         _out("")
         _out(
             "  placement                   not attempted: no --corpus, so no segment "
             "has a response id and no golden set can be written"
         )
-        return None
+        return None, None
     corpus = load_corpus_arg(Path(args.corpus), config=config)
     assert corpus is not None
+    manual, manual_source, manual_found = _manual_placements(rulings, args.manual_placements)
+    multi = rulings is not None and rulings.multi_place_ambiguous
     _, report = place_highlights(
         pairs,
         corpus,
         fuzzy_threshold=config.rules.fuzzy_threshold,
         path=str(tagged),
+        multi_place=multi,
+        manual_placements=manual,
     )
     _out("")
     _count("placement", f"{report.total} segment(s) on {len(corpus)} response(s)")
     _count("exact", report.exact, indent=4)
     _count("fuzzy", report.fuzzy, indent=4)
     _count("resolved", report.resolved, indent=4)
+    if report.multi_place_enabled:
+        _count(
+            "multi_placed",
+            f"{report.multi_placed} highlight(s) in {report.multi_placements} placements",
+            indent=4,
+        )
+    if report.manual_requested:
+        _count("manual", f"{report.manual} of {report.manual_requested} requested", indent=4)
     _count("ambiguous (excluded)", report.ambiguous, indent=4)
     _count("unlocated (excluded)", report.unlocated, indent=4)
     _count("mapped", report.mapped, indent=4)
     _count("responses in the coded set", report.coded_response_count, indent=4)
-    return report
+    if manual_source or manual:
+        _count(
+            "manual placements file",
+            f"{manual_source or '(inline only)'}  "
+            + ("found" if manual_found else "not present, nothing applied"),
+            indent=4,
+        )
+    for highlight_id, reason in report.manual_unapplied:
+        _out(f"      manual placement not applied: highlight {highlight_id}: {reason}")
+    if rulings is None:
+        return report, None
+    return report, {
+        "multi_place_ambiguous": {
+            "enabled": report.multi_place_enabled,
+            "highlights": report.multi_placed,
+            "placements": report.multi_placements,
+        },
+        "manual_placements": {
+            "source": manual_source,
+            "file_found": manual_found,
+            "requested": report.manual_requested,
+            "applied": report.manual,
+            "applied_ids": [list(item) for item in report.manual_applied],
+            "unapplied": [list(item) for item in report.manual_unapplied],
+        },
+    }
 
 
 def _definitions(
@@ -577,7 +754,9 @@ def cmd_codebook_define(args: argparse.Namespace) -> int:
 
     config = _config_from_args(args, run_id="definer", output_dir=out)
     pairs = read_tagged_pairs(tagged)
-    organised = organise_tagged(pairs, rules=config.rules)
+    organised = organise_tagged(
+        pairs, rules=config.rules, rulings=_rulings_from_meta(meta, document)
+    )
     described = _descriptions_from_json(payload)
     sources: dict[str, str] = dict(meta.get("description_sources") or {})
     for name in described:
@@ -598,10 +777,11 @@ def cmd_codebook_define(args: argparse.Namespace) -> int:
 
     log = CallLog()
     definer = _definer_for(config, log)
+    apply_cap(args, config, definer)  # --max-usd (ADR-0053)
     definitions: list[Definition] = []
     report = CheckReport()
     for context in contexts_for(organised, pairs, described=described, only=sorted(targets)):
-        definition = definer.define(context)
+        definition = capped(definer.define, context)
         definitions.append(definition)
         report.findings.extend(definition.findings)
         if definition.accepted and definition.description:
@@ -687,6 +867,23 @@ def add_codebook_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]
     organise.add_argument("--corpus", help="corpus JSON or xlsx — places every segment on a response")
     organise.add_argument("--definitions", help="the researcher's codebook Markdown")
     organise.add_argument("--sheet", help="worksheet name, when the pairings are a workbook")
+    organise.add_argument(
+        "--rulings",
+        metavar="PATH",
+        help=(
+            "the PI's rulings on this export, as JSON (ADR-0050): label merges, top-level "
+            "codes, multi-placement of ambiguous highlights, manual placements"
+        ),
+    )
+    organise.add_argument(
+        "--manual-placements",
+        metavar="PATH",
+        help=(
+            "a JSON object mapping highlight id -> response id, applied after both "
+            "placement passes (overrides the rulings' own manual_placements_file; a "
+            "file that is not there is a no-op). Needs --corpus"
+        ),
+    )
     organise.add_argument("--out", required=True, help="output directory")
     _add_seed(organise)
     organise.set_defaults(handler=cmd_codebook_organise, offline=True)
