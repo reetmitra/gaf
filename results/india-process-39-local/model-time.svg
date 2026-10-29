@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="254" viewBox="0 0 760 254" role="img" aria-labelledby="t d">
+<title id="t">Model time by role and task</title>
+<desc id="d">Horizontal bars of model-seconds, 2,817 in all: coder_b / code 1,127 s (40%); coder_a / code 600 s (21%); judge / judge_route 517 s (18%); judge / judge_dispute 481 s (17%); judge / judge_fit 92 s (3%).</desc>
+<style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}.ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}.s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}.gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}.ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.wash{fill:var(--s1);fill-opacity:.1}</style>
+<rect class="bg" x="0" y="0" width="760" height="254"/>
+<text class="ttl" x="16.00" y="24.00">Model time by role and task</text>
+<text class="sub" x="16.00" y="42.00">Model-seconds on calls that reached a model; a cache replay takes none.</text>
+<line class="axis" x1="200.00" y1="52.00" x2="200.00" y2="208.00"/>
+<text class="tick" text-anchor="middle" x="200.00" y="224.00">0</text>
+<line class="grid" x1="336.67" y1="52.00" x2="336.67" y2="208.00"/>
+<text class="tick" text-anchor="middle" x="336.67" y="224.00">500</text>
+<line class="grid" x1="473.33" y1="52.00" x2="473.33" y2="208.00"/>
+<text class="tick" text-anchor="middle" x="473.33" y="224.00">1,000</text>
+<line class="grid" x1="610.00" y1="52.00" x2="610.00" y2="208.00"/>
+<text class="tick" text-anchor="middle" x="610.00" y="224.00">1,500</text>
+<text class="tick" text-anchor="middle" x="405.00" y="246.00">model-seconds</text>
+<text text-anchor="end" x="190.00" y="77.00">coder_b / code</text>
+<path class="s1" d="M200.00,64.00h304.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-304.00z"><title>coder_b / code: 1,126.8 s, 40.0% of model time</title></path>
+<text x="516.00" y="77.00">1,127 s (40%)</text>
+<text text-anchor="end" x="190.00" y="107.00">coder_a / code</text>
+<path class="s1" d="M200.00,94.00h160.12a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-160.12z"><title>coder_a / code: 600.4 s, 21.3% of model time</title></path>
+<text x="372.12" y="107.00">600 s (21%)</text>
+<text text-anchor="end" x="190.00" y="137.00">judge / judge_route</text>
+<path class="s1" d="M200.00,124.00h137.30a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-137.30z"><title>judge / judge_route: 517.0 s, 18.4% of model time</title></path>
+<text x="349.30" y="137.00">517 s (18%)</text>
+<text text-anchor="end" x="190.00" y="167.00">judge / judge_dispute</text>
+<path class="s1" d="M200.00,154.00h127.54a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-127.54z"><title>judge / judge_dispute: 481.2 s, 17.1% of model time</title></path>
+<text x="339.54" y="167.00">481 s (17%)</text>
+<text text-anchor="end" x="190.00" y="197.00">judge / judge_fit</text>
+<path class="s1" d="M200.00,184.00h21.05a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-21.05z"><title>judge / judge_fit: 91.6 s, 3.3% of model time</title></path>
+<text x="233.05" y="197.00">92 s (3%)</text>
+</svg>

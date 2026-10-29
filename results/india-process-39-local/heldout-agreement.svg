@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="282" viewBox="0 0 760 282" role="img" aria-labelledby="t d">
+<title id="t">Agreement with his coding, by code</title>
+<desc id="d">Bars on one axis with a zero line. with descriptions: F1 0.050, kappa -0.010; by name only: F1 0.071, kappa +0.011.</desc>
+<style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}.ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}.s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}.gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}.ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.wash{fill:var(--s1);fill-opacity:.1}</style>
+<rect class="bg" x="0" y="0" width="760" height="282"/>
+<text class="ttl" x="16.00" y="24.00">Agreement with his coding, by code</text>
+<rect class="s1" x="16.00" y="36.00" width="10" height="10" rx="2"/>
+<text x="32.00" y="45.00">F1</text>
+<rect class="s2" x="64.00" y="36.00" width="10" height="10" rx="2"/>
+<text x="80.00" y="45.00">Cohen&#x27;s kappa</text>
+<text class="sub" x="190.00" y="45.00">The line at 0 is chance agreement for kappa.</text>
+<text class="tick" text-anchor="middle" x="96.00" y="258.00">-0.2</text>
+<text class="tick" text-anchor="middle" x="195.00" y="258.00">0</text>
+<text class="tick" text-anchor="middle" x="294.00" y="258.00">0.2</text>
+<text class="tick" text-anchor="middle" x="393.00" y="258.00">0.4</text>
+<text class="tick" text-anchor="middle" x="492.00" y="258.00">0.6</text>
+<text class="tick" text-anchor="middle" x="591.00" y="258.00">0.8</text>
+<text class="tick" text-anchor="middle" x="690.00" y="258.00">1</text>
+<text x="16.00" y="86.00">with descriptions (19 responses, 123 codes)</text>
+<line class="grid" x1="96.00" y1="94.00" x2="96.00" y2="148.00"/>
+<line class="grid" x1="294.00" y1="94.00" x2="294.00" y2="148.00"/>
+<line class="grid" x1="393.00" y1="94.00" x2="393.00" y2="148.00"/>
+<line class="grid" x1="492.00" y1="94.00" x2="492.00" y2="148.00"/>
+<line class="grid" x1="591.00" y1="94.00" x2="591.00" y2="148.00"/>
+<line class="grid" x1="690.00" y1="94.00" x2="690.00" y2="148.00"/>
+<text text-anchor="end" x="86.00" y="113.00">F1</text>
+<path class="s1" d="M195.00,100.00h20.75a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-20.75z"><title>with descriptions: F1 0.050</title></path>
+<text x="227.75" y="113.00">0.050</text>
+<text text-anchor="end" x="86.00" y="139.00">kappa</text>
+<path class="s2" d="M195.00,126.00h-2.58a2.58,2.58 0 0 0 -2.58,2.58v12.84a2.58,2.58 0 0 0 2.58,2.58h2.58z"><title>with descriptions: kappa -0.010</title></path>
+<text text-anchor="end" x="181.84" y="139.00">-0.010</text>
+<line class="zero" x1="195.00" y1="94.00" x2="195.00" y2="148.00"/>
+<text x="16.00" y="174.00">by name only (19 responses, 120 codes)</text>
+<line class="grid" x1="96.00" y1="182.00" x2="96.00" y2="236.00"/>
+<line class="grid" x1="294.00" y1="182.00" x2="294.00" y2="236.00"/>
+<line class="grid" x1="393.00" y1="182.00" x2="393.00" y2="236.00"/>
+<line class="grid" x1="492.00" y1="182.00" x2="492.00" y2="236.00"/>
+<line class="grid" x1="591.00" y1="182.00" x2="591.00" y2="236.00"/>
+<line class="grid" x1="690.00" y1="182.00" x2="690.00" y2="236.00"/>
+<text text-anchor="end" x="86.00" y="201.00">F1</text>
+<path class="s1" d="M195.00,188.00h31.36a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-31.36z"><title>by name only: F1 0.071</title></path>
+<text x="238.36" y="201.00">0.071</text>
+<text text-anchor="end" x="86.00" y="227.00">kappa</text>
+<path class="s2" d="M195.00,214.00h2.67a2.67,2.67 0 0 1 2.67,2.67v12.65a2.67,2.67 0 0 1 -2.67,2.67h-2.67z"><title>by name only: kappa +0.011</title></path>
+<text x="208.35" y="227.00">+0.011</text>
+<line class="zero" x1="195.00" y1="182.00" x2="195.00" y2="236.00"/>
+<text class="tick" text-anchor="middle" x="393.00" y="274.00">F1 (0 to 1) and kappa (-1 to 1) on one axis</text>
+</svg>

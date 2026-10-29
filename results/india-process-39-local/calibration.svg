@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="348" viewBox="0 0 760 348" role="img" aria-labelledby="t d">
+<title id="t">F1 against threshold</title>
+<desc id="d">Line charts of F1 against threshold, one per threshold. tau_fit: provisional 0.30 scores F1 0.08, recommended 0.95 scores 0.98, best F1 0.98 from 0.85 to 1.00; tau_high: provisional 0.80 scores F1 0.50, recommended 0.95 scores 1.00, best F1 1.00 from 0.90 to 1.00; tau_low: provisional 0.45 scores F1 0.00, recommended 0.95 scores 1.00, best F1 1.00 from 0.90 to 1.00.</desc>
+<style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}.ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}.s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}.gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}.ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.wash{fill:var(--s1);fill-opacity:.1}</style>
+<rect class="bg" x="0" y="0" width="760" height="348"/>
+<text class="ttl" x="16.00" y="24.00">F1 against threshold</text>
+<line class="ln" x1="16" y1="42" x2="38" y2="42"/>
+<text x="44.00" y="46.00">F1</text>
+<circle class="cur ring" cx="96" cy="42" r="5"/>
+<text x="108.00" y="46.00">provisional (current)</text>
+<circle class="s2 ring" cx="248" cy="42" r="5"/>
+<text x="260.00" y="46.00">recommended</text>
+<rect class="wash" x="350.00" y="37.00" width="10" height="10" rx="2"/>
+<text x="366.00" y="46.00">range where F1 is highest</text>
+<text class="ttl" x="46.00" y="78.00">tau_fit</text>
+<text class="sub" x="46.00" y="92.00">137 of 144 positive</text>
+<rect class="wash" x="220.53" y="100.00" width="30.80" height="140"/>
+<line class="axis" x1="46.00" y1="240.00" x2="251.33" y2="240.00"/>
+<text class="tick" text-anchor="end" x="38.00" y="244.00">0</text>
+<line class="grid" x1="46.00" y1="170.00" x2="251.33" y2="170.00"/>
+<text class="tick" text-anchor="end" x="38.00" y="174.00">0.5</text>
+<line class="grid" x1="46.00" y1="100.00" x2="251.33" y2="100.00"/>
+<text class="tick" text-anchor="end" x="38.00" y="104.00">1</text>
+<text class="tick" text-anchor="middle" x="46.00" y="256.00">0</text>
+<text class="tick" text-anchor="middle" x="148.67" y="256.00">0.5</text>
+<text class="tick" text-anchor="middle" x="251.33" y="256.00">1</text>
+<text class="tick" text-anchor="middle" x="148.67" y="272.00">threshold</text>
+<polyline class="ln" points="46.00,240.00 56.27,240.00 66.53,240.00 76.80,240.00 87.07,237.97 97.33,234.00 107.60,228.25 117.87,202.78 128.13,185.96 138.40,159.18 148.67,136.11 158.93,125.88 169.20,114.00 179.47,109.89 189.73,106.09 200.00,104.52 210.27,104.00 220.53,103.49 230.80,103.49 241.07,103.49 251.33,103.49"/>
+<circle class="cur ring" cx="107.60" cy="228.25" r="5"><title>tau_fit provisional 0.30: F1 0.08</title></circle>
+<circle class="s2 ring" cx="241.07" cy="103.49" r="5"><title>tau_fit recommended 0.95: F1 0.98</title></circle>
+<circle class="cur ring" cx="51.00" cy="296.00" r="5"/>
+<text x="62.00" y="300.00">provisional 0.30 (F1 0.08)</text>
+<circle class="s2 ring" cx="51.00" cy="316.00" r="5"/>
+<text x="62.00" y="320.00">recommended 0.95 (F1 0.98)</text>
+<text class="sub" x="62.00" y="340.00">best F1 0.98 at 0.85-1.00</text>
+<text class="ttl" x="291.33" y="78.00">tau_high</text>
+<text class="sub" x="291.33" y="92.00">4 of 68 positive</text>
+<rect class="wash" x="476.13" y="100.00" width="20.53" height="140"/>
+<line class="axis" x1="291.33" y1="240.00" x2="496.67" y2="240.00"/>
+<line class="grid" x1="291.33" y1="170.00" x2="496.67" y2="170.00"/>
+<line class="grid" x1="291.33" y1="100.00" x2="496.67" y2="100.00"/>
+<text class="tick" text-anchor="middle" x="291.33" y="256.00">0</text>
+<text class="tick" text-anchor="middle" x="394.00" y="256.00">0.5</text>
+<text class="tick" text-anchor="middle" x="496.67" y="256.00">1</text>
+<text class="tick" text-anchor="middle" x="394.00" y="272.00">threshold</text>
+<polyline class="ln" points="291.33,224.44 301.60,224.44 311.87,224.44 322.13,224.44 332.40,224.44 342.67,224.44 352.93,224.44 363.20,224.44 373.47,224.44 383.73,224.44 394.00,224.23 404.27,223.77 414.53,222.50 424.80,218.46 435.07,207.06 445.33,181.05 455.60,170.00 465.87,128.00 476.13,100.00 486.40,100.00 496.67,100.00"/>
+<circle class="cur ring" cx="455.60" cy="170.00" r="5"><title>tau_high provisional 0.80: F1 0.50</title></circle>
+<circle class="s2 ring" cx="486.40" cy="100.00" r="5"><title>tau_high recommended 0.95: F1 1.00</title></circle>
+<circle class="cur ring" cx="296.33" cy="296.00" r="5"/>
+<text x="307.33" y="300.00">provisional 0.80 (F1 0.50)</text>
+<circle class="s2 ring" cx="296.33" cy="316.00" r="5"/>
+<text x="307.33" y="320.00">recommended 0.95 (F1 1.00)</text>
+<text class="sub" x="307.33" y="340.00">best F1 1.00 at 0.90-1.00</text>
+<text class="ttl" x="536.67" y="78.00">tau_low</text>
+<text class="sub" x="536.67" y="92.00">64 of 68 positive</text>
+<rect class="wash" x="721.47" y="100.00" width="20.53" height="140"/>
+<line class="axis" x1="536.67" y1="240.00" x2="742.00" y2="240.00"/>
+<line class="grid" x1="536.67" y1="170.00" x2="742.00" y2="170.00"/>
+<line class="grid" x1="536.67" y1="100.00" x2="742.00" y2="100.00"/>
+<text class="tick" text-anchor="middle" x="536.67" y="256.00">0</text>
+<text class="tick" text-anchor="middle" x="639.33" y="256.00">0.5</text>
+<text class="tick" text-anchor="middle" x="742.00" y="256.00">1</text>
+<text class="tick" text-anchor="middle" x="639.33" y="272.00">threshold</text>
+<polyline class="ln" points="536.67,240.00 546.93,240.00 557.20,240.00 567.47,240.00 577.73,240.00 588.00,240.00 598.27,240.00 608.53,240.00 618.80,240.00 629.07,240.00 639.33,235.69 649.60,227.46 659.87,208.89 670.13,173.33 680.40,135.69 690.67,113.16 700.93,109.33 711.20,102.22 721.47,100.00 731.73,100.00 742.00,100.00"/>
+<circle class="cur ring" cx="629.07" cy="240.00" r="5"><title>tau_low provisional 0.45: F1 0.00</title></circle>
+<circle class="s2 ring" cx="731.73" cy="100.00" r="5"><title>tau_low recommended 0.95: F1 1.00</title></circle>
+<circle class="cur ring" cx="541.67" cy="296.00" r="5"/>
+<text x="552.67" y="300.00">provisional 0.45 (F1 0.00)</text>
+<circle class="s2 ring" cx="541.67" cy="316.00" r="5"/>
+<text x="552.67" y="320.00">recommended 0.95 (F1 1.00)</text>
+<text class="sub" x="552.67" y="340.00">best F1 1.00 at 0.90-1.00</text>
+</svg>

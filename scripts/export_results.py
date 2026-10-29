@@ -28,8 +28,10 @@ Usage::
 Inputs are located by the run layout ``gaf`` writes: ``corpus.json``,
 ``stats.json``, ``codebook.json``, ``assignments.json``, ``findings.json``,
 ``timeline.json``, ``reorganisation_trail.json``, ``decision_matrix.md``,
-``analysis/`` and ``views/`` under ``--run``; ``golden.json``, ``placement.json`` (or
-the older ``golden_mapping.json``), ``organised.json``, ``codebook.json``,
+``analysis/`` and ``views/`` under ``--run`` (plus ``run_metrics.json``,
+``calibration_report.json``, ``agreement/`` and ``agreement_nameonly/``, which draw the four
+figures on ``00-at-a-glance.md``); ``golden.json``, ``placement.json`` (or the older
+``golden_mapping.json``), ``organised.json``, ``codebook.json``,
 ``golden_checks.json``, ``tree.mmd``, ``analysis_golden/`` and ``views/`` under
 ``--human``, which defaults to ``--run`` so a directory holding both still exports
 exactly as it did. A missing input skips its section, prints why, and is recorded as
@@ -42,7 +44,9 @@ metric a reader can check, and what cannot be shown is named rather than omitted
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import math
 import re
 import shutil
 import sys
@@ -2490,6 +2494,717 @@ def section_halt_resume(ctx: Ctx) -> str | None:
     return "\n".join(parts)
 
 
+# ------------------------------------------------------------------ at a glance
+#
+# One page, 00-at-a-glance.md: four figures drawn from the run's own measurements and, above
+# them, "realisations" - short rule-based statements, each emitted only when the inputs it
+# rests on exist and its condition holds, each giving the number it rests on and what that
+# suggests. Nothing here reads a text column: every input is a count, a share, a threshold, a
+# role/task name or a model name, and every file written is still re-read by the guard.
+
+#: The width of every figure, in pixels (the saturation figure's).
+FIG_W = 760
+
+#: A standalone SVG cannot inherit a page's colours, so each carries its own surface and both
+#: schemes in one stylesheet. The values are the dataviz skill's validated default palette:
+#: slots 1 and 2 (blue, orange) pass its six checks on both surfaces, and the ordinal blue
+#: steps 600/400/250 clear its 2:1 floor on both. Text wears ink tokens, never a series colour.
+FIG_CSS = (
+    ":root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;"
+    "--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}"
+    "@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;"
+    "--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}"
+    ".bg{fill:var(--bg)}"
+    "text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}"
+    ".ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}"
+    "line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}"
+    ".s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}"
+    ".gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}"
+    ".ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}"
+    ".wash{fill:var(--s1);fill-opacity:.1}"
+)
+
+#: A statement about a judge needs at least this many rulings behind it.
+SIDING_MIN = 20
+
+#: Below this |kappa| agreement is called indistinguishable from chance.
+CHANCE_KAPPA = 0.1
+
+#: A best-F1 range this wide is flat (the width `gaf/checks/health.py` also calls flat).
+PLATEAU_WIDE = 0.3
+
+
+def _f(value: float, places: int = 2) -> str:
+    """Fixed-precision number for SVG, negative zero normalised, so the bytes are stable."""
+    text = f"{value:.{places}f}"
+    return text[1:] if text.startswith("-") and float(text) == 0.0 else text
+
+
+def _t(x: float, y: float, content: Any, cls: str = "", anchor: str = "start") -> str:
+    attrs = (f' class="{cls}"' if cls else "") + (f' text-anchor="{anchor}"' if anchor != "start" else "")
+    return f'<text{attrs} x="{_f(x)}" y="{_f(y)}">{html.escape(str(content))}</text>'
+
+
+def _ln(x1: float, y1: float, x2: float, y2: float, cls: str = "grid") -> str:
+    return f'<line class="{cls}" x1="{_f(x1)}" y1="{_f(y1)}" x2="{_f(x2)}" y2="{_f(y2)}"/>'
+
+
+def _swatch(x: float, y: float, cls: str) -> str:
+    return f'<rect class="{cls}" x="{_f(x)}" y="{_f(y)}" width="10" height="10" rx="2"/>'
+
+
+def _bar(x0: float, x1: float, y: float, h: float, cls: str, tip: str) -> str:
+    """A horizontal bar from the baseline `x0` to `x1` (either side of it).
+
+    Square at the baseline, 4px round at the data end, and a tooltip. A zero-length bar is
+    not drawn: the label beside it says 0, and a sliver would say otherwise.
+    """
+    w, s = abs(x1 - x0), (1 if x1 >= x0 else -1)
+    if w == 0:
+        return ""
+    r = min(4.0, w / 2, h / 2)
+    sweep = 1 if s > 0 else 0
+    d = (
+        f"M{_f(x0)},{_f(y)}h{_f(s * (w - r))}a{_f(r)},{_f(r)} 0 0 {sweep} {_f(s * r)},{_f(r)}"
+        f"v{_f(h - 2 * r)}a{_f(r)},{_f(r)} 0 0 {sweep} {_f(-s * r)},{_f(r)}h{_f(-s * (w - r))}z"
+    )
+    return f'<path class="{cls}" d="{d}"><title>{html.escape(tip)}</title></path>'
+
+
+def _ticks(hi: float, n: int = 4) -> list[float]:
+    """Round tick values from 0 up to the first one at or above `hi`."""
+    if hi <= 0:
+        return [0.0, 1.0]
+    raw = hi / n
+    mag = 10 ** math.floor(math.log10(raw))
+    step = next(m * mag for m in (1, 2, 2.5, 5, 10) if m * mag >= raw)
+    ticks, v = [0.0], 0.0
+    while v < hi - 1e-9:
+        v += step
+        ticks.append(v)
+    return ticks
+
+
+def _svg(height: float, title: str, desc: str, body: list[str]) -> str:
+    """The standalone wrapper: title and description for a reader who cannot see the picture."""
+    return "\n".join(
+        [
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{FIG_W}" height="{_f(height, 0)}" '
+            f'viewBox="0 0 {FIG_W} {_f(height, 0)}" role="img" aria-labelledby="t d">',
+            f'<title id="t">{html.escape(title)}</title>',
+            f'<desc id="d">{html.escape(desc)}</desc>',
+            f"<style>{FIG_CSS}</style>",
+            f'<rect class="bg" x="0" y="0" width="{FIG_W}" height="{_f(height, 0)}"/>',
+            *body,
+            "</svg>",
+        ]
+    ) + "\n"
+
+
+def figure_model_time(rows: list[tuple[str, str, float]]) -> str:
+    """Bars: model-seconds per role and task, longest first, seconds and share at the tip."""
+    rows = sorted(rows, key=lambda r: (-r[2], r[0], r[1]))
+    total = sum(r[2] for r in rows) or 1.0
+    ticks = _ticks(max(r[2] for r in rows))
+    left, right, top, row, bar_h = 200, 150, 58, 30, 18
+    plot_w = FIG_W - left - right
+    height = top + row * len(rows) + 46
+
+    def x(v: float) -> float:
+        return left + plot_w * v / ticks[-1]
+
+    base = top + row * len(rows)
+    body = [
+        _t(16, 24, "Model time by role and task", "ttl"),
+        _t(16, 42, "Model-seconds on calls that reached a model; a cache replay takes none.", "sub"),
+    ]
+    for v in ticks:
+        body.append(_ln(x(v), top - 6, x(v), base, "axis" if v == 0 else "grid"))
+        body.append(_t(x(v), base + 16, f"{v:,.0f}", "tick", "middle"))
+    body.append(_t(left + plot_w / 2, height - 8, "model-seconds", "tick", "middle"))
+    said = []
+    for i, (role, task, secs) in enumerate(rows):
+        y = top + row * i + (row - bar_h) / 2
+        name = f"{role} / {task}"
+        body.append(_t(left - 10, y + bar_h / 2 + 4, name, "", "end"))
+        body.append(_bar(left, x(secs), y, bar_h, "s1", f"{name}: {secs:,.1f} s, {secs / total:.1%} of model time"))
+        body.append(_t(x(secs) + 8, y + bar_h / 2 + 4, f"{secs:,.0f} s ({secs / total:.0%})"))
+        said.append(f"{name} {secs:,.0f} s ({secs / total:.0%})")
+    desc = f"Horizontal bars of model-seconds, {total:,.0f} in all: " + "; ".join(said) + "."
+    return _svg(height, "Model time by role and task", desc, body)
+
+
+def _stack(y0: float, title: str, items: list[tuple[str, int, str]]) -> tuple[list[str], str]:
+    """One 100% bar with a two-line legend beneath it: (svg lines, the sentence for <desc>)."""
+    total = sum(n for _, n, _ in items) or 1
+    left, width, gap = 16, FIG_W - 32, 2
+    body = [_t(left, y0, f"{title} ({total:,})", "")]
+    acc, said = 0, []
+    for i, (label, n, cls) in enumerate(items):
+        a, b = width * acc / total, width * (acc + n) / total
+        if n:
+            lead = gap if i and acc else 0
+            body.append(
+                f'<rect class="{cls}" x="{_f(left + a + lead)}" y="{_f(y0 + 10)}" '
+                f'width="{_f(b - a - lead)}" height="22"><title>{html.escape(label)}: {n:,} '
+                f"({n / total:.1%})</title></rect>"
+            )
+        acc += n
+        cx = left + i * (width / 3)
+        body.append(_swatch(cx, y0 + 46, cls))
+        body.append(_t(cx + 16, y0 + 55, label))
+        body.append(_t(cx + 16, y0 + 71, f"{n:,} ({n / total:.1%})", "sub"))
+        said.append(f"{label} {n:,} ({n / total:.1%})")
+    return body, f"{title} ({total:,}): " + ", ".join(said) + "."
+
+
+def figure_agreement(agree: Json | None, siding: Json | None) -> str:
+    """Two 100% bars: how the coders agreed, and whom the judge sided with."""
+    panels: list[tuple[str, list[tuple[str, int, str]]]] = []
+    if agree:
+        panels.append(
+            (
+                "Coder A against coder B, comparisons",
+                [
+                    ("agreed outright", agree["agreed_outright"]["count"], "o1"),
+                    ("grey zone, sent to the judge", agree["grey_zone"]["count"], "o2"),
+                    ("disputed or unmatched", agree["disputed_or_unmatched"]["count"], "o3"),
+                ],
+            )
+        )
+    if siding:
+        panels.append(
+            (
+                "Whom the judge sided with, rulings",
+                [
+                    ("coder A", siding["coder_a"]["count"], "s1"),
+                    ("coder B", siding["coder_b"]["count"], "s2"),
+                    ("neither", siding["neither"]["count"], "gray"),
+                ],
+            )
+        )
+    body = [_t(16, 24, "Coder agreement and the judge's siding", "ttl")]
+    said = []
+    for i, (title, items) in enumerate(panels):
+        lines, sentence = _stack(58 + 104 * i, title, items)
+        body += lines
+        said.append(sentence)
+    return _svg(48 + 104 * len(panels), "Coder agreement and the judge's siding", " ".join(said), body)
+
+
+def figure_heldout(variants: list[tuple[str, float, float, str]]) -> str:
+    """Grouped bars: F1 and Cohen's kappa for each way of matching codes, a zero line drawn.
+
+    `variants` is ``(label, f1, kappa, detail)``. The axis runs to 1 whatever the values, so a
+    small score looks small; it starts at -0.2 or below when a kappa is negative, because a
+    bar that cannot go left of zero cannot show that agreement is worse than chance.
+    """
+    left, right, top, row, bar_h = 96, 70, 74, 26, 18
+    low = min(v for _, f1, k, _ in variants for v in (f1, k))
+    lo = 0.0 if low >= 0 else round(min(-0.2, math.floor(low / 0.2) * 0.2), 1)
+    ticks = [round(lo + 0.2 * i, 1) for i in range(round((1.0 - lo) / 0.2) + 1)]
+    plot_w = FIG_W - left - right
+    group = 22 + 2 * row + 14
+    base = top + group * len(variants) - 8
+    height = base + 40
+
+    def x(v: float) -> float:
+        return left + plot_w * (v - lo) / (1.0 - lo)
+
+    body = [
+        _t(16, 24, "Agreement with his coding, by code", "ttl"),
+        _swatch(16, 36, "s1"),
+        _t(32, 45, "F1"),
+        _swatch(64, 36, "s2"),
+        _t(80, 45, "Cohen's kappa"),
+        _t(190, 45, "The line at 0 is chance agreement for kappa.", "sub"),
+    ]
+    body += [_t(x(v), base + 16, f"{v:g}", "tick", "middle") for v in ticks]
+    said = []
+    for g, (label, f1, kappa, detail) in enumerate(variants):
+        y0 = top + group * g
+        body.append(_t(16, y0 + 12, f"{label} ({detail})"))
+        body += [_ln(x(v), y0 + 20, x(v), y0 + 22 + 2 * row) for v in ticks if v]
+        for i, (name, value, cls, shown) in enumerate(
+            (("F1", f1, "s1", f"{f1:.3f}"), ("kappa", kappa, "s2", f"{kappa:+.3f}"))
+        ):
+            y = y0 + 22 + row * i + (row - bar_h) / 2
+            body.append(_t(left - 10, y + bar_h / 2 + 4, name, "", "end"))
+            body.append(_bar(x(0), x(value), y, bar_h, cls, f"{label}: {name} {shown}"))
+            tip_x = x(value) + (8 if value >= 0 else -8)
+            body.append(_t(tip_x, y + bar_h / 2 + 4, shown, "", "start" if value >= 0 else "end"))
+        body.append(_ln(x(0), y0 + 20, x(0), y0 + 22 + 2 * row, "zero"))
+        said.append(f"{label}: F1 {f1:.3f}, kappa {kappa:+.3f}")
+    body.append(_t(left + plot_w / 2, height - 8, "F1 (0 to 1) and kappa (-1 to 1) on one axis", "tick", "middle"))
+    return _svg(height, "Agreement with his coding, by code", "Bars on one axis with a zero line. " + "; ".join(said) + ".", body)
+
+
+def _f1_at(curve: list[Json], threshold: float) -> float:
+    return min(curve, key=lambda c: abs(c["threshold"] - threshold))["f1"]
+
+
+def figure_calibration(sweeps: dict[str, Json]) -> str:
+    """Small multiples: F1 against threshold, the provisional and recommended values marked."""
+    names = sorted(sweeps)
+    left, right, gap, top, ph = 46, 18, 40, 100, 140
+    pw = (FIG_W - left - right - gap * (len(names) - 1)) / len(names)
+    height = top + ph + 108
+    body = [
+        _t(16, 24, "F1 against threshold", "ttl"),
+        '<line class="ln" x1="16" y1="42" x2="38" y2="42"/>',
+        _t(44, 46, "F1"),
+        '<circle class="cur ring" cx="96" cy="42" r="5"/>',
+        _t(108, 46, "provisional (current)"),
+        '<circle class="s2 ring" cx="248" cy="42" r="5"/>',
+        _t(260, 46, "recommended"),
+        _swatch(350, 37, "wash"),
+        _t(366, 46, "range where F1 is highest"),
+    ]
+    said = []
+    for i, name in enumerate(names):
+        s, curve = sweeps[name], sweeps[name]["curve"]
+        x0 = left + i * (pw + gap)
+        lo_t, hi_t = curve[0]["threshold"], curve[-1]["threshold"]
+
+        def x(v: float, x0: float = x0, lo_t: float = lo_t, hi_t: float = hi_t) -> float:
+            return x0 + pw * (v - lo_t) / ((hi_t - lo_t) or 1.0)
+
+        def y(v: float) -> float:
+            return top + ph * (1.0 - v)
+
+        body.append(_t(x0, top - 22, name, "ttl"))
+        body.append(_t(x0, top - 8, f"{s['n_positive']} of {s['n_units']} positive", "sub"))
+        p0, p1 = s["plateau"]
+        body.append(
+            f'<rect class="wash" x="{_f(x(p0))}" y="{_f(top)}" width="{_f(max(x(p1) - x(p0), 2))}" height="{ph}"/>'
+        )
+        for v in (0.0, 0.5, 1.0):
+            body.append(_ln(x0, y(v), x0 + pw, y(v), "axis" if v == 0 else "grid"))
+            if i == 0:
+                body.append(_t(x0 - 8, y(v) + 4, f"{v:g}", "tick", "end"))
+        for v in (lo_t, (lo_t + hi_t) / 2, hi_t):
+            body.append(_t(x(v), top + ph + 16, f"{v:g}", "tick", "middle"))
+        body.append(_t(x0 + pw / 2, top + ph + 32, "threshold", "tick", "middle"))
+        pts = " ".join(f"{_f(x(c['threshold']))},{_f(y(c['f1']))}" for c in curve)
+        body.append(f'<polyline class="ln" points="{pts}"/>')
+        cur, rec = s["current"], s["recommended"]
+        f_cur, f_rec = s["f1_at_current"], _f1_at(curve, rec)
+        for cls, at, f1, what in (("cur", cur, f_cur, "provisional"), ("s2", rec, f_rec, "recommended")):
+            body.append(
+                f'<circle class="{cls} ring" cx="{_f(x(at))}" cy="{_f(y(f1))}" r="5">'
+                f"<title>{name} {what} {at:.2f}: F1 {f1:.2f}</title></circle>"
+            )
+        body.append(f'<circle class="cur ring" cx="{_f(x0 + 5)}" cy="{_f(top + ph + 56)}" r="5"/>')
+        body.append(_t(x0 + 16, top + ph + 60, f"provisional {cur:.2f} (F1 {f_cur:.2f})"))
+        body.append(f'<circle class="s2 ring" cx="{_f(x0 + 5)}" cy="{_f(top + ph + 76)}" r="5"/>')
+        body.append(_t(x0 + 16, top + ph + 80, f"recommended {rec:.2f} (F1 {f_rec:.2f})"))
+        body.append(_t(x0 + 16, top + ph + 100, f"best F1 {s['best_f1']:.2f} at {p0:.2f}-{p1:.2f}", "sub"))
+        said.append(
+            f"{name}: provisional {cur:.2f} scores F1 {f_cur:.2f}, recommended {rec:.2f} scores "
+            f"{f_rec:.2f}, best F1 {s['best_f1']:.2f} from {p0:.2f} to {p1:.2f}"
+        )
+    return _svg(height, "F1 against threshold", "Line charts of F1 against threshold, one per threshold. " + "; ".join(said) + ".", body)
+
+
+@dataclass
+class Glance:
+    """What the page reads, loaded once; ``None`` or empty where the run does not hold it."""
+
+    offline: bool
+    metrics: Json | None = None  # run_metrics.json (or the copy stats.json carries)
+    calibration: Json | None = None  # calibration_report.json
+    agreement: list[tuple[str, Json]] = field(default_factory=list)  # (way of matching, agreement.json)
+    models: dict[str, str] = field(default_factory=dict)  # role -> model, from the run's config
+
+
+def _load_glance(run: Path) -> Glance:
+    stats = _quiet_load(run / "stats.json") or {}
+    agreement = []
+    for sub, how in (("agreement", "with descriptions"), ("agreement_nameonly", "by name only")):
+        j = _quiet_load(run / sub / "agreement.json")
+        if isinstance(((j or {}).get("code_level") or {}).get("cohens_kappa"), int | float):
+            agreement.append((how, j))
+    config = (_quiet_load(run / "run.json") or {}).get("config") or {}
+    models = {
+        role: m["model"] for role, m in (config.get("models") or {}).items() if isinstance(m, dict) and m.get("model")
+    }
+    return Glance(
+        offline=_offline(run),
+        metrics=_quiet_load(run / "run_metrics.json") or stats.get("run_metrics") or None,
+        calibration=_quiet_load(run / "calibration_report.json"),
+        agreement=agreement,
+        models=models,
+    )
+
+
+def _time_rows(g: Glance) -> list[tuple[str, str, float]]:
+    """``(role, task, model-seconds)`` for the calls that took model time.
+
+    Empty if unmeasured, and always empty for an offline run: no model was called, so there is
+    no model time to report whatever a file claims.
+    """
+    lat = (g.metrics or {}).get("latency") or {}
+    if g.offline or not lat.get("measured"):
+        return []
+    return [
+        (r["role"], r["task"], r["total"] / 1000.0)
+        for r in lat.get("by_role_task_ms") or []
+        if r.get("total", 0) > 0
+    ]
+
+
+# -- the rules. Each returns the statements it has grounds for: none when an input is absent or
+# -- its condition does not hold. The ones about models never run on an offline run.
+
+
+def rule_model_time(g: Glance) -> list[str]:
+    rows = _time_rows(g)
+    if not rows:
+        return []
+    total = sum(s for *_, s in rows)
+    coder = sum(s for role, _, s in rows if role.startswith("coder"))
+    judge = sum(s for role, _, s in rows if role == "judge")
+    if not (coder or judge):
+        return []
+    rest = total - coder - judge
+    said = (
+        f"The coders took {coder:,.0f} of {total:,.0f} model-seconds ({coder / total:.0%}) and the "
+        f"judge {judge:,.0f} ({judge / total:.0%})" + (f", other roles {rest:,.0f}." if rest >= 0.5 else ".")
+    )
+    if max(coder, judge) / total < 0.55:
+        why = "Time is split about evenly, so neither side alone is the bottleneck."
+    else:
+        lead = "coders" if coder > judge else "judge"
+        why = (
+            f"Most of the time is the {lead}, so a faster model there is what would shorten a run; "
+            "speeding up the other side would change little."
+        )
+    return [f"{said} {why}"]
+
+
+def rule_judge_siding(g: Glance) -> list[str]:
+    s = (g.metrics or {}).get("judge_siding") or {}
+    n = s.get("decisions", 0)
+    if g.offline or n < SIDING_MIN:
+        return []
+    out = []
+    for coder, other in (("coder_a", "coder_b"), ("coder_b", "coder_a")):
+        if (s.get(coder) or {}).get("count") != 0:
+            continue
+        la, lb = f"coder {coder[-1].upper()}", f"coder {other[-1].upper()}"
+        nb, nn = s[other]["count"], s["neither"]["count"]
+        said = (
+            f"The judge sided with {la} in 0 of {n} decisions, with {lb} in {nb} ({nb / n:.1%}) "
+            f"and with neither in {nn} ({nn / n:.1%})."
+        )
+        if coder == "coder_b" and "by construction" in str(s.get("basis", "")):
+            why = (
+                "The run's own metrics note says that zero is built into the judge's two verdicts "
+                "(keep both candidates, or drop coder B's), so it is not evidence of a preference; "
+                f"the informative figure is the {nb / n:.1%} for coder A, the rate at which the judge "
+                "dropped coder B's candidate."
+            )
+        else:
+            why = f"A judge that never backs {la} is not arbitrating between the coders."
+        judge_model = g.models.get("judge")
+        if judge_model and judge_model == g.models.get(other):
+            why += f" The judge runs the same model as {lb} ({judge_model}), so a lean towards {lb} may be self-preference."
+        elif judge_model and judge_model == g.models.get(coder):
+            why += (
+                f" The judge runs the same model as {la} ({judge_model}), the coder it never backed, so "
+                "favouring its own model's output does not explain the zero."
+            )
+        out.append(f"{said} {why}")
+    return out
+
+
+def rule_chance_agreement(g: Glance) -> list[str]:
+    clauses = []
+    for how, j in g.agreement:
+        cl = j["code_level"]
+        if abs(cl["cohens_kappa"]) >= CHANCE_KAPPA:
+            continue
+        paired = j.get("matched_only") or {}
+        tail = (
+            f", and kappa on the {paired['n_codes']} matched codes alone is {paired['cohens_kappa']:.2f}"
+            if isinstance(paired.get("cohens_kappa"), int | float) and paired.get("n_codes")
+            else ""
+        )
+        clauses.append(
+            f"{how}, kappa {cl['cohens_kappa']:+.3f} (observed agreement {cl['observed_agreement']:.1%}, "
+            f"{cl['expected_agreement']:.1%} expected by chance) and F1 {cl['f1']:.2f}{tail}"
+        )
+    if not clauses:
+        return []
+    who = "The offline stand-in coder (a keyword table)" if g.offline else "The machine's coding"
+    why = (
+        "That describes the keyword table, not any model."
+        if g.offline
+        else "The matched-code figure covers only the few codes both sides share. The two codings pick out "
+        "almost none of the same code-and-response cells, so reconcile the codebooks before reading a score "
+        "as a verdict on either side."
+    )
+    return [
+        f"{who} and his coding agree no better than chance at the level of the code "
+        f"(|kappa| < {CHANCE_KAPPA:g}): " + "; ".join(clauses) + f". {why}"
+    ]
+
+
+def rule_calibration_plateau(g: Glance) -> list[str]:
+    out = []
+    for name, s in sorted(((g.calibration or {}).get("sweeps") or {}).items()):
+        curve, plateau = s.get("curve"), s.get("plateau")
+        if not curve or not plateau:
+            continue
+        lo, hi = plateau
+        edge = hi >= curve[-1]["threshold"] - 1e-9
+        if not (edge or hi - lo >= PLATEAU_WIDE):
+            continue
+        rec, cur = s["recommended"], s["current"]
+        said = (
+            f"{name}: the best F1 ({s['best_f1']:.2f}) holds from {lo:.2f} to {hi:.2f}"
+            + (", right up to the end of the grid" if edge else "")
+            + (
+                f"; the recommended {rec:.2f} is the middle of that range, not a peak the curve found, and the "
+                f"provisional {cur:.2f} scores F1 {s['f1_at_current']:.2f}."
+                if s.get("changed")
+                else f"; the provisional {cur:.2f} is already inside it, so the sweep keeps it."
+            )
+        )
+        why = (
+            f"{s['n_positive']} of {s['n_units']} {s['unit']} are {s.get('positive_label', 'positive')}. This golden set supports "
+            f"\"at least {lo:.2f}\", not {rec:.2f} exactly."
+        )
+        offline = " The scores come from the offline run's lexical space." if g.offline else ""
+        out.append(f"{said} {why}{offline}")
+    return out
+
+
+def rule_cache_replay(g: Glance) -> list[str]:
+    spend = (g.metrics or {}).get("spend") or {}
+    calls, hits = spend.get("calls", 0), spend.get("cache_hits", 0)
+    if g.offline or not calls or not hits:
+        return []
+    return [
+        f"{hits:,} of {calls:,} model calls ({hits / calls:.0%}) were replayed from the cache, not sent to a "
+        f"model. The time and cost on this page are for the other {calls - hits:,} calls, so read them as "
+        "what this run added; a run from an empty cache would take longer."
+    ]
+
+
+def rule_response_time(g: Glance) -> list[str]:
+    lat = (g.metrics or {}).get("latency") or {}
+    per = lat.get("per_response_model_s") or {}
+    if g.offline or not lat.get("measured") or not per.get("n"):
+        return []
+    n, responses = per["n"], ((g.metrics or {}).get("spend") or {}).get("responses", 0)
+    rest = (
+        f"; the other {responses - n} of {responses} responses had no model time to count"
+        if responses > n
+        else ""
+    )
+    return [
+        f"Each of the {n} responses that reached a model took {per['mean']:.0f} s of model time on average "
+        f"(median {per['median']:.0f} s, slowest {per['max']:.0f} s){rest}. At that rate 100 responses need "
+        f"about {per['mean'] * 100 / 3600:.1f} hours of model time."
+    ]
+
+
+RULES = (
+    rule_model_time,
+    rule_judge_siding,
+    rule_chance_agreement,
+    rule_calibration_plateau,
+    rule_cache_replay,
+    rule_response_time,
+)
+
+
+def _drawn(ctx: Ctx, name: str, svg: str) -> bool:
+    """Write one figure, but only if the whole figure passes the guard (as `copy_guarded` does)."""
+    found = ctx.withheld.locate(svg)
+    if found is None:
+        _write(ctx.out, name, svg)
+        return True
+    offset, piece = found
+    ctx.skip(name, f"**withheld**: the figure shares a run of {ctx.withheld.shingle} characters with a response")
+    record_guard_hit(ctx.run, name, offset, piece)
+    print(f"  hold  {name} - shares a run of {len(piece)} characters with withheld text at offset {offset}")
+    return False
+
+
+def _not_drawn(ctx: Ctx, name: str, reason: str) -> list[str]:
+    ctx.skip(name, reason)
+    print(f"  skip  {name} - {reason}")
+    return [f"*Not drawn: {reason}.*", ""]
+
+
+def _who(key: str) -> str:
+    """``coder_a`` -> ``coder A``; ``grey_zone`` -> ``grey zone``."""
+    return f"coder {key[-1].upper()}" if key.startswith("coder_") else key.replace("_", " ")
+
+
+def _share(n: int, total: int) -> str:
+    return f"{n / total:.1%}" if total else "-"
+
+
+def _glance_time(ctx: Ctx, g: Glance) -> list[str]:
+    name = "model-time.svg"
+    rows = _time_rows(g)
+    head = ["## Where the model's time went", ""]
+    if not rows:
+        why = (
+            "no `run_metrics.json` (`gaf report` writes it)"
+            if g.metrics is None
+            else "this is an offline run: no model was called, so there is no model time"
+            if g.offline
+            else "no model time was measured"
+        )
+        return [*head, *_not_drawn(ctx, name, why)]
+    if not _drawn(ctx, name, figure_model_time(rows)):
+        return [*head, "*Not drawn: withheld by the guard.*", ""]
+    total = sum(s for *_, s in rows)
+    spent = {
+        (r["role"], r["task"]): r for r in ((g.metrics or {}).get("spend") or {}).get("by_role_task") or []
+    }
+    table = [
+        [
+            role,
+            task,
+            spent.get((role, task), {}).get("model", "-"),
+            spent.get((role, task), {}).get("calls", "-"),
+            spent.get((role, task), {}).get("cache_hits", "-"),
+            f"{secs:,.1f}",
+            f"{secs / total:.1%}",
+        ]
+        for role, task, secs in sorted(rows, key=lambda r: (-r[2], r[0], r[1]))
+    ]
+    return [
+        *head,
+        f"![model time by role and task]({name})",
+        "",
+        _table(["role", "task", "model", "calls", "cache replays", "model-seconds", "share"], table, align="lllrrrr"),
+        "",
+    ]
+
+
+def _glance_agreement(ctx: Ctx, g: Glance) -> list[str]:
+    name = "agreement-judge.svg"
+    m = g.metrics or {}
+    agree, siding = m.get("coder_agreement"), (None if g.offline else m.get("judge_siding"))
+    head = ["## Coder agreement and the judge's siding", ""]
+    if not agree and not siding:
+        return [*head, *_not_drawn(ctx, name, "no `run_metrics.json` (`gaf report` writes it)")]
+    if not _drawn(ctx, name, figure_agreement(agree, siding)):
+        return [*head, "*Not drawn: withheld by the guard.*", ""]
+    rows: list[list[Any]] = []
+    for title, block, keys in (
+        ("coder agreement", agree, ("agreed_outright", "grey_zone", "disputed_or_unmatched")),
+        ("judge siding", siding, ("coder_a", "coder_b", "neither")),
+    ):
+        if block:
+            total = sum(block[k]["count"] for k in keys)
+            rows += [[f"{title}: {_who(k)}", block[k]["count"], _share(block[k]["count"], total)] for k in keys]
+    out = [*head, f"![coder agreement and the judge's siding]({name})", ""]
+    if agree:
+        out += [f"A comparison is {str(agree.get('unit', 'one comparison')).split(': ', 1)[-1]}.", ""]
+    return [*out, _table(["measure", "count", "share"], rows, align="lrr"), ""]
+
+
+def _glance_heldout(ctx: Ctx, g: Glance) -> list[str]:
+    name = "heldout-agreement.svg"
+    head = ["## Agreement with his coding", ""]
+    if not g.agreement:
+        return [*head, *_not_drawn(ctx, name, "no `agreement/agreement.json` or `agreement_nameonly/agreement.json` in the run")]
+    variants = [
+        (
+            how,
+            j["code_level"]["f1"],
+            j["code_level"]["cohens_kappa"],
+            f"{j['code_level']['n_responses']} responses, {j['code_level']['n_codes']} codes",
+        )
+        for how, j in g.agreement
+    ]
+    if not _drawn(ctx, name, figure_heldout(variants)):
+        return [*head, "*Not drawn: withheld by the guard.*", ""]
+    rows = []
+    for how, j in g.agreement:
+        cl, mo = j["code_level"], j.get("matched_only") or {}
+        paired = f"{mo['cohens_kappa']:.3f} over {mo['n_codes']} codes" if "cohens_kappa" in mo else "-"
+        rows.append([how, f"{cl['f1']:.3f}", f"{cl['cohens_kappa']:+.3f}", cl["tp"], cl["fp"], cl["fn"], paired])
+    return [
+        *head,
+        f"![agreement with his coding]({name})",
+        "",
+        _table(["matching", "F1", "kappa", "TP", "FP", "FN", "kappa on matched codes"], rows, align="lrrrrrr"),
+        "",
+    ]
+
+
+def _glance_calibration(ctx: Ctx, g: Glance) -> list[str]:
+    name = "calibration.svg"
+    sweeps = (g.calibration or {}).get("sweeps") or {}
+    head = ["## Calibration", ""]
+    if not sweeps:
+        return [*head, *_not_drawn(ctx, name, "no `calibration_report.json` (the `calibrate_thresholds` snippet in `docs/RUNBOOK.md` writes it)")]
+    if not _drawn(ctx, name, figure_calibration(sweeps)):
+        return [*head, "*Not drawn: withheld by the guard.*", ""]
+    rows = [
+        [
+            f"`{k}`",
+            f"{s['current']:.2f}",
+            f"{s['f1_at_current']:.3f}",
+            f"{s['recommended']:.2f}",
+            f"{_f1_at(s['curve'], s['recommended']):.3f}",
+            f"{s['best_f1']:.3f}",
+            f"{s['plateau'][0]:.2f}-{s['plateau'][1]:.2f}",
+        ]
+        for k, s in sorted(sweeps.items())
+    ]
+    return [
+        *head,
+        f"![F1 against threshold]({name})",
+        "",
+        _table(
+            ["threshold", "provisional", "F1 at provisional", "recommended", "F1 at recommended", "best F1", "best-F1 range"],
+            rows,
+            align="lrrrrrr",
+        ),
+        "",
+    ]
+
+
+def section_at_a_glance(ctx: Ctx) -> str | None:
+    g = _load_glance(ctx.run)
+    realisations = [line for rule in RULES for line in rule(g)]
+    parts = [f"# 00 - At a glance: {ctx.label}", ""]
+    parts += [
+        (
+            "This is an offline run: no model was called, so nothing on this page is a statement about a model."
+            if g.offline
+            else "Models were called for this run; every number below is one the run recorded about itself."
+        ),
+        "",
+        "## Realisations",
+        "",
+        "Each line is produced by a rule that fires only when the numbers it rests on exist and its "
+        "condition holds; a rule whose input is absent is silent, not guessed.",
+        "",
+    ]
+    parts += [f"- {r}" for r in realisations] or ["- No rule had grounds to fire on this run's inputs."]
+    parts.append("")
+    figures = [
+        *_glance_time(ctx, g),
+        *_glance_agreement(ctx, g),
+        *_glance_heldout(ctx, g),
+        *_glance_calibration(ctx, g),
+    ]
+    if not realisations and not any(line.startswith("![") for line in figures):
+        ctx.skip("00-at-a-glance.md", "none of `run_metrics.json`, the agreement files or `calibration_report.json` is present")
+        return None
+    return "\n".join(parts + figures)
+
+
 # ------------------------------------------------------------------- pages and README
 
 
@@ -2621,8 +3336,8 @@ def section_readme(ctx: Ctx, produced: list[tuple[str, str]]) -> str:
         "",
         _table(["file", "what it holds"], rows, align="ll"),
         "",
-        "Plus this README and the two figures — `dendrogram.svg` and `saturation.svg` —",
-        "which are embedded in the sections that discuss them rather than listed above.",
+        "Plus this README and the figures — `dendrogram.svg`, `saturation.svg` and the four drawn on",
+        "`00-at-a-glance.md` — which are embedded in the sections that discuss them rather than listed above.",
         "",
         "## What was run",
         "",
@@ -3034,6 +3749,7 @@ def main(argv: list[str] | None = None) -> int:
     feed_human(human, ctx.withheld)
 
     sections: list[tuple[str, str, Any]] = [
+        ("00-at-a-glance.md", "four figures and what the run's own numbers say, in plain words", section_at_a_glance),
         ("01-inputs.md", "the corpus, and how his highlights were placed onto it", section_inputs),
         ("02-human-codebook.md", "his codebook organised: tree, counts, notes, definitions", section_human_codebook),
         ("03-structural-checks.md", "his coding against his own rules", section_structural),

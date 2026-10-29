@@ -22,6 +22,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
@@ -1264,3 +1265,373 @@ def test_rationale_is_a_withheld_key(tmp_path: Path):
     withheld = xr.Withheld()
     xr.feed_run(run, withheld)
     assert not withheld.is_clean(PLANTED_TWO)
+
+
+# --------------------------------------------------------------------------- #
+# 6. The at-a-glance page: four figures and the rules that read the run's numbers
+#
+# Every number below is invented. None is, or is chosen to resemble, a real run's.
+# --------------------------------------------------------------------------- #
+
+
+def metrics_payload(**over: Any) -> dict[str, Any]:
+    """An invented `run_metrics.json`: coders 60 of 100 model-seconds, a judge that never backs B."""
+    base: dict[str, Any] = {
+        "schema": "gaf.run_metrics/1",
+        "coder_agreement": {
+            "agreed_outright": {"count": 5},
+            "grey_zone": {"count": 25},
+            "disputed_or_unmatched": {"count": 10},
+            "comparisons": 40,
+            "unit": "M1 comparison: an invented unit of comparison",
+        },
+        "judge_siding": {
+            "decisions": 25,
+            "coder_a": {"count": 10},
+            "coder_b": {"count": 0},
+            "neither": {"count": 15},
+            "basis": "An invented note: coder B's share is zero by construction.",
+        },
+        "latency": {
+            "measured": True,
+            "by_role_task_ms": [
+                {"role": "coder_a", "task": "code", "n": 3, "total": 30000.0},
+                {"role": "coder_b", "task": "code", "n": 3, "total": 30000.0},
+                {"role": "judge", "task": "judge_fit", "n": 4, "total": 40000.0},
+            ],
+            "per_response_model_s": {"n": 3, "mean": 33.33, "median": 30.0, "max": 50.0},
+        },
+        "spend": {
+            "calls": 10,
+            "cache_hits": 4,
+            "responses": 5,
+            "by_role_task": [
+                {"role": "coder_a", "task": "code", "model": "model-one", "calls": 3, "cache_hits": 0},
+                {"role": "coder_b", "task": "code", "model": "model-two", "calls": 3, "cache_hits": 0},
+                {"role": "judge", "task": "judge_fit", "model": "model-two", "calls": 4, "cache_hits": 4},
+            ],
+        },
+    }
+    return {**base, **over}
+
+
+def agreement_payload(kappa: float = 0.04, f1: float = 0.1) -> dict[str, Any]:
+    """An invented `agreement.json`, whole enough for the agreement section to render it too."""
+    cl = {
+        "cohens_kappa": kappa, "f1": f1, "precision": 0.1, "recall": 0.1, "tp": 3, "fp": 20, "fn": 22,
+        "tn": 800, "n_responses": 3, "n_codes": 9, "n_cells": 27,
+        "observed_agreement": 0.9, "expected_agreement": 0.9,
+    }  # fmt: skip
+    return {
+        "code_level": cl,
+        "matched_only": {**cl, "cohens_kappa": 0.5, "n_codes": 2},
+        "segment_level": {
+            "weighted_precision": 0.1, "weighted_recall": 0.1, "weighted_f1": 0.1,
+            "strict_precision": 0.1, "strict_recall": 0.1, "strict_f1": 0.1,
+            "overlap_threshold": 0.5, "right_code_wrong_place": 1, "mean_overlap_on_shared_codes": 0.4,
+        },
+        "matching": {
+            "pairs": [], "space_id": "lexical-v1-512", "tau_high": 0.8,
+            "n_human_codes": 3, "n_machine_codes": 3,
+        },
+        "over_coding": [],
+        "blind_spots": [],
+    }  # fmt: skip
+
+
+def sweep_payload(*, f1: list[float], current: float, recommended: float, plateau: list[float]) -> dict[str, Any]:
+    grid = [0.0, 0.25, 0.5, 0.75, 1.0]
+    return {
+        "name": "invented", "unit": "invented units", "positive_label": "invented positives",
+        "prediction_label": "invented prediction",
+        "current": current, "recommended": recommended, "changed": current != recommended,
+        "best_f1": max(f1), "f1_at_current": f1[grid.index(current)], "plateau": plateau,
+        "n_units": 12, "n_positive": 6,
+        "curve": [
+            {"threshold": t, "f1": v, "tp": 1, "fp": 1, "fn": 1, "tn": 1, "precision": 0.5, "recall": 0.5}
+            for t, v in zip(grid, f1, strict=True)
+        ],
+    }  # fmt: skip
+
+
+def calibration_payload() -> dict[str, Any]:
+    """`tau_fit` peaks to the edge of the grid; `tau_low` peaks inside it and stays put."""
+    return {
+        "space_id": "lexical-v1-512",
+        "sweeps": {
+            "tau_fit": sweep_payload(f1=[0, 0.2, 0.9, 0.9, 0.9], current=0.25, recommended=0.75, plateau=[0.5, 1.0]),
+            "tau_low": sweep_payload(f1=[0, 0.5, 1.0, 0.5, 0], current=0.5, recommended=0.5, plateau=[0.5, 0.5]),
+        },
+    }
+
+
+def build_glance(run: Path, *, offline: bool = False, metrics: dict[str, Any] | None = None) -> None:
+    """Write every input the page reads into a run directory built by `build_run`."""
+    stats = json.loads((run / "stats.json").read_text(encoding="utf-8"))
+    _write_json(run / "stats.json", {**stats, "offline": offline})
+    _write_json(run / "run_metrics.json", metrics if metrics is not None else metrics_payload())
+    _write_json(run / "calibration_report.json", calibration_payload())
+    _write_json(run / "agreement" / "agreement.json", agreement_payload(0.04, 0.1))
+    _write_json(run / "agreement_nameonly" / "agreement.json", agreement_payload(-0.02, 0.2))
+    models = {"coder_a": "model-one", "coder_b": "model-two", "judge": "model-two"}
+    _write_json(run / "run.json", {"config": {"models": {r: {"model": m} for r, m in models.items()}}})
+
+
+def glance(live: bool = True, **over: Any) -> Any:
+    """A `Glance` built in memory, for the rule tests."""
+    models = {"coder_a": "model-one", "coder_b": "model-two", "judge": "model-two"}
+    return xr.Glance(
+        offline=not live,
+        metrics=over.get("metrics", metrics_payload()),
+        calibration=over.get("calibration", calibration_payload()),
+        agreement=over.get("agreement", [("with descriptions", agreement_payload(0.04))]),
+        models=over.get("models", models),
+    )
+
+
+def svg_root(svg: str) -> ET.Element:
+    """Parse a figure (valid XML or the test fails) and insist on a title, a description and a scheme."""
+    root = ET.fromstring(svg)
+    assert root.tag.endswith("svg")
+    assert root.findtext("{*}title") and root.findtext("{*}desc")
+    assert "prefers-color-scheme:dark" in svg
+    return root
+
+
+def svg_texts(root: ET.Element) -> list[str]:
+    return [(t.text or "") for t in root.iter("{http://www.w3.org/2000/svg}text")]
+
+
+# -- the four figures --
+
+
+def test_the_model_time_figure_is_xml_and_labels_every_bar_with_seconds_and_share():
+    svg = xr.figure_model_time([("coder_a", "code", 30.0), ("judge", "judge_fit", 40.0)])
+    texts = svg_texts(svg_root(svg))
+    assert "judge / judge_fit" in texts and "coder_a / code" in texts
+    assert "40 s (57%)" in texts and "30 s (43%)" in texts
+    assert svg == xr.figure_model_time([("judge", "judge_fit", 40.0), ("coder_a", "code", 30.0)])
+
+
+def test_the_agreement_figure_labels_counts_and_shares_and_shows_a_zero_share():
+    svg = xr.figure_agreement(
+        metrics_payload()["coder_agreement"], metrics_payload()["judge_siding"]
+    )
+    texts = svg_texts(svg_root(svg))
+    assert "5 (12.5%)" in texts and "25 (62.5%)" in texts and "10 (25.0%)" in texts
+    assert "10 (40.0%)" in texts and "0 (0.0%)" in texts and "15 (60.0%)" in texts
+    assert svg.count("<rect class=") == 1 + 2 * 3 + 5  # background, swatches, and the five non-empty segments
+    only = xr.figure_agreement(None, metrics_payload()["judge_siding"])
+    assert "Coder A against coder B" not in only and "judge" in only
+
+
+def test_the_heldout_figure_draws_a_zero_line_and_a_negative_kappa_left_of_it():
+    svg = xr.figure_heldout(
+        [("with descriptions", 0.05, -0.02, "3 responses"), ("by name only", 0.1, 0.04, "3 responses")]
+    )
+    root = svg_root(svg)
+    texts = svg_texts(root)
+    assert {"0.050", "-0.020", "0.100", "+0.040", "-0.2", "0"} <= set(texts)
+    assert svg.count('class="zero"') == 2, "one zero line per group, drawn over the bars"
+    negative = next(p for p in root.iter("{http://www.w3.org/2000/svg}path") if "-0.020" in "".join(p.itertext()))
+    assert negative.get("d", "").partition("h")[2].startswith("-"), "a negative kappa grows leftwards"
+    assert "-0.2" not in svg_texts(svg_root(xr.figure_heldout([("only", 0.1, 0.2, "x")]))), "no room left of zero when none is needed"
+
+
+def test_the_calibration_figure_marks_the_provisional_and_the_recommended_value():
+    sweeps = calibration_payload()["sweeps"]
+    svg = xr.figure_calibration(sweeps)
+    root = svg_root(svg)
+    texts = svg_texts(root)
+    assert "provisional 0.25 (F1 0.20)" in texts and "recommended 0.75 (F1 0.90)" in texts
+    assert "tau_fit" in texts and "tau_low" in texts and "best F1 0.90 at 0.50-1.00" in texts
+    assert svg.count("<polyline") == 2 and svg.count('class="wash"') == 2 + 1  # one band per panel, one in the key
+    titles = "".join(t.text or "" for t in root.iter("{http://www.w3.org/2000/svg}title"))
+    assert "tau_fit provisional 0.25: F1 0.20" in titles and "tau_low recommended 0.50: F1 1.00" in titles
+
+
+# -- the rules: each fires, and each does not --
+
+
+def test_model_time_rule_fires_with_the_share_and_stays_silent_without_its_input():
+    (said,) = xr.rule_model_time(glance())
+    assert "60 of 100 model-seconds (60%)" in said and "judge 40 (40%)" in said
+    assert "coders" in said.split("Most of the time is the")[1][:8]
+    assert xr.rule_model_time(glance(metrics=None)) == []
+    unmeasured = metrics_payload(latency={"measured": False, "by_role_task_ms": []})
+    assert xr.rule_model_time(glance(metrics=unmeasured)) == []
+    even = metrics_payload(latency={"measured": True, "by_role_task_ms": [
+        {"role": "coder_a", "task": "code", "total": 50000.0}, {"role": "judge", "task": "judge_fit", "total": 50000.0}]})  # fmt: skip
+    assert "split about evenly" in xr.rule_model_time(glance(metrics=even))[0]
+
+
+def test_judge_siding_rule_fires_on_a_zero_share_and_names_the_shared_model():
+    (said,) = xr.rule_judge_siding(glance())
+    assert "0 of 25 decisions" in said and "coder A in 10 (40.0%)" in said and "neither in 15 (60.0%)" in said
+    assert "built into the judge's two verdicts" in said, "the note says the zero is structural"
+    assert "same model as coder B (model-two), the coder it never backed" in said
+    flipped = metrics_payload(judge_siding={
+        "decisions": 25, "coder_a": {"count": 0}, "coder_b": {"count": 10}, "neither": {"count": 15}, "basis": ""})  # fmt: skip
+    (said,) = xr.rule_judge_siding(glance(metrics=flipped))
+    assert "0 of 25 decisions" in said and "arbitrating" in said and "built into" not in said
+    assert "same model as coder B (model-two), so a lean towards coder B may be self-preference" in said
+    assert "same model" not in xr.rule_judge_siding(glance(models={"judge": "model-three"}))[0]
+
+
+def test_judge_siding_rule_needs_twenty_decisions_and_a_zero():
+    few = {**metrics_payload()["judge_siding"], "decisions": 19}
+    assert xr.rule_judge_siding(glance(metrics=metrics_payload(judge_siding=few))) == []
+    both = {**metrics_payload()["judge_siding"], "coder_b": {"count": 3}, "neither": {"count": 12}}
+    assert xr.rule_judge_siding(glance(metrics=metrics_payload(judge_siding=both))) == []
+    assert xr.rule_judge_siding(glance(metrics=None)) == []
+
+
+def test_chance_rule_fires_under_a_tenth_and_not_above_it():
+    (said,) = xr.rule_chance_agreement(glance())
+    assert "no better than chance" in said and "kappa +0.040" in said and "kappa on the 2 matched codes alone is 0.50" in said
+    assert "90.0% expected by chance" in said and "F1 0.10" in said
+    both = glance(agreement=[("with descriptions", agreement_payload(0.04)), ("by name only", agreement_payload(-0.02))])
+    assert "kappa -0.020" in xr.rule_chance_agreement(both)[0] and "by name only" in xr.rule_chance_agreement(both)[0]
+    clear = glance(agreement=[("with descriptions", agreement_payload(0.5))])
+    assert xr.rule_chance_agreement(clear) == []
+    assert xr.rule_chance_agreement(glance(agreement=[])) == []
+
+
+def test_calibration_rule_fires_on_an_edge_or_a_flat_plateau_and_not_on_a_peak():
+    said = xr.rule_calibration_plateau(glance())
+    assert len(said) == 1 and said[0].startswith("tau_fit:"), "tau_low peaks inside the grid, narrowly"
+    assert "holds from 0.50 to 1.00, right up to the end of the grid" in said[0]
+    assert "recommended 0.75 is the middle of that range" in said[0] and "provisional 0.25 scores F1 0.20" in said[0]
+    assert "6 of 12 invented units are invented positives" in said[0] and '"at least 0.50"' in said[0]
+    flat = calibration_payload()
+    flat["sweeps"] = {"tau_mid": sweep_payload(f1=[0, 0.9, 0.9, 0.9, 0.5], current=0.25, recommended=0.5, plateau=[0.25, 0.75])}
+    (wide,) = xr.rule_calibration_plateau(glance(calibration=flat))
+    assert "right up to the end" not in wide and "holds from 0.25 to 0.75" in wide, "flat, but not at the edge"
+    kept = {"sweeps": {"tau_x": sweep_payload(f1=[0, 0.9, 0.9, 0.9, 0.9], current=0.25, recommended=0.25, plateau=[0.25, 1.0])}}
+    assert "already inside it, so the sweep keeps it" in xr.rule_calibration_plateau(glance(calibration=kept))[0]
+    assert xr.rule_calibration_plateau(glance(calibration=None)) == []
+
+
+def test_cache_rule_fires_when_calls_were_replayed():
+    (said,) = xr.rule_cache_replay(glance())
+    assert "4 of 10 model calls (40%) were replayed" in said and "other 6 calls" in said
+    none = metrics_payload(spend={"calls": 10, "cache_hits": 0, "responses": 5})
+    assert xr.rule_cache_replay(glance(metrics=none)) == []
+    assert xr.rule_cache_replay(glance(metrics=None)) == []
+
+
+def test_response_time_rule_fires_and_counts_the_responses_it_leaves_out():
+    (said,) = xr.rule_response_time(glance())
+    assert "Each of the 3 responses that reached a model took 33 s" in said and "median 30 s, slowest 50 s" in said
+    assert "the other 2 of 5 responses had no model time to count" in said
+    assert "about 0.9 hours of model time" in said
+    no_n = metrics_payload(latency={"measured": True, "per_response_model_s": {}})
+    assert xr.rule_response_time(glance(metrics=no_n)) == []
+    assert xr.rule_response_time(glance(metrics=None)) == []
+
+
+def test_an_offline_run_never_gets_a_claim_about_a_model():
+    offline = glance(live=False)
+    for rule in (xr.rule_model_time, xr.rule_judge_siding, xr.rule_cache_replay, xr.rule_response_time):
+        assert rule(offline) == [], rule.__name__
+    assert xr._time_rows(offline) == []
+    said = " ".join(line for rule in xr.RULES for line in rule(offline))
+    assert "keyword table" in said and "model-seconds" not in said and "judge" not in said.lower()
+    assert "the machine's coding" not in said.lower()
+
+
+# -- the page: registration, absence, the guard --
+
+
+def glance_export(tmp_path: Path, *, offline: bool = False, metrics: dict[str, Any] | None = None) -> tuple[int, Path, Path]:
+    run = build_run(tmp_path)
+    build_glance(run, offline=offline, metrics=metrics)
+    code, out = export(tmp_path, run, human=build_human(tmp_path))
+    return code, out, run
+
+
+FIGURES = ("model-time.svg", "agreement-judge.svg", "heldout-agreement.svg", "calibration.svg")
+
+
+def test_the_at_a_glance_page_is_written_listed_and_embeds_its_four_figures(tmp_path: Path):
+    code, out, _run = glance_export(tmp_path)
+    assert code == 0
+    names = files_under(out)
+    assert "00-at-a-glance.md" in names and all(f in names for f in FIGURES)
+    page = (out / "00-at-a-glance.md").read_text(encoding="utf-8")
+    for figure in FIGURES:
+        assert f"]({figure})" in page
+        svg_root((out / figure).read_text(encoding="utf-8"))
+    assert page.index("## Realisations") < page.index("## Where the model's time went")
+    assert "The coders took 60 of 100 model-seconds (60%)" in page
+    readme = (out / "README.md").read_text(encoding="utf-8")
+    assert "[00-at-a-glance.md](00-at-a-glance.md)" in readme and "00-at-a-glance.md" in readme.split("## What is in")[1]
+
+
+def test_a_missing_input_skips_its_figure_and_the_readme_says_why(tmp_path: Path, capsys):
+    run = build_run(tmp_path)
+    build_glance(run)
+    (run / "calibration_report.json").unlink()
+    code, out = export(tmp_path, run, human=build_human(tmp_path))
+    assert code == 0
+    names = files_under(out)
+    assert "calibration.svg" not in names and "heldout-agreement.svg" in names
+    assert "*Not drawn: no `calibration_report.json`" in (out / "00-at-a-glance.md").read_text(encoding="utf-8")
+    readme = (out / "README.md").read_text(encoding="utf-8")
+    assert "`calibration.svg`" in readme and "not produced" in readme.lower()
+    assert "skip  calibration.svg" in capsys.readouterr().out
+
+
+def test_a_run_with_none_of_the_inputs_gets_no_page_and_says_so(tmp_path: Path):
+    run = build_run(tmp_path)
+    code, out = export(tmp_path, run, human=build_human(tmp_path))
+    assert code == 0
+    assert "00-at-a-glance.md" not in files_under(out) and not any(f in files_under(out) for f in FIGURES)
+    assert "`00-at-a-glance.md`" in (out / "README.md").read_text(encoding="utf-8")
+
+
+def test_the_metrics_that_stats_json_carries_are_read_when_the_file_is_absent(tmp_path: Path):
+    run = build_run(tmp_path)
+    stats = json.loads((run / "stats.json").read_text(encoding="utf-8"))
+    _write_json(run / "stats.json", {**stats, "offline": False, "run_metrics": metrics_payload()})
+    code, out = export(tmp_path, run, human=build_human(tmp_path))
+    assert code == 0 and "model-time.svg" in files_under(out)
+
+
+def test_an_offline_run_gets_no_model_time_figure_and_no_live_claim_on_the_page(tmp_path: Path):
+    code, out, _run = glance_export(tmp_path, offline=True)  # the metrics still say "measured"
+    assert code == 0
+    names = files_under(out)
+    assert "model-time.svg" not in names, "no model was called, so there is no model time to draw"
+    page = (out / "00-at-a-glance.md").read_text(encoding="utf-8")
+    assert "This is an offline run: no model was called" in page and "Models were called" not in page
+    assert "model-seconds" not in page.replace("Model-seconds", "") and "replayed from the cache" not in page
+    assert "sided with" not in page and "keyword table" in page
+    assert "this is an offline run: no model was called, so there is no model time" in page
+    assert "judge siding" not in page, "a stub judge's siding is not a finding"
+
+
+def test_a_figure_that_shares_a_run_with_a_response_is_withheld_alone(tmp_path: Path):
+    leaky = metrics_payload()
+    leaky["latency"]["by_role_task_ms"][0]["role"] = PLANTED
+    code, out, run = glance_export(tmp_path, metrics=leaky)
+    assert code == 0, "the export survives: the one figure is held back, the rest are written"
+    names = files_under(out)
+    assert "model-time.svg" not in names and "agreement-judge.svg" in names
+    page = (out / "00-at-a-glance.md").read_text(encoding="utf-8")
+    assert "Not drawn: withheld by the guard" in page
+    assert PLANTED.casefold()[:30] not in page.casefold()
+    assert "model-time.svg" in (out / "README.md").read_text(encoding="utf-8")
+    assert (run / xr.GUARD_LOG_NAME).exists()
+
+
+def test_the_at_a_glance_files_are_byte_identical_and_free_of_respondent_text(tmp_path: Path):
+    code, out_a, run = glance_export(tmp_path)
+    assert code == 0
+    code_b, out_b = export(tmp_path, run, human=tmp_path / "human", out="second")
+    assert code_b == 0
+    for name in ("00-at-a-glance.md", *FIGURES):
+        body = (out_a / name).read_bytes()
+        assert body == (out_b / name).read_bytes(), name
+        text = body.decode("utf-8").casefold()
+        assert PLANTED.casefold()[:30] not in text and PLANTED_TWO.casefold()[:30] not in text
