@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-label="Ward&#x27;s linkage — 39 responses, 2 clusters">
+<title>Ward&#x27;s linkage — 39 responses, 2 clusters</title>
+<style>text{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;fill:#1a202c}.axis{stroke:#a0aec0;stroke-width:1}.grid{stroke:#e2e8f0;stroke-width:1}.link{fill:none;stroke-width:1.4;stroke-linejoin:round}.cut{stroke:#c53030;stroke-width:1.2;stroke-dasharray:5 4;fill:none}.ttl{font-size:14px;font-weight:600}.lbl{font-size:9px;fill:#4a5568}.tick{font-size:10px;fill:#4a5568}.bar{fill:#90cdf4;stroke:#2b6cb0;stroke-width:0.8}.curve{fill:none;stroke:#2f855a;stroke-width:2}.dot{fill:#2f855a}</style>
+<rect x="0" y="0" width="960" height="520" fill="#ffffff"/>
+<text class="ttl" x="60" y="24">Ward&#x27;s linkage — 39 responses, 2 clusters</text>
+<line class="axis" x1="60" y1="472.00" x2="60" y2="44.00"/>
+<line class="grid" x1="60" y1="472.00" x2="936" y2="472.00"/>
+<text class="tick" x="54" y="475.00" text-anchor="end">0.00</text>
+<line class="grid" x1="60" y1="386.40" x2="936" y2="386.40"/>
+<text class="tick" x="54" y="389.40" text-anchor="end">1.13</text>
+<line class="grid" x1="60" y1="300.80" x2="936" y2="300.80"/>
+<text class="tick" x="54" y="303.80" text-anchor="end">2.26</text>
+<line class="grid" x1="60" y1="215.20" x2="936" y2="215.20"/>
+<text class="tick" x="54" y="218.20" text-anchor="end">3.40</text>
+<line class="grid" x1="60" y1="129.60" x2="936" y2="129.60"/>
+<text class="tick" x="54" y="132.60" text-anchor="end">4.53</text>
+<line class="grid" x1="60" y1="44.00" x2="936" y2="44.00"/>
+<text class="tick" x="54" y="47.00" text-anchor="end">5.66</text>
+<polyline class="link" stroke="#2b6cb0" points="93.69,472.00 93.69,302.92 116.15,302.92 116.15,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="71.23,472.00 71.23,271.94 104.92,271.94 104.92,302.92"/>
+<polyline class="link" stroke="#2b6cb0" points="161.08,472.00 161.08,286.78 183.54,286.78 183.54,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="138.62,472.00 138.62,249.39 172.31,249.39 172.31,286.78"/>
+<polyline class="link" stroke="#2b6cb0" points="88.08,271.94 88.08,175.91 155.46,175.91 155.46,249.39"/>
+<polyline class="link" stroke="#2b6cb0" points="250.92,472.00 250.92,320.77 273.38,320.77 273.38,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="228.46,472.00 228.46,297.37 262.15,297.37 262.15,320.77"/>
+<polyline class="link" stroke="#2b6cb0" points="206.00,472.00 206.00,255.91 245.31,255.91 245.31,297.37"/>
+<polyline class="link" stroke="#2b6cb0" points="318.31,472.00 318.31,320.77 340.77,320.77 340.77,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="295.85,472.00 295.85,276.76 329.54,276.76 329.54,320.77"/>
+<polyline class="link" stroke="#2b6cb0" points="363.23,472.00 363.23,258.13 385.69,258.13 385.69,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="312.69,276.76 312.69,240.99 374.46,240.99 374.46,258.13"/>
+<polyline class="link" stroke="#2b6cb0" points="408.15,472.00 408.15,286.78 430.62,286.78 430.62,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="453.08,472.00 453.08,320.77 475.54,320.77 475.54,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="542.92,472.00 542.92,365.06 565.38,365.06 565.38,472.00"/>
+<polyline class="link" stroke="#2b6cb0" points="520.46,472.00 520.46,333.95 554.15,333.95 554.15,365.06"/>
+<polyline class="link" stroke="#2b6cb0" points="498.00,472.00 498.00,300.12 537.31,300.12 537.31,333.95"/>
+<polyline class="link" stroke="#2b6cb0" points="464.31,320.77 464.31,279.22 517.65,279.22 517.65,300.12"/>
+<polyline class="link" stroke="#2b6cb0" points="419.38,286.78 419.38,229.91 490.98,229.91 490.98,279.22"/>
+<polyline class="link" stroke="#2b6cb0" points="343.58,240.99 343.58,193.97 455.18,193.97 455.18,229.91"/>
+<polyline class="link" stroke="#2b6cb0" points="225.65,255.91 225.65,172.09 399.38,172.09 399.38,193.97"/>
+<polyline class="link" stroke="#2b6cb0" points="121.77,175.91 121.77,121.56 312.52,121.56 312.52,172.09"/>
+<polyline class="link" stroke="#2f855a" points="587.85,472.00 587.85,302.92 610.31,302.92 610.31,472.00"/>
+<polyline class="link" stroke="#2f855a" points="632.77,472.00 632.77,320.77 655.23,320.77 655.23,472.00"/>
+<polyline class="link" stroke="#2f855a" points="677.69,472.00 677.69,232.88 700.15,232.88 700.15,472.00"/>
+<polyline class="link" stroke="#2f855a" points="644.00,320.77 644.00,210.06 688.92,210.06 688.92,232.88"/>
+<polyline class="link" stroke="#2f855a" points="599.08,302.92 599.08,157.19 666.46,157.19 666.46,210.06"/>
+<polyline class="link" stroke="#2f855a" points="722.62,472.00 722.62,286.78 745.08,286.78 745.08,472.00"/>
+<polyline class="link" stroke="#2f855a" points="767.54,472.00 767.54,341.03 790.00,341.03 790.00,472.00"/>
+<polyline class="link" stroke="#2f855a" points="812.46,472.00 812.46,286.78 834.92,286.78 834.92,472.00"/>
+<polyline class="link" stroke="#2f855a" points="778.77,341.03 778.77,264.92 823.69,264.92 823.69,286.78"/>
+<polyline class="link" stroke="#2f855a" points="733.85,286.78 733.85,226.98 801.23,226.98 801.23,264.92"/>
+<polyline class="link" stroke="#2f855a" points="857.38,472.00 857.38,271.94 879.85,271.94 879.85,472.00"/>
+<polyline class="link" stroke="#2f855a" points="902.31,472.00 902.31,258.13 924.77,258.13 924.77,472.00"/>
+<polyline class="link" stroke="#2f855a" points="868.62,271.94 868.62,204.66 913.54,204.66 913.54,258.13"/>
+<polyline class="link" stroke="#2f855a" points="767.54,226.98 767.54,145.01 891.08,145.01 891.08,204.66"/>
+<polyline class="link" stroke="#2f855a" points="632.77,157.19 632.77,82.07 829.31,82.07 829.31,145.01"/>
+<polyline class="link" stroke="#4a5568" points="217.14,121.56 217.14,44.00 731.04,44.00 731.04,82.07"/>
+<line class="cut" x1="60" y1="63.04" x2="936" y2="63.04"/>
+<text class="tick" x="936" y="59.04" text-anchor="end" fill="#c53030">cut for k=2 (d=5.408)</text>
+<text class="lbl" x="71.23" y="480.00" text-anchor="end" transform="rotate(-90 71.23 480.00)">96</text>
+<text class="lbl" x="93.69" y="480.00" text-anchor="end" transform="rotate(-90 93.69 480.00)">61</text>
+<text class="lbl" x="116.15" y="480.00" text-anchor="end" transform="rotate(-90 116.15 480.00)">80</text>
+<text class="lbl" x="138.62" y="480.00" text-anchor="end" transform="rotate(-90 138.62 480.00)">47</text>
+<text class="lbl" x="161.08" y="480.00" text-anchor="end" transform="rotate(-90 161.08 480.00)">24</text>
+<text class="lbl" x="183.54" y="480.00" text-anchor="end" transform="rotate(-90 183.54 480.00)">236</text>
+<text class="lbl" x="206.00" y="480.00" text-anchor="end" transform="rotate(-90 206.00 480.00)">67</text>
+<text class="lbl" x="228.46" y="480.00" text-anchor="end" transform="rotate(-90 228.46 480.00)">46</text>
+<text class="lbl" x="250.92" y="480.00" text-anchor="end" transform="rotate(-90 250.92 480.00)">79</text>
+<text class="lbl" x="273.38" y="480.00" text-anchor="end" transform="rotate(-90 273.38 480.00)">100</text>
+<text class="lbl" x="295.85" y="480.00" text-anchor="end" transform="rotate(-90 295.85 480.00)">95</text>
+<text class="lbl" x="318.31" y="480.00" text-anchor="end" transform="rotate(-90 318.31 480.00)">11</text>
+<text class="lbl" x="340.77" y="480.00" text-anchor="end" transform="rotate(-90 340.77 480.00)">23</text>
+<text class="lbl" x="363.23" y="480.00" text-anchor="end" transform="rotate(-90 363.23 480.00)">43</text>
+<text class="lbl" x="385.69" y="480.00" text-anchor="end" transform="rotate(-90 385.69 480.00)">73</text>
+<text class="lbl" x="408.15" y="480.00" text-anchor="end" transform="rotate(-90 408.15 480.00)">40</text>
+<text class="lbl" x="430.62" y="480.00" text-anchor="end" transform="rotate(-90 430.62 480.00)">84</text>
+<text class="lbl" x="453.08" y="480.00" text-anchor="end" transform="rotate(-90 453.08 480.00)">22</text>
+<text class="lbl" x="475.54" y="480.00" text-anchor="end" transform="rotate(-90 475.54 480.00)">44</text>
+<text class="lbl" x="498.00" y="480.00" text-anchor="end" transform="rotate(-90 498.00 480.00)">15</text>
+<text class="lbl" x="520.46" y="480.00" text-anchor="end" transform="rotate(-90 520.46 480.00)">14</text>
+<text class="lbl" x="542.92" y="480.00" text-anchor="end" transform="rotate(-90 542.92 480.00)">19</text>
+<text class="lbl" x="565.38" y="480.00" text-anchor="end" transform="rotate(-90 565.38 480.00)">88</text>
+<text class="lbl" x="587.85" y="480.00" text-anchor="end" transform="rotate(-90 587.85 480.00)">45</text>
+<text class="lbl" x="610.31" y="480.00" text-anchor="end" transform="rotate(-90 610.31 480.00)">81</text>
+<text class="lbl" x="632.77" y="480.00" text-anchor="end" transform="rotate(-90 632.77 480.00)">33</text>
+<text class="lbl" x="655.23" y="480.00" text-anchor="end" transform="rotate(-90 655.23 480.00)">48</text>
+<text class="lbl" x="677.69" y="480.00" text-anchor="end" transform="rotate(-90 677.69 480.00)">51</text>
+<text class="lbl" x="700.15" y="480.00" text-anchor="end" transform="rotate(-90 700.15 480.00)">52</text>
+<text class="lbl" x="722.62" y="480.00" text-anchor="end" transform="rotate(-90 722.62 480.00)">85</text>
+<text class="lbl" x="745.08" y="480.00" text-anchor="end" transform="rotate(-90 745.08 480.00)">94</text>
+<text class="lbl" x="767.54" y="480.00" text-anchor="end" transform="rotate(-90 767.54 480.00)">82</text>
+<text class="lbl" x="790.00" y="480.00" text-anchor="end" transform="rotate(-90 790.00 480.00)">90</text>
+<text class="lbl" x="812.46" y="480.00" text-anchor="end" transform="rotate(-90 812.46 480.00)">53</text>
+<text class="lbl" x="834.92" y="480.00" text-anchor="end" transform="rotate(-90 834.92 480.00)">138</text>
+<text class="lbl" x="857.38" y="480.00" text-anchor="end" transform="rotate(-90 857.38 480.00)">42</text>
+<text class="lbl" x="879.85" y="480.00" text-anchor="end" transform="rotate(-90 879.85 480.00)">77</text>
+<text class="lbl" x="902.31" y="480.00" text-anchor="end" transform="rotate(-90 902.31 480.00)">64</text>
+<text class="lbl" x="924.77" y="480.00" text-anchor="end" transform="rotate(-90 924.77 480.00)">87</text>
+</svg>

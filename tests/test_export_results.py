@@ -741,6 +741,32 @@ def test_withheld_keeps_a_short_string_whole():
     assert withheld.is_clean("a different short phrase entirely")
 
 
+def test_withheld_sees_the_space_a_cell_puts_around_a_string():
+    """A run of 19 characters plus the space before them is a 20-character hit in a file.
+
+    The file-level `scan` found one that the per-item check had passed, because the
+    per-item check trimmed the string and so never formed a window that began on the space.
+    """
+    withheld = xr.Withheld()
+    withheld.add("so alpha beta gamma de")
+    assert not withheld.is_clean("alpha beta gamma dezzz")
+    assert withheld.is_clean("beta gamma dezzz")
+
+
+def test_a_description_containing_a_whole_short_response_is_withheld():
+    """The repository's provenance test keeps a short response whole and finds it anywhere.
+
+    Doing that to every page aborts the export on the phrases a corpus repeats, so the exporter
+    asks it only of a description, the one place text written by a model can echo a response.
+    """
+    withheld = xr.Withheld()
+    xr._harvest({"content": "job security"}, withheld)  # 12 characters: the floor
+    xr._harvest({"content": "ai jobs"}, withheld)  # below the floor: any sentence can say it
+    text, clean = xr.guarded_description("the main worry is job security for many", withheld)
+    assert not clean and text == xr.WITHHELD_DESCRIPTION
+    assert xr.guarded_description("the main worry is ai jobs for many", withheld)[1]
+
+
 def test_withheld_ignores_case_and_whitespace():
     withheld = xr.Withheld()
     withheld.add(PLANTED)
@@ -1141,6 +1167,20 @@ def test_the_readme_carries_no_respondent_text(tmp_path: Path):
     readme = (out / "README.md").read_text(encoding="utf-8").casefold()
     assert PLANTED.casefold()[:30] not in readme
     assert PLANTED_TWO.casefold()[:30] not in readme
+
+
+def test_a_live_run_is_not_described_as_an_offline_keyword_table(tmp_path: Path):
+    """The offline wording is for offline runs only; a run that called models says so."""
+    run = build_run(tmp_path)
+    human = build_human(tmp_path)
+    build_analysis(run)
+    stats = json.loads((run / "stats.json").read_text(encoding="utf-8"))
+    _write_json(run / "stats.json", {**stats, "offline": False})
+    code, out = export(tmp_path, run, human=human)
+    assert code == 0
+    body = (out / "08-machine-run.md").read_text(encoding="utf-8")
+    assert "(live-model coders)" in body
+    assert "offline stand-in coder" not in body
 
 
 @pytest.mark.parametrize("section", ["01-inputs.md", "02-human-codebook.md", "08-machine-run.md"])

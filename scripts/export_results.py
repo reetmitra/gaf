@@ -58,6 +58,11 @@ from gaf.config import CheckpointPolicy
 #: runs on the machine that has the data and can afford to be stricter.
 GUARD_SHINGLE = 20
 
+#: A withheld text shorter than the shingle but at least this long is looked for *inside* longer
+#: text, not only as a whole string. The repository's provenance test uses the same floor
+#: (`PROVENANCE_MIN_CELL`); below it a fragment is a phrase any sentence can reproduce by accident.
+SHORT_MIN = 12
+
 #: What stands in for a description that shares wording with a response. The code name
 #: is still emitted beside it: withholding a definition is not withholding the code.
 WITHHELD_DESCRIPTION = "*definition withheld: shares wording with a response*"
@@ -223,6 +228,7 @@ class Withheld:
 
     def __init__(self, shingle: int = GUARD_SHINGLE) -> None:
         self.shingles: set[str] = set()
+        self.short_content: set[str] = set()
         self.n_texts = 0
         self.shingle = shingle
 
@@ -243,6 +249,22 @@ class Withheld:
         for i in range(len(norm) - self.shingle + 1):
             self.shingles.add(norm[i : i + self.shingle])
 
+    def add_content(self, text: Any) -> None:
+        """A whole response or highlight body that is short, but long enough to be someone's words.
+
+        Kept apart from `shingles` on purpose: matching these *inside* every page flags the common
+        phrases a corpus repeats and aborts the export. They are asked about only where text the
+        pipeline wrote could echo one, a description (see :func:`guarded_description`).
+        """
+        if isinstance(text, str):
+            norm = self._norm(text)
+            if SHORT_MIN <= len(norm) < self.shingle:
+                self.short_content.add(norm)
+
+    def contains_short_content(self, text: str) -> bool:
+        hay = self._norm(text)
+        return any(s in hay for s in self.short_content)
+
     def locate(self, text: str) -> tuple[int, str] | None:
         """``(offset, run)`` for the first withheld run in `text`, or ``None``.
 
@@ -258,10 +280,13 @@ class Withheld:
             return None
         if len(hay) < self.shingle:
             return (0, hay) if hay in self.shingles else None
-        for i in range(len(hay) - self.shingle + 1):
-            piece = hay[i : i + self.shingle]
+        # A string is emitted between spaces (a table cell, a list item), and `scan` sees those
+        # spaces: a window that starts or ends on one is a hit there, so it must be one here.
+        padded = f" {hay} "
+        for i in range(len(padded) - self.shingle + 1):
+            piece = padded[i : i + self.shingle]
             if piece in self.shingles:
-                return (i, piece)
+                return (max(i - 1, 0), piece)
         return None
 
     def first_hit(self, text: str) -> str | None:
@@ -324,7 +349,7 @@ def guarded_description(text: Any, withheld: Withheld) -> tuple[str, bool]:
     """
     if not isinstance(text, str) or not text.strip():
         return "", True
-    if withheld.is_clean(text):
+    if withheld.is_clean(text) and not withheld.contains_short_content(text):
         return text, True
     return WITHHELD_DESCRIPTION, False
 
@@ -364,6 +389,8 @@ def _harvest(node: Any, withheld: Withheld) -> None:
             if key in TEXT_KEYS:
                 if isinstance(value, str):
                     withheld.add(value)
+                    if key == "content":
+                        withheld.add_content(value)
                 elif isinstance(value, list):
                     for item in value:
                         if isinstance(item, str):
@@ -1289,6 +1316,11 @@ def _agreement_block(title: str, j: Json, withheld: Withheld) -> list[str]:
     return parts
 
 
+def _offline(run: Path) -> bool:
+    """Whether the run used mock clients. A run without stats is read as offline, as before."""
+    return bool((_quiet_load(run / "stats.json") or {}).get("offline", True))
+
+
 def section_agreement(ctx: Ctx) -> str | None:
     run, withheld = ctx.run, ctx.withheld
     runs = [
@@ -1304,9 +1336,19 @@ def section_agreement(ctx: Ctx) -> str | None:
         return None
     parts = ["# 06 - Concurrent validation: his coding against the machine's", ""]
     parts += [
-        "The machine side here is the offline stand-in coder (a deterministic keyword table used",
-        "so the pipeline runs without a model or a key). Its agreement with an expert is not the",
-        "question; whether the harness measures and explains a disagreement on real inputs is.",
+        *(
+            (
+                "The machine side here is the offline stand-in coder (a deterministic keyword table used",
+                "so the pipeline runs without a model or a key). Its agreement with an expert is not the",
+                "question; whether the harness measures and explains a disagreement on real inputs is.",
+            )
+            if _offline(ctx.run)
+            else (
+                "The machine side here is a pair of live models served on this machine (the run's own",
+                "config names them), a weaker pair than the approved line-up. Agreement here tests the",
+                "pipeline; it is not what the approved models would find.",
+            )
+        ),
         "",
     ]
     parts += blocks
@@ -1436,7 +1478,8 @@ def section_machine_run(ctx: Ctx) -> str | None:
                 ] += 1
         frows_marker = [[c, sev, mk, n] for (c, sev, mk), n in sorted(by_marker.items())]
     top2 = per_code.most_common(2)
-    parts = [f"# 08 - The machine run (offline stand-in coder), run id `{stats.get('run_id')}`", ""]
+    coder = "offline stand-in coder" if stats.get("offline", True) else "live-model coders"
+    parts = [f"# 08 - The machine run ({coder}), run id `{stats.get('run_id')}`", ""]
     parts += [
         f"{stats['n_responses']} responses, {stats['n_segments']} segments, {stats['assignments']} assignments, {stats['codes_final']} codes in {stats['families_final']} families; embedding space `{stats['space_id']}`; offline: {stats.get('offline')}.",
         "",
@@ -1448,7 +1491,11 @@ def section_machine_run(ctx: Ctx) -> str | None:
         "",
         f"The two most-used machine codes account for {sum(n for _, n in top2)} of {stats['assignments']} assignments: "
         + ", ".join(f"{_code(c)} {n}" for c, n in top2)
-        + ". That is the keyword table's fallback behaviour, not a finding.",
+        + (
+            ". That is the keyword table's fallback behaviour, not a finding."
+            if stats.get("offline", True)
+            else ". Read it as a property of these coders on this sample."
+        ),
         "",
         "## Findings by check",
         "",
@@ -1705,9 +1752,18 @@ def section_growth(ctx: Ctx) -> str | None:
                 "The curve is the growth table above (the two are one fact read two ways, and a",
                 "test asserts they agree batch by batch), so it is not repeated here.",
                 "",
-                "A stand-in coder built on a keyword table saturates because its vocabulary is",
-                "finite, not because the corpus ran out of ideas. Read this as a property of the",
-                "offline coder, not a finding about the corpus.",
+                *(
+                    (
+                        "A stand-in coder built on a keyword table saturates because its vocabulary is",
+                        "finite, not because the corpus ran out of ideas. Read this as a property of the",
+                        "offline coder, not a finding about the corpus.",
+                    )
+                    if _offline(ctx.run)
+                    else (
+                        "Read this as a property of these coders on this sample, not as a finding that",
+                        "the corpus has run out of ideas.",
+                    )
+                ),
                 "",
             ]
     return "\n".join(parts)
