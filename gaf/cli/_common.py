@@ -495,8 +495,32 @@ def _embedder_for(config: RunConfig) -> EmbeddingService:
 # --------------------------------------------------------------------------- #
 
 
+_TAUS = ("tau_fit", "tau_high", "tau_low")
+
+
+def load_thresholds(path: Path) -> dict[str, float]:
+    """The similarity thresholds a run may take from a frozen file (ADR-0054). Nothing else moves."""
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CliError(f"cannot read thresholds {str(path)!r}: {exc}") from exc
+    values = raw if isinstance(raw, dict) else {}
+    numeric = all(
+        isinstance(v, int | float) and not isinstance(v, bool) and 0 <= v <= 1
+        for v in values.values()
+    )
+    if not values or not set(values) <= set(_TAUS) or not numeric:
+        raise CliError(
+            f"thresholds {str(path)!r} must be a JSON object with some of "
+            f"{', '.join(_TAUS)}, each a number from 0 to 1"
+        )
+    return {k: float(v) for k, v in values.items()}
+
+
 def _config_from_args(args: argparse.Namespace, *, run_id: str, output_dir: Path) -> RunConfig:
     rules = CodingRules()
+    if getattr(args, "thresholds", None):
+        rules = CodingRules.from_json({**rules.to_json(), **load_thresholds(Path(args.thresholds))})
     config = RunConfig(
         run_id=run_id,
         offline=bool(getattr(args, "offline", True)),

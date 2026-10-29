@@ -3414,3 +3414,32 @@ key; adding it would orphan every existing entry. Hosted embeddings are outside 
 directory that has been moved takes its spend with it: the chain finds it by the path the
 resumed run recorded, and says so when it cannot.
 
+
+---
+
+## ADR-0054 — A run may take its thresholds from a frozen file; the defaults do not move
+
+**Status:** proposed (branch `live-run-oct`, 29 October 2026; amends no frozen contract:
+`CodingRules` is unchanged and a run overrides three of its fields)
+
+*Context.* Calibration (`calibrate_thresholds`) reports and never changes a constant, and a
+threshold may move only through a recorded artefact (brief §11). On 7 and 8 October the report,
+run on the calibration fold and again on the held-out fold, said the three provisional
+thresholds (tau_fit 0.30, tau_high 0.80, tau_low 0.45) are wrong for the local 768-d embedding
+space and pointed at about 0.95 on flat plateaus. There was no way to test that claim without
+editing `gaf/config.py`.
+
+*Decision.* `gaf run --thresholds FILE` reads a JSON object holding some of `tau_fit`,
+`tau_high` and `tau_low`, each a number from 0 to 1, and the run uses them in place of the
+defaults. Nothing else can move: any other key, a non-number, a boolean or a value outside 0 to 1
+is refused. The values land in the run's echoed config like any other rule, so a run states the
+thresholds it used. The defaults in `gaf/config.py` are unchanged; adopting any value as a
+default is a separate decision, recorded in its own ADR with the principal investigator.
+
+*Consequences.* A before-and-after comparison costs one extra run per threshold file. The coder
+calls may miss the cache, because a coder's prompt carries the codebook as it stood and a
+changed threshold changes how the codebook grows. The command checks no ordering between the
+thresholds: tau_low above tau_high is accepted, and a pair that leaves the judge no band is the
+caller's to avoid.
+
+*What remains open.* Which values, if any, become the defaults.

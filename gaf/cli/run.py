@@ -537,6 +537,14 @@ def add_run_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> 
         ),
     )
     run.add_argument(
+        "--thresholds",
+        help=(
+            "a JSON file holding some of tau_fit, tau_high, tau_low, used in place of the "
+            "defaults (ADR-0054). The values are echoed in the run's config; the defaults "
+            "themselves do not move"
+        ),
+    )
+    run.add_argument(
         "--halt-on-checkpoint",
         action="store_true",
         help=(

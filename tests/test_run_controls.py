@@ -1010,3 +1010,45 @@ def test_a_normal_reply_records_no_stop_reason() -> None:
     assert reply.stop_reason is None
     stopped = replace(reply, data={"_stop_reason": "max_tokens", "_stop_category": "x"})
     assert stopped.stop_reason == "max_tokens"
+
+
+# --------------------------------------------------------------------------- #
+# --thresholds (ADR-0054)
+# --------------------------------------------------------------------------- #
+
+
+def _rules_from_thresholds_file(path: Path | None) -> Any:
+    import argparse
+
+    from gaf.cli._common import _config_from_args
+
+    args = argparse.Namespace(thresholds=None if path is None else str(path))
+    return _config_from_args(args, run_id="t", output_dir=Path(".")).rules
+
+
+def test_a_thresholds_file_moves_only_the_thresholds_it_names(tmp_path: Path) -> None:
+    from gaf.config import CodingRules
+
+    file = tmp_path / "t.json"
+    file.write_text(json.dumps({"tau_fit": 0.9, "tau_low": 0.85}), encoding="utf-8")
+    rules = _rules_from_thresholds_file(file)
+    assert (rules.tau_fit, rules.tau_low) == (0.9, 0.85)
+    assert rules.tau_high == CodingRules().tau_high
+
+
+def test_without_the_flag_the_defaults_stand() -> None:
+    from gaf.config import CodingRules
+
+    assert _rules_from_thresholds_file(None) == CodingRules()
+
+
+@pytest.mark.parametrize(
+    "body", ['{"tau_x": 0.5}', '{"tau_fit": 1.5}', '{"tau_fit": true}', "[]", "{}", "not json"]
+)
+def test_a_bad_thresholds_file_is_refused(tmp_path: Path, body: str) -> None:
+    from gaf.cli._common import CliError
+
+    file = tmp_path / "t.json"
+    file.write_text(body, encoding="utf-8")
+    with pytest.raises(CliError):
+        _rules_from_thresholds_file(file)
