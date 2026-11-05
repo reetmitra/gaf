@@ -2524,14 +2524,14 @@ FIG_W = 760
 #: steps 600/400/250 clear its 2:1 floor on both. Text wears ink tokens, never a series colour.
 FIG_CSS = (
     ":root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;"
-    "--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}"
+    "--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}"
     "@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;"
-    "--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500}}"
+    "--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}"
     ".bg{fill:var(--bg)}"
     "text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}"
     ".ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}"
     "line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}"
-    ".s1{fill:var(--s1)}.s2{fill:var(--s2)}.s3{fill:var(--s3)}.s4{fill:var(--s4)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}"
+    ".s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}"
     ".gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}"
     ".ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}"
     ".wash{fill:var(--s1);fill-opacity:.1}"
@@ -2598,16 +2598,16 @@ def _ticks(hi: float, n: int = 4) -> list[float]:
     return ticks
 
 
-def _svg(height: float, title: str, desc: str, body: list[str]) -> str:
+def _svg(height: float, title: str, desc: str, body: list[str], width: float = FIG_W) -> str:
     """The standalone wrapper: title and description for a reader who cannot see the picture."""
     return "\n".join(
         [
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{FIG_W}" height="{_f(height, 0)}" '
-            f'viewBox="0 0 {FIG_W} {_f(height, 0)}" role="img" aria-labelledby="t d">',
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{_f(width, 0)}" height="{_f(height, 0)}" '
+            f'viewBox="0 0 {_f(width, 0)} {_f(height, 0)}" role="img" aria-labelledby="t d">',
             f'<title id="t">{html.escape(title)}</title>',
             f'<desc id="d">{html.escape(desc)}</desc>',
             f"<style>{FIG_CSS}</style>",
-            f'<rect class="bg" x="0" y="0" width="{FIG_W}" height="{_f(height, 0)}"/>',
+            f'<rect class="bg" x="0" y="0" width="{_f(width, 0)}" height="{_f(height, 0)}"/>',
             *body,
             "</svg>",
         ]
@@ -3234,9 +3234,6 @@ def section_at_a_glance(ctx: Ctx) -> str | None:
 #: A change smaller than this share of A's value is not worth a sentence.
 COMPARE_MATERIAL = 0.10
 
-#: The figure draws this many runs (A and the first three compared): the palette's first four slots.
-COMPARE_FIGURE_RUNS = 4
-
 #: What the page says under its realisations, once.
 COMPARE_CAVEAT = (
     "Each line reports a difference and none says why. The configuration differences above are the "
@@ -3356,6 +3353,36 @@ def _change(a: float | None, b: float | None) -> str:
     return (f"{d:+,.1f}" if isinstance(d, float) else f"{d:+,}") + (f" ({d / a:+.1%})" if a else "")
 
 
+def _stat(f: RunFacts, *path: str) -> int | float | None:
+    """A number from ``stats.json``, or ``None`` when the run does not hold it."""
+    v: Any = f.stats
+    for key in path:
+        v = v.get(key) if isinstance(v, dict) else None
+    return v if isinstance(v, int | float) else None
+
+
+def _summary_for(facts: list[RunFacts]) -> list[str]:
+    """One row per run, the baseline first: the headline numbers side by side. A dash is 'not held'."""
+    rows = []
+    for i, f in enumerate(facts):
+        j, secs = _judge(f), _seconds(f)
+        cells: list[Any] = [
+            f"{chr(65 + i)} `{f.name}`" + (" (offline)" if f.offline else ""),
+            _count(j and j[0]),
+            _count(_stat(f, "codes_created")),
+            _count(_stat(f, "families_final")),
+            _count(secs and sum(secs.values()) / 60.0),
+            _count(_stat(f, "llm", "fail_safes")),
+        ]
+        for how in ("with descriptions", "by name only"):
+            cl = (dict(f.agreement).get(how) or {}).get("code_level")
+            cells += [f"{cl['f1']:.3f}", f"{cl['cohens_kappa']:+.3f}"] if cl else ["-", "-"]
+        rows.append(cells)
+    header = ["run", "judge calls", "codes created", "families", "fresh model minutes", "fail-safes"]
+    header += [f"{m}, {how}" for how in ("with descriptions", "by name only") for m in ("F1", "kappa")]
+    return [_table(header, rows, align="l" + "r" * 9), ""]
+
+
 def _measures(a: RunFacts, b: RunFacts) -> list[tuple[str, float | None, float | None]]:
     """The rows of one run's table against A. A value a run does not hold is ``None``."""
     ja, jb = _judge(a), _judge(b)
@@ -3375,13 +3402,7 @@ def _measures(a: RunFacts, b: RunFacts) -> list[tuple[str, float | None, float |
         ("assignments", ("assignments",)),
         ("escalations to the judge", ("escalations",)),
     ):
-        pair = []
-        for f in (a, b):
-            v: Any = f.stats
-            for key in path:
-                v = v.get(key) if isinstance(v, dict) else None
-            pair.append(v if isinstance(v, int | float) else None)
-        rows.append((label, *pair))
+        rows.append((label, _stat(a, *path), _stat(b, *path)))
     return rows
 
 
@@ -3396,59 +3417,63 @@ def _unique_names(facts: list[RunFacts], dirs: list[Path]) -> None:
 # -- the figure
 
 
-def _hbars(x0: float, y0: float, w: float, title: str, values: list[float | None], fmt: str, names: list[str], hi: float | None = None) -> tuple[list[str], float]:
-    """One small multiple: a title and one bar per run, the value at the tip. Returns (svg, height).
+def _grid(y0: float, names: list[str], panels: list[tuple[str, list[float | None], str, float | None]], label_w: float, col_w: float) -> tuple[list[str], float]:
+    """Rows of runs, one column per measure. Returns (svg, height).
 
-    Each starts at its own zero. A run that holds no value is labelled so, not drawn as nothing.
+    Each row is labelled by its run id at the left; the baseline (the first row) is blue and every
+    other row orange. Each column starts at its own zero, so counts, minutes and a 0-to-1 score never
+    share an axis. A run that holds no value is labelled so, not drawn as nothing.
     """
-    top, row = y0 + 14, 26
-    top_value = hi or max((v for v in values if v), default=1.0)
-    body = [_t(x0, y0, title)]
-    body.append(_ln(x0, top - 2, x0, top + row * len(values), "axis"))
-    for i, (name, v) in enumerate(zip(names, values, strict=True)):
-        y = top + row * i + 4
-        if v is None:
-            body.append(_t(x0 + 8, y + 13, "not available", "tick"))
-            continue
-        x1 = x0 + (w - 56) * v / top_value
-        body.append(_bar(x0, x1, y, 18, f"s{i + 1}", f"{name}: {title} {fmt.format(v)}"))
-        body.append(_t(x1 + 8, y + 13, fmt.format(v)))
-    return body, 14 + row * len(values) + 8
+    top, row, gap = y0 + 14, 26, 28
+    ys = [top + row * i + (8 if i else 0) + 4 for i in range(len(names))]
+    base = ys[-1] + 22
+    body = [_t(16 + label_w - 8, y + 13, name, "", "end") for name, y in zip(names, ys, strict=True)]
+    for k, (title, values, fmt, hi) in enumerate(panels):
+        x0 = 16 + label_w + k * (col_w + gap)
+        body += [_t(x0, y0, title), _ln(x0, top - 2, x0, base, "axis")]
+        scale = hi or max((v for v in values if v), default=1.0)
+        for i, (name, v, y) in enumerate(zip(names, values, ys, strict=True)):
+            if v is None:
+                body.append(_t(x0 + 8, y + 13, "not available", "tick"))
+                continue
+            x1 = x0 + (col_w - 56) * v / scale
+            body.append(_bar(x0, x1, y, 18, "s1" if i == 0 else "s2", f"{name}: {title} {fmt.format(v)}"))
+            body.append(_t(x1 + 8, y + 13, fmt.format(v)))
+    return body, base - y0 + 8
 
 
 def figure_comparison(names: list[str], measures: list[tuple[str, list[float | None], str]], f1: list[tuple[str, list[float | None]]]) -> str:
     """Bars per run: judge calls, codes created and model minutes, then F1 for each way of matching.
 
-    `names` are the run ids, in order; run i keeps slot i+1 of the palette. Each measure is its
-    own small multiple, so counts, minutes and a 0-to-1 score never share an axis.
+    `names` are the run ids, the baseline first; every run has a row, however many there are. There
+    is no legend: each row carries its own id at the left. The label column is as wide as the
+    longest id needs, and the figure widens before it squeezes a column.
     """
-    names = names[:COMPARE_FIGURE_RUNS]
-    width = (FIG_W - 32 - 28 * 2) / 3
-    body = [_t(16, 24, "Runs compared", "ttl")]
-    legend_x = 16.0
-    for i, name in enumerate(names):
-        body += [_swatch(legend_x, 36, f"s{i + 1}"), _t(legend_x + 16, 45, name)]
-        legend_x += 16 + 7 * len(name) + 24
+    label_w = 7 * max(len(n) for n in names) + 16
+    width = max(FIG_W, 32 + label_w + 2 * 28 + 3 * 160)
+    col_w = (width - 32 - label_w - 2 * 28) / 3
+    body = [
+        _t(16, 24, "Runs compared", "ttl"),
+        _t(16, 42, "The baseline first, in blue; every run compared with it in orange.", "sub"),
+    ]
     said = []
     y = 76.0
     for header, panels in (
-        ("Calls, codes and time", [(t, v[: len(names)], fmt, None) for t, v, fmt in measures]),
-        ("F1 against his coding, scale 0 to 1", [(f"F1, {how}", v[: len(names)], "{:.3f}", 1.0) for how, v in f1]),
+        ("Calls, codes and time", [(t, v, fmt, None) for t, v, fmt in measures]),
+        ("F1 against his coding, scale 0 to 1", [(f"F1, {how}", v, "{:.3f}", 1.0) for how, v in f1]),
     ):
         if not panels:
             continue
         body.append(_t(16, y, header, "sub"))
-        y += 22
-        tallest = 0.0
-        for k, (title, values, fmt, hi) in enumerate(panels):
-            lines, h = _hbars(16 + k * (width + 28), y, width, title, values, fmt, names, hi)
-            body += lines
-            tallest = max(tallest, h)
+        lines, height = _grid(y + 22, names, panels, label_w, col_w)
+        body += lines
+        y += 22 + height + 24
+        for title, values, fmt, _hi in panels:
             said.append(
                 f"{title}: " + ", ".join(f"{n} {'not available' if v is None else fmt.format(v)}" for n, v in zip(names, values, strict=True))
             )
-        y += tallest + 30
-    return _svg(y - 6, "Runs compared", "Bars per run, one small chart per measure. " + "; ".join(said) + ".", body)
+    desc = f"Bars per run, one column per measure; the baseline {names[0]} is blue and the others orange. " + "; ".join(said) + "."
+    return _svg(y - 6, "Runs compared", desc, body, width)
 
 
 # -- the rules. Each reports a difference between A and one other run, and none says why.
@@ -3567,6 +3592,12 @@ def section_comparison(ctx: Ctx) -> str | None:
         "Run A, the baseline, is the exported run. Each later run is set against it; a figure is a count, "
         "a sum or a score the run recorded, and a difference is reported, not explained.",
         "",
+        "## Summary",
+        "",
+        *_summary_for(facts),
+        "A dash means the run does not hold that figure. Judge calls are all calls, replays included; model "
+        "minutes count calls that reached a model, and are shown only for a run that called one.",
+        "",
         _table(
             ["", "run", "models"],
             [
@@ -3602,10 +3633,16 @@ def section_comparison(ctx: Ctx) -> str | None:
         parts += [f"## `{b.name}` against `{a.name}`", "", *_table_for(ctx, name, a, b), ""]
     parts += ["## Agreement with his coding", "", *_agreement_for(ctx, name, facts), ""]
     parts += ["## Figure", "", *_figure_for(ctx, facts), ""]
-    realisations = [line for rule in COMPARE_RULES for line in rule(facts)]
     parts += ["## Realisations", ""]
-    parts += [f"- {r}" for r in realisations] or ["- No rule had grounds to fire on these runs' inputs."]
-    parts += ["", COMPARE_CAVEAT, ""]
+    if len(others) > 2:  # a heading for each run, so a long page stays readable
+        for b in others:
+            lines = [line for rule in COMPARE_RULES for line in rule([a, b])]
+            parts += [f"### `{b.name}`", "", *([f"- {r}" for r in lines] or ["- No rule had grounds to fire."]), ""]
+    else:
+        lines = [line for rule in COMPARE_RULES for line in rule(facts)]
+        parts += [f"- {r}" for r in lines] or ["- No rule had grounds to fire on these runs' inputs."]
+        parts.append("")
+    parts += [COMPARE_CAVEAT, ""]
     return "\n".join(parts)
 
 
@@ -3640,11 +3677,10 @@ def _agreement_for(ctx: Ctx, name: str, facts: list[RunFacts]) -> list[str]:
 
 def _figure_for(ctx: Ctx, facts: list[RunFacts]) -> list[str]:
     figure = "comparison.svg"
-    shown = facts[:COMPARE_FIGURE_RUNS]
-    names = [f.name for f in shown]
-    judge = [(j := _judge(f)) and float(j[0]) for f in shown]
-    codes = [float(c) if isinstance(c := f.stats.get("codes_created"), int) else None for f in shown]
-    minutes = [(s := _seconds(f)) and sum(s.values()) / 60.0 for f in shown]
+    names = [f.name for f in facts]
+    judge = [(j := _judge(f)) and float(j[0]) for f in facts]
+    codes = [float(c) if isinstance(c := f.stats.get("codes_created"), int) else None for f in facts]
+    minutes = [(s := _seconds(f)) and sum(s.values()) / 60.0 for f in facts]
     measures: list[tuple[str, list[float | None], str]] = [
         ("Judge calls", judge, "{:,.0f}"),
         ("Codes created", codes, "{:,.0f}"),
@@ -3652,9 +3688,9 @@ def _figure_for(ctx: Ctx, facts: list[RunFacts]) -> list[str]:
     ]
     measures = [m for m in measures if any(v is not None for v in m[1])]
     f1 = [
-        (how, [dict(f.agreement).get(how, {}).get("code_level", {}).get("f1") for f in shown])
+        (how, [dict(f.agreement).get(how, {}).get("code_level", {}).get("f1") for f in facts])
         for how in ("with descriptions", "by name only")
-        if any(how in dict(f.agreement) for f in shown)
+        if any(how in dict(f.agreement) for f in facts)
     ]
     if not measures and not f1:
         why = "none of the runs holds a judge count, a code count, model time or an agreement file"
@@ -3663,12 +3699,7 @@ def _figure_for(ctx: Ctx, facts: list[RunFacts]) -> list[str]:
         return [f"*Not drawn: {why}.*"]
     if not _drawn(ctx, figure, figure_comparison(names, measures, f1)):
         return ["*Not drawn: withheld by the guard.*"]
-    note = (
-        [f"The figure shows the first {COMPARE_FIGURE_RUNS} of {len(facts)} runs; the tables cover all of them.", ""]
-        if len(facts) > COMPARE_FIGURE_RUNS
-        else []
-    )
-    return [f"![runs compared]({figure})", "", *note]
+    return [f"![runs compared]({figure})", ""]
 
 
 # ------------------------------------------------------------------- pages and README

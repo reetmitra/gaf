@@ -1729,12 +1729,32 @@ def test_the_comparison_figure_is_xml_names_each_run_and_labels_each_value():
     assert svg == xr.figure_comparison(["alpha", "beta"], measures, [("with descriptions", [0.05, None])])
 
 
-def test_the_comparison_figure_draws_only_as_many_runs_as_the_palette_has_slots():
-    five = [f"run{i}" for i in range(5)]
-    svg = xr.figure_comparison(five, [("Codes created", [1.0, 2.0, 3.0, 4.0, 5.0], "{:,.0f}")], [])
-    texts = svg_texts(svg_root(svg))
-    assert "run3" in texts and "run4" not in texts and "5" not in texts
-    assert 'class="s4"' in svg and 'class="s5"' not in svg
+def test_a_six_run_figure_labels_every_row_by_its_run_id_and_has_no_legend():
+    ids = ["baseline", "threshold-test", "model-one", "model-two", "model-three", "x"]
+    measures = [("Judge calls", [10.0, 15.0, 8.0, None, 12.0, 9.0], "{:,.0f}"), ("Codes created", [20.0] * 6, "{:,.0f}")]
+    svg = xr.figure_comparison(ids, measures, [("with descriptions", [0.05, 0.07, None, None, 0.01, 0.02])])
+    root = svg_root(svg)
+    texts = svg_texts(root)
+    assert all(i in texts for i in ids), "every run id is drawn"
+    assert texts.count("model-three") == 2, "once for the counts and once for the scores, beside its row"
+    assert 'width="10" height="10"' not in svg and "rx=" not in svg, "no legend swatch"
+    paths = [p.get("class") for p in root.iter("{http://www.w3.org/2000/svg}path")]
+    # three columns; a value per run but the gaps (1 + 0 + 2): the baseline is blue, every other bar orange
+    assert paths.count("s1") == 3 and paths.count("s2") == (5 - 1) + (6 - 1) + (4 - 1)
+    assert texts.count("not available") == 1 + 2, "a run without a value says so"
+    assert svg == xr.figure_comparison(ids, measures, [("with descriptions", [0.05, 0.07, None, None, 0.01, 0.02])])
+
+
+def test_the_label_column_is_as_wide_as_the_longest_run_id_and_the_figure_widens_for_it():
+    short = xr.figure_comparison(["a", "bb"], [("Codes created", [1.0, 2.0], "{:,.0f}")], [])
+    long_id = "a-run-id-of-exactly-forty-characters-xyz1"
+    wide = xr.figure_comparison([long_id, "bb"], [("Codes created", [1.0, 2.0], "{:,.0f}")], [])
+    for svg, longest in ((short, 2), (wide, len(long_id))):
+        root = svg_root(svg)
+        axis_x = min(float(ln.get("x1", "0")) for ln in root.iter("{http://www.w3.org/2000/svg}line") if ln.get("class") == "axis")
+        assert axis_x == 7 * longest + 32, "the bars start where the longest id ends"
+        assert root.get("viewBox") == f"0 0 {root.get('width')} {root.get('height')}"
+    assert svg_root(short).get("width") == str(xr.FIG_W) and int(svg_root(wide).get("width")) > xr.FIG_W
 
 
 # -- the rules: each fires, each does not
@@ -1848,7 +1868,8 @@ def test_compare_may_be_repeated_and_must_name_a_directory(tmp_path: Path):
     page = (out / "17-comparison.md").read_text(encoding="utf-8")
     assert "## `beta` against `alpha`" in page and "## `gamma` against `alpha`" in page
     assert "| `rules.tau_fit` | 0.30 | 0.90 | 0.95 |" in page
-    assert 'class="s3"' in (out / "comparison.svg").read_text(encoding="utf-8")
+    assert {"alpha", "beta", "gamma"} <= set(svg_texts(svg_root((out / "comparison.svg").read_text(encoding="utf-8"))))
+    assert "### `" not in page, "two compared runs share one list of realisations"
     code, _ = compare_export(tmp_path / "again", [tmp_path / "nope"])
     assert code == 2
 
@@ -1917,3 +1938,36 @@ def test_the_comparison_files_are_byte_identical_and_free_of_respondent_text(tmp
         assert body == (out_b / name).read_bytes(), name
         text = body.decode("utf-8").casefold()
         assert PLANTED.casefold()[:30] not in text and PLANTED_TWO.casefold()[:30] not in text
+
+
+def test_the_summary_table_lists_every_run_and_dashes_what_a_run_does_not_hold(tmp_path: Path):
+    b = build_compare_run(tmp_path / "o1", "beta", judge_calls=15, judge_replays=0, codes=30, families=8, kappa=0.06, tp=5)
+    c = build_compare_run(tmp_path / "o2", "gamma", offline=True, agreement=False, codes=25)
+    code, out = compare_export(tmp_path, [b, c])
+    assert code == 0
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    assert page.index("## Summary") < page.index("## Configuration"), "the summary is at the top"
+    assert "| run | judge calls | codes created | families | fresh model minutes | fail-safes | F1, with descriptions |" in page
+    assert "| A `alpha` | 10 | 20 | 5 | 0.3 | 0 | 0.100 | +0.040 | 0.200 | +0.040 |" in page
+    assert "| B `beta` | 15 | 30 | 8 | 0.5 | 0 | 0.100 | +0.060 | 0.200 | +0.060 |" in page
+    assert "| C `gamma` (offline) | 10 | 25 | 5 | - | 0 | - | - | - | - |" in page, "no minutes for an offline run, no agreement"
+    assert "## `beta` against `alpha`" in page, "the per-run tables are still there"
+
+
+def test_realisations_get_a_sub_heading_per_run_only_above_two_compared_runs(tmp_path: Path):
+    runs = [
+        build_compare_run(tmp_path / f"o{i}", name, codes=codes)
+        for i, (name, codes) in enumerate([("beta", 30), ("gamma", 20), ("delta", 10)])
+    ]
+    code, out = compare_export(tmp_path, runs)
+    assert code == 0
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    tail = page.split("## Realisations")[1]
+    assert tail.index("### `beta`") < tail.index("### `gamma`") < tail.index("### `delta`")
+    beta, gamma, delta = (tail.split(f"### `{n}`")[1].split("###")[0] for n in ("beta", "gamma", "delta"))
+    assert "`beta` created 10 more codes" in beta and "`gamma`" not in beta
+    assert "No rule had grounds to fire." in gamma, "a run that did not move still has its heading"
+    assert "`delta` created 10 fewer codes" in delta and "`beta`" not in delta
+    assert "none says why" in tail.split("### `delta`")[1]
+    code, out2 = compare_export(tmp_path / "two", runs[:2])
+    assert code == 0 and "### `" not in (out2 / "17-comparison.md").read_text(encoding="utf-8")
