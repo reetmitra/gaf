@@ -1,6 +1,6 @@
 # Coding results: India Process, the 39 responses the PI coded, on local models
 
-Produced by `scripts/export_results.py` from run directories that stay on the researcher's machine. **No respondent's words appear in this directory**: the exporter re-reads every file it wrote against every text the runs hold (26 files, 11634 withheld texts, 20-character window, against every real source file the repository test reads) and removes the whole export on a hit. It also withheld 112 model-written code descriptions because each shares a 20-character run with a response; those codes appear by name with a note.
+Produced by `scripts/export_results.py` from run directories that stay on the researcher's machine. **No respondent's words appear in this directory**: the exporter re-reads every file it wrote against every text the runs hold (26 files, 18534 withheld texts, 20-character window, against every real source file the repository test reads) and removes the whole export on a hit. It also withheld 112 model-written code descriptions because each shares a 20-character run with a response; those codes appear by name with a note.
 
 ## What this is, and is not
 
@@ -31,6 +31,26 @@ Produced by `scripts/export_results.py` from run directories that stay on the re
 5. **What did it cost, and how long did it take?** USD 0. Model time averaged **108 seconds per response** (median 101, 90th percentile 155) over the 26 responses not already cached, with 229 fresh calls averaging 12.3 seconds. About 47 minutes of active running; the run's 106-minute wall clock includes an hour in which the laptop slept.
 6. **Where does it fail?** Worked disagreement cases need respondent text and belong in a private appendix for the PI only. Not produced.
 
+## Model tests: does swapping coder A change anything?
+
+Four more cold runs on the same 39 responses, the same held-out fold and the same agreement code. Each changes **one thing** from the baseline: the three thresholds (the plateau run above), or coder A (`qwen3.5:9b` replaced by `qwen2.5:7b-instruct`, `llama3.1:8b` or `mistral:7b-instruct`, all served by Ollama on the laptop). Coder B, the judge and the refactorer stayed `gemma4:12b` and the embedder `embeddinggemma`. Numbers come from each run's own `stats.json`, database and agreement files; the full tables are in [17-comparison.md](17-comparison.md).
+
+| run | what changed | codes (families) | judge calls, all / fresh | fresh model minutes | F1 / kappa, with descriptions | F1 / kappa, by name only | agreed cells of 146 (desc. / name) |
+|---|---|---:|---:|---:|---:|---:|---:|
+| baseline `local-eval39` | nothing | 91 (31) | 291 / 177 | 47.0 | 0.050 / -0.010 | 0.071 / +0.011 | 7 / 10 |
+| `-plateau` | the three thresholds | 125 (39) | 399 / 398 | 65.0 | 0.074 / +0.018 | 0.095 / +0.038 | 11 / 14 |
+| `-qwen25` | coder A: qwen2.5:7b-instruct | 73 (22) | 255 / 254 | 49.3 | 0.068 / +0.006 | 0.150 / +0.092 | 9 / 20 |
+| `-llama31` | coder A: llama3.1:8b | 93 (36) | 280 / 272 | 52.4 | 0.043 / -0.016 | 0.057 / -0.001 | 6 / 8 |
+| `-mistral` | coder A: mistral:7b-instruct | 75 (20) | 247 / 236 | 50.2 | 0.028 / -0.038 | 0.057 / -0.010 | 4 / 8 |
+
+What the table supports, and what it does not:
+
+- **Every run agrees with the PI at about chance.** No kappa reaches 0.1 in either matching. The best single figure is `-qwen25` by name only (20 of his 146 cells, F1 0.150, kappa +0.092); it is one run, matched on names, and the same run with descriptions gives 9 cells. The spread across the five runs, 4 to 11 cells with descriptions, is a few cells, so no model is shown to be better.
+- **The coder changes the shape of the codebook far more than it changes agreement.** Families range from 20 to 39 and codes from 73 to 125; agreement barely moves. A stronger or weaker coder A does not, on this evidence, bring the vocabulary closer to his 117 leaves.
+- **No run produced a fail-safe**, so none of the four local models failed to return usable output on these 39 responses.
+- **The model-minute column favours the baseline.** The baseline replayed 114 of its judge calls from an earlier cache, so only 177 were timed; the others timed 236 to 398. Per fresh judge call the time is about the same in every run (5.4 to 6.2 seconds, the same judge model), so compare calls, not minutes.
+- One run per configuration, 19 held-out responses, and none of these models is the approved line-up. These are tests of the pipeline's plumbing and of how sensitive it is to the coder, not a ranking of models.
+
 ## Files
 
 Start with [00-at-a-glance.md](00-at-a-glance.md): four figures and the findings the numbers support, each stated with the number it rests on.
@@ -42,7 +62,7 @@ Start with [00-at-a-glance.md](00-at-a-glance.md): four figures and the findings
 | [06-agreement.md](06-agreement.md) | his coding against the machine's, both ways, on the held-out 19 |
 | [07-calibration.md](07-calibration.md) | the threshold sweeps on the calibration fold |
 | [08-machine-run.md](08-machine-run.md) to [14-timeline.md](14-timeline.md) | the machine run, growth, handover, patterns, affinity, crosswalk, timeline |
-| [17-comparison.md](17-comparison.md) | the default run set against the plateau-threshold run: configuration, calls, codes, agreement, one figure |
+| [17-comparison.md](17-comparison.md) | the default run set against four others (plateau thresholds; coder A swapped for qwen2.5, llama3.1, mistral): summary table, configuration, calls, codes, agreement, one figure, realisations per run |
 | [views-machine/views.html](views-machine/views.html) | a self-contained page of figures |
 
 ## Read these caveats first

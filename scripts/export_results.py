@@ -3523,10 +3523,11 @@ def rule_compare_agreement(runs: list[RunFacts]) -> list[str]:
                 continue
             filled = ca["tp"] + ca["fn"]
             of = f" of the {filled:,} cells his coding fills" if filled == cb["tp"] + cb["fn"] else ""
+            moved = abs(cb["tp"] - ca["tp"])
             said = (
                 f"Matching {how}, agreement with his coding moved from kappa {ca['cohens_kappa']:+.3f} in `{a.name}` "
                 f"to {cb['cohens_kappa']:+.3f} in `{b.name}` and from F1 {ca['f1']:.3f} to {cb['f1']:.3f}; true positives "
-                f"went from {ca['tp']:,} to {cb['tp']:,}, which is {abs(cb['tp'] - ca['tp']):,} cells{of}."
+                f"went from {ca['tp']:,} to {cb['tp']:,}, which is {moved:,} cell{'' if moved == 1 else 's'}{of}."
             )
             if abs(ca["cohens_kappa"]) < CHANCE_KAPPA and abs(cb["cohens_kappa"]) < CHANCE_KAPPA:
                 said += f" Both kappas are under {CHANCE_KAPPA:g} in size, which is within chance."

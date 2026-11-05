@@ -1791,6 +1791,7 @@ def test_agreement_rule_reports_the_move_in_cells_and_names_chance(tmp_path: Pat
     assert "moved from kappa +0.040 in `alpha` to +0.060 in `beta`" in said[0]
     assert "true positives went from 3 to 5, which is 2 cells of the 25 cells his coding fills" in said[0]
     assert "Both kappas are under 0.1 in size, which is within chance." in said[0]
+    assert "which is 1 cell of the" in xr.rule_compare_agreement(pair(tmp_path / "one", kappa=0.06, tp=4))[0]
     (clear,) = [s for s in xr.rule_compare_agreement(pair(tmp_path / "c", kappa=0.5, tp=5)) if "with descriptions" in s]
     assert "within chance" not in clear, "a kappa of 0.5 is not"
     runs = pair(tmp_path / "d", kappa=0.06, tp=5)

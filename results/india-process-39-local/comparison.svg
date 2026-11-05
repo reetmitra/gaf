@@ -1,43 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="322" viewBox="0 0 760 322" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="482" viewBox="0 0 760 482" role="img" aria-labelledby="t d">
 <title id="t">Runs compared</title>
-<desc id="d">Bars per run, one small chart per measure. Judge calls: local-eval39 291, local-eval39-plateau 399; Codes created: local-eval39 91, local-eval39-plateau 125; Model minutes, fresh calls: local-eval39 47.0, local-eval39-plateau 65.0; F1, with descriptions: local-eval39 0.050, local-eval39-plateau 0.074; F1, by name only: local-eval39 0.071, local-eval39-plateau 0.095.</desc>
-<style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}.ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}.s1{fill:var(--s1)}.s2{fill:var(--s2)}.s3{fill:var(--s3)}.s4{fill:var(--s4)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}.gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}.ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.wash{fill:var(--s1);fill-opacity:.1}</style>
-<rect class="bg" x="0" y="0" width="760" height="322"/>
+<desc id="d">Bars per run, one column per measure; the baseline local-eval39 is blue and the others orange. Judge calls: local-eval39 291, local-eval39-plateau 399, local-eval39-qwen25 255, local-eval39-llama31 280, local-eval39-mistral 247; Codes created: local-eval39 91, local-eval39-plateau 125, local-eval39-qwen25 73, local-eval39-llama31 93, local-eval39-mistral 75; Model minutes, fresh calls: local-eval39 47.0, local-eval39-plateau 65.0, local-eval39-qwen25 49.3, local-eval39-llama31 52.4, local-eval39-mistral 50.2; F1, with descriptions: local-eval39 0.050, local-eval39-plateau 0.074, local-eval39-qwen25 0.068, local-eval39-llama31 0.043, local-eval39-mistral 0.028; F1, by name only: local-eval39 0.071, local-eval39-plateau 0.095, local-eval39-qwen25 0.150, local-eval39-llama31 0.057, local-eval39-mistral 0.057.</desc>
+<style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}.ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}.s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}.gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}.ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.wash{fill:var(--s1);fill-opacity:.1}</style>
+<rect class="bg" x="0" y="0" width="760" height="482"/>
 <text class="ttl" x="16.00" y="24.00">Runs compared</text>
-<rect class="s1" x="16.00" y="36.00" width="10" height="10" rx="2"/>
-<text x="32.00" y="45.00">local-eval39</text>
-<rect class="s2" x="140.00" y="36.00" width="10" height="10" rx="2"/>
-<text x="156.00" y="45.00">local-eval39-plateau</text>
+<text class="sub" x="16.00" y="42.00">The baseline first, in blue; every run compared with it in orange.</text>
 <text class="sub" x="16.00" y="76.00">Calls, codes and time</text>
-<text x="16.00" y="98.00">Judge calls</text>
-<line class="axis" x1="16.00" y1="110.00" x2="16.00" y2="164.00"/>
-<path class="s1" d="M16.00,116.00h118.53a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-118.53z"><title>local-eval39: Judge calls 291</title></path>
-<text x="146.53" y="129.00">291</text>
-<path class="s2" d="M16.00,142.00h164.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-164.00z"><title>local-eval39-plateau: Judge calls 399</title></path>
-<text x="192.00" y="155.00">399</text>
-<text x="268.00" y="98.00">Codes created</text>
-<line class="axis" x1="268.00" y1="110.00" x2="268.00" y2="164.00"/>
-<path class="s1" d="M268.00,116.00h118.30a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-118.30z"><title>local-eval39: Codes created 91</title></path>
-<text x="398.30" y="129.00">91</text>
-<path class="s2" d="M268.00,142.00h164.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-164.00z"><title>local-eval39-plateau: Codes created 125</title></path>
-<text x="444.00" y="155.00">125</text>
-<text x="520.00" y="98.00">Model minutes, fresh calls</text>
-<line class="axis" x1="520.00" y1="110.00" x2="520.00" y2="164.00"/>
-<path class="s1" d="M520.00,116.00h117.34a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-117.34z"><title>local-eval39: Model minutes, fresh calls 47.0</title></path>
-<text x="649.34" y="129.00">47.0</text>
-<path class="s2" d="M520.00,142.00h164.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-164.00z"><title>local-eval39-plateau: Model minutes, fresh calls 65.0</title></path>
-<text x="696.00" y="155.00">65.0</text>
-<text class="sub" x="16.00" y="202.00">F1 against his coding, scale 0 to 1</text>
-<text x="16.00" y="224.00">F1, with descriptions</text>
-<line class="axis" x1="16.00" y1="236.00" x2="16.00" y2="290.00"/>
-<path class="s1" d="M16.00,242.00h4.40a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-4.40z"><title>local-eval39: F1, with descriptions 0.050</title></path>
-<text x="32.40" y="255.00">0.050</text>
-<path class="s2" d="M16.00,268.00h8.49a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-8.49z"><title>local-eval39-plateau: F1, with descriptions 0.074</title></path>
-<text x="36.49" y="281.00">0.074</text>
-<text x="268.00" y="224.00">F1, by name only</text>
-<line class="axis" x1="268.00" y1="236.00" x2="268.00" y2="290.00"/>
-<path class="s1" d="M268.00,242.00h8.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-8.00z"><title>local-eval39: F1, by name only 0.071</title></path>
-<text x="288.00" y="255.00">0.071</text>
-<path class="s2" d="M268.00,268.00h11.89a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-11.89z"><title>local-eval39-plateau: F1, by name only 0.095</title></path>
-<text x="291.89" y="281.00">0.095</text>
+<text text-anchor="end" x="164.00" y="129.00">local-eval39</text>
+<text text-anchor="end" x="164.00" y="163.00">local-eval39-plateau</text>
+<text text-anchor="end" x="164.00" y="189.00">local-eval39-qwen25</text>
+<text text-anchor="end" x="164.00" y="215.00">local-eval39-llama31</text>
+<text text-anchor="end" x="164.00" y="241.00">local-eval39-mistral</text>
+<text x="172.00" y="98.00">Judge calls</text>
+<line class="axis" x1="172.00" y1="110.00" x2="172.00" y2="250.00"/>
+<path class="s1" d="M172.00,116.00h80.60a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-80.60z"><title>local-eval39: Judge calls 291</title></path>
+<text x="264.60" y="129.00">291</text>
+<path class="s2" d="M172.00,150.00h112.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-112.00z"><title>local-eval39-plateau: Judge calls 399</title></path>
+<text x="296.00" y="163.00">399</text>
+<path class="s2" d="M172.00,176.00h70.14a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-70.14z"><title>local-eval39-qwen25: Judge calls 255</title></path>
+<text x="254.14" y="189.00">255</text>
+<path class="s2" d="M172.00,202.00h77.40a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-77.40z"><title>local-eval39-llama31: Judge calls 280</title></path>
+<text x="261.40" y="215.00">280</text>
+<path class="s2" d="M172.00,228.00h67.81a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-67.81z"><title>local-eval39-mistral: Judge calls 247</title></path>
+<text x="251.81" y="241.00">247</text>
+<text x="372.00" y="98.00">Codes created</text>
+<line class="axis" x1="372.00" y1="110.00" x2="372.00" y2="250.00"/>
+<path class="s1" d="M372.00,116.00h80.45a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-80.45z"><title>local-eval39: Codes created 91</title></path>
+<text x="464.45" y="129.00">91</text>
+<path class="s2" d="M372.00,150.00h112.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-112.00z"><title>local-eval39-plateau: Codes created 125</title></path>
+<text x="496.00" y="163.00">125</text>
+<path class="s2" d="M372.00,176.00h63.74a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-63.74z"><title>local-eval39-qwen25: Codes created 73</title></path>
+<text x="447.74" y="189.00">73</text>
+<path class="s2" d="M372.00,202.00h82.30a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-82.30z"><title>local-eval39-llama31: Codes created 93</title></path>
+<text x="466.30" y="215.00">93</text>
+<path class="s2" d="M372.00,228.00h65.60a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-65.60z"><title>local-eval39-mistral: Codes created 75</title></path>
+<text x="449.60" y="241.00">75</text>
+<text x="572.00" y="98.00">Model minutes, fresh calls</text>
+<line class="axis" x1="572.00" y1="110.00" x2="572.00" y2="250.00"/>
+<path class="s1" d="M572.00,116.00h79.78a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-79.78z"><title>local-eval39: Model minutes, fresh calls 47.0</title></path>
+<text x="663.78" y="129.00">47.0</text>
+<path class="s2" d="M572.00,150.00h112.00a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-112.00z"><title>local-eval39-plateau: Model minutes, fresh calls 65.0</title></path>
+<text x="696.00" y="163.00">65.0</text>
+<path class="s2" d="M572.00,176.00h84.03a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-84.03z"><title>local-eval39-qwen25: Model minutes, fresh calls 49.3</title></path>
+<text x="668.03" y="189.00">49.3</text>
+<path class="s2" d="M572.00,202.00h89.58a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-89.58z"><title>local-eval39-llama31: Model minutes, fresh calls 52.4</title></path>
+<text x="673.58" y="215.00">52.4</text>
+<path class="s2" d="M572.00,228.00h85.54a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-85.54z"><title>local-eval39-mistral: Model minutes, fresh calls 50.2</title></path>
+<text x="669.54" y="241.00">50.2</text>
+<text class="sub" x="16.00" y="282.00">F1 against his coding, scale 0 to 1</text>
+<text text-anchor="end" x="164.00" y="335.00">local-eval39</text>
+<text text-anchor="end" x="164.00" y="369.00">local-eval39-plateau</text>
+<text text-anchor="end" x="164.00" y="395.00">local-eval39-qwen25</text>
+<text text-anchor="end" x="164.00" y="421.00">local-eval39-llama31</text>
+<text text-anchor="end" x="164.00" y="447.00">local-eval39-mistral</text>
+<text x="172.00" y="304.00">F1, with descriptions</text>
+<line class="axis" x1="172.00" y1="316.00" x2="172.00" y2="456.00"/>
+<path class="s1" d="M172.00,322.00h2.90a2.90,2.90 0 0 1 2.90,2.90v12.20a2.90,2.90 0 0 1 -2.90,2.90h-2.90z"><title>local-eval39: F1, with descriptions 0.050</title></path>
+<text x="185.80" y="335.00">0.050</text>
+<path class="s2" d="M172.00,356.00h4.62a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-4.62z"><title>local-eval39-plateau: F1, with descriptions 0.074</title></path>
+<text x="188.62" y="369.00">0.074</text>
+<path class="s2" d="M172.00,382.00h3.92a3.92,3.92 0 0 1 3.92,3.92v10.15a3.92,3.92 0 0 1 -3.92,3.92h-3.92z"><title>local-eval39-qwen25: F1, with descriptions 0.068</title></path>
+<text x="187.85" y="395.00">0.068</text>
+<path class="s2" d="M172.00,408.00h2.47a2.47,2.47 0 0 1 2.47,2.47v13.06a2.47,2.47 0 0 1 -2.47,2.47h-2.47z"><title>local-eval39-llama31: F1, with descriptions 0.043</title></path>
+<text x="184.94" y="421.00">0.043</text>
+<path class="s2" d="M172.00,434.00h1.65a1.65,1.65 0 0 1 1.65,1.65v14.70a1.65,1.65 0 0 1 -1.65,1.65h-1.65z"><title>local-eval39-mistral: F1, with descriptions 0.028</title></path>
+<text x="183.30" y="447.00">0.028</text>
+<text x="372.00" y="304.00">F1, by name only</text>
+<line class="axis" x1="372.00" y1="316.00" x2="372.00" y2="456.00"/>
+<path class="s1" d="M372.00,322.00h4.29a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-4.29z"><title>local-eval39: F1, by name only 0.071</title></path>
+<text x="388.29" y="335.00">0.071</text>
+<path class="s2" d="M372.00,356.00h6.97a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-6.97z"><title>local-eval39-plateau: F1, by name only 0.095</title></path>
+<text x="390.97" y="369.00">0.095</text>
+<path class="s2" d="M372.00,382.00h13.44a4.00,4.00 0 0 1 4.00,4.00v10.00a4.00,4.00 0 0 1 -4.00,4.00h-13.44z"><title>local-eval39-qwen25: F1, by name only 0.150</title></path>
+<text x="397.44" y="395.00">0.150</text>
+<path class="s2" d="M372.00,408.00h3.29a3.29,3.29 0 0 1 3.29,3.29v11.42a3.29,3.29 0 0 1 -3.29,3.29h-3.29z"><title>local-eval39-llama31: F1, by name only 0.057</title></path>
+<text x="386.58" y="421.00">0.057</text>
+<path class="s2" d="M372.00,434.00h3.30a3.30,3.30 0 0 1 3.30,3.30v11.40a3.30,3.30 0 0 1 -3.30,3.30h-3.30z"><title>local-eval39-mistral: F1, by name only 0.057</title></path>
+<text x="386.60" y="447.00">0.057</text>
 </svg>
