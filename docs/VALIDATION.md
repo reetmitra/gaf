@@ -241,7 +241,7 @@ quotation with the response id, the segment and the nearest miss.
 The investigator's hand-coding of the 20-response seed sample **arrived on 9 September**
 and drops into the regression harness with one environment variable and no code change
 (`docs/RUNBOOK.md`); the calibration module has since run against it
-([`results/india-process-1-20/07-calibration.md`](../results/india-process-1-20/07-calibration.md)).
+(`results/india-process-1-20/07-calibration.md`, since removed from the working tree and in git history at `0af6528`).
 His codebook definitions and the full 200-response corpus arrived after that. Even so:
 
 - **τ_fit, τ_high and τ_low remain uncalibrated in the sense that matters: the constants

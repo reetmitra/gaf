@@ -538,7 +538,7 @@ through the assignments shape — and the file stays outside the repository. Unt
 set, one test skips, which is the correct state rather than a failure.
 
 **This has already been run once, against the 20-response seed sample**
-([`results/india-process-1-20/07-calibration.md`](../results/india-process-1-20/07-calibration.md)):
+(`results/india-process-1-20/07-calibration.md`, since removed from the working tree and in git history at `0af6528`):
 τ_high and τ_low move to 0.95 on only 18 candidate pairs — too few to move a threshold
 on, by the module's own reading — and τ_fit's F1 is flat from 0.45 to 1.00 over 197
 code applications, meaning even that many barely discriminates it. τ_high = 0.80,

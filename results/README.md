@@ -37,9 +37,10 @@ what has not been tried. Each folder has its own README with the tables behind t
 | [`agreement-checks.md`](agreement-checks.md) | Agreement with the PI with intervals, a chance level, a trivial predictor, a family-level roll-up, and four-fold calibration. |
 | [`india-process-39-local/`](india-process-39-local/README.md) | The 39 responses the PI coded, coded cold by local models, plus eight comparison runs on the same 39 (a threshold change, three coder swaps, a judge swap, a repeat, two temperature-0.7 repeats). Start at `00-at-a-glance.md`; the side-by-side is `17-comparison.md`. |
 | [`india-process-1-200-local/`](india-process-1-200-local/README.md) | All 200 responses coded cold by local models: vocabulary growth, saturation, the full analysis tail. |
-| [`india-process-1-200/`](india-process-1-200/README.md) | The same 200 with the offline stand-in coder (a keyword table, not a model), with a seeded run and a halt-and-resume. The baseline the local runs are read against. |
-| [`india-process-1-20/`](india-process-1-20/README.md) | The 10 September meeting document. Not regenerated. |
-| [`india-state-1-20/`](india-state-1-20/README.md) | The State sample under its own question, offline. Not regenerated. |
+
+Three earlier packs (the offline stand-in coder on all 200 responses, the 10 September 20-response
+meeting document, and the State sample under its own question) were removed from the working tree on
+6 November 2026. They remain in git history at commit `0af6528`.
 
 ## Every run, in one table
 
