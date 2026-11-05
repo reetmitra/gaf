@@ -17,8 +17,9 @@ how the codebook should be restructured.
 ## Results on the principal investigator's sample
 
 [`results/`](results/README.md) holds what the pipeline produced on his real responses,
-exported as Markdown and figures. Start with [`results/README.md`](results/README.md): what
-was run, what came out, and what has not been tried.
+exported as Markdown and figures. Start with [`docs/PI-GUIDE.md`](docs/PI-GUIDE.md), which says what to open in
+what order, then [`results/README.md`](results/README.md): what was run, what came out, and
+what has not been tried.
 [`india-process-39-local/`](results/india-process-39-local/README.md) is the 39 responses he
 coded himself, coded cold by local models, with eight comparison runs;
 [`india-process-1-200-local/`](results/india-process-1-200-local/README.md) is all 200
@@ -221,6 +222,7 @@ gaf/
 |---|---|
 | [`docs/METHODS.md`](docs/METHODS.md) | methods-appendix prose, quotable in the paper |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | the verification dossier — every check, why it exists, and what it cannot see |
+| [`docs/PI-GUIDE.md`](docs/PI-GUIDE.md) | for the principal investigator: what to open in what order, what to look for, and what is waiting on him |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | operator guide, including the human-gate workflow |
 | [`docs/CODING_RULES.md`](docs/CODING_RULES.md) | the PI's rules, each with the verbatim quotation behind it |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | the design law, and where the complexity actually lives |
