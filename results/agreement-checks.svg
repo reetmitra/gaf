@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" role="img" aria-label="Agreement with the PI: kappa with intervals, code level and family level">
+<style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--mute:#898781;--grid:#e1e0d9;--s1:#2a78d6;--s2:#eb6834}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--grid:#2c2c2a;--s1:#3987e5;--s2:#d95926}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,Helvetica,Arial,sans-serif}.m{fill:var(--mute)}.g{stroke:var(--grid)}.ci{stroke:var(--s1);stroke-width:2}.dot{fill:var(--s1)}.ch{fill:none;stroke:var(--mute);stroke-width:1.5}.tr{fill:var(--s2)}</style>
+<rect class="bg" width="880" height="300"/>
+<text x="16" y="24" font-weight="600" font-size="15">Agreement with the PI, held-out fold (kappa, 95% interval)</text>
+<text class="m" x="16" y="44">dot = machine  |  open circle = chance with responses shuffled  |  diamond = a predictor that gives every response the PI's most common codes</text>
+<text x="190.0" y="62" font-weight="600">Leaf codes (116)</text>
+<line class="g" x1="250.0" x2="250.0" y1="70" y2="250"/>
+<text class="m" x="242.0" y="266">0</text>
+<line class="g" x1="310.0" x2="310.0" y1="70" y2="250"/>
+<text class="m" x="302.0" y="266">0.2</text>
+<line class="g" x1="370.0" x2="370.0" y1="70" y2="250"/>
+<text class="m" x="362.0" y="266">0.4</text>
+<line class="g" x1="430.0" x2="430.0" y1="70" y2="250"/>
+<text class="m" x="422.0" y="266">0.6</text>
+<text x="180" y="89.0" text-anchor="end">eval39</text>
+<line class="ci" x1="237.11890842830815" x2="257.5753039909854" y1="85.0" y2="85.0"/>
+<circle class="dot" cx="246.87434983876022" cy="85.0" r="4.5"/>
+<circle class="ch" cx="234.15811485748472" cy="85.0" r="4.5"/>
+<path class="tr" d="M315.6090230223405 80.0L320.6090230223405 85.0L315.6090230223405 90.0L310.6090230223405 85.0Z"/>
+<text x="180" y="119.0" text-anchor="end">eval39-plateau</text>
+<line class="ci" x1="242.2913476556784" x2="270.35156282759846" y1="115.0" y2="115.0"/>
+<circle class="dot" cx="255.2960415967798" cy="115.0" r="4.5"/>
+<circle class="ch" cx="235.69758302583034" cy="115.0" r="4.5"/>
+<path class="tr" d="M319.14551116271684 110.0L324.14551116271684 115.0L319.14551116271684 120.0L314.14551116271684 115.0Z"/>
+<text x="180" y="149.0" text-anchor="end">eval39-qwen25</text>
+<line class="ci" x1="239.63759909399778" x2="265.5907484453988" y1="145.0" y2="145.0"/>
+<circle class="dot" cx="251.84404001446302" cy="145.0" r="4.5"/>
+<circle class="ch" cx="235.38486922984197" cy="145.0" r="4.5"/>
+<path class="tr" d="M309.3686056708567 140.0L314.3686056708567 145.0L309.3686056708567 150.0L304.3686056708567 145.0Z"/>
+<text x="180" y="179.0" text-anchor="end">eval39-llama31</text>
+<line class="ci" x1="235.3584255305334" x2="257.49714029159964" y1="175.0" y2="175.0"/>
+<circle class="dot" cx="245.25688059312006" cy="175.0" r="4.5"/>
+<circle class="ch" cx="233.86084234116686" cy="175.0" r="4.5"/>
+<path class="tr" d="M316.2974636934043 170.0L321.2974636934043 175.0L316.2974636934043 180.0L311.2974636934043 175.0Z"/>
+<text x="180" y="209.0" text-anchor="end">eval39-mistral</text>
+<line class="ci" x1="231.9784631718835" x2="246.0059803145191" y1="205.0" y2="205.0"/>
+<circle class="dot" cx="238.5443770504644" cy="205.0" r="4.5"/>
+<circle class="ch" cx="231.79685640441036" cy="205.0" r="4.5"/>
+<path class="tr" d="M314.5717519390167 200.0L319.5717519390167 205.0L314.5717519390167 210.0L309.5717519390167 205.0Z"/>
+<text x="180" y="239.0" text-anchor="end">cold200</text>
+<line class="ci" x1="237.4309013558812" x2="258.0555033178411" y1="235.0" y2="235.0"/>
+<circle class="dot" cx="247.2940703152378" cy="235.0" r="4.5"/>
+<circle class="ch" cx="234.01949800786485" cy="235.0" r="4.5"/>
+<path class="tr" d="M315.7286802654215 230.0L320.7286802654215 235.0L315.7286802654215 240.0L310.7286802654215 235.0Z"/>
+<text x="530.0" y="62" font-weight="600">Families (15)</text>
+<line class="g" x1="590.0" x2="590.0" y1="70" y2="250"/>
+<text class="m" x="582.0" y="266">0</text>
+<line class="g" x1="650.0" x2="650.0" y1="70" y2="250"/>
+<text class="m" x="642.0" y="266">0.2</text>
+<line class="g" x1="710.0" x2="710.0" y1="70" y2="250"/>
+<text class="m" x="702.0" y="266">0.4</text>
+<line class="g" x1="770.0" x2="770.0" y1="70" y2="250"/>
+<text class="m" x="762.0" y="266">0.6</text>
+<line class="ci" x1="718.2082641740194" x2="765.5458515283843" y1="85.0" y2="85.0"/>
+<circle class="dot" cx="741.853429910524" cy="85.0" r="4.5"/>
+<circle class="ch" cx="644.357443544951" cy="85.0" r="4.5"/>
+<path class="tr" d="M708.0851063829787 80.0L713.0851063829787 85.0L708.0851063829787 90.0L703.0851063829787 85.0Z"/>
+<line class="ci" x1="689.927378358751" x2="765.5902004454343" y1="115.0" y2="115.0"/>
+<circle class="dot" cx="727.2340425531916" cy="115.0" r="4.5"/>
+<circle class="ch" cx="633.3535106382978" cy="115.0" r="4.5"/>
+<path class="tr" d="M708.0851063829787 110.0L713.0851063829787 115.0L708.0851063829787 120.0L703.0851063829787 115.0Z"/>
+<line class="ci" x1="699.5089564209964" x2="763.6723258342394" y1="145.0" y2="145.0"/>
+<circle class="dot" cx="732.2600172960507" cy="145.0" r="4.5"/>
+<circle class="ch" cx="621.9011818968003" cy="145.0" r="4.5"/>
+<path class="tr" d="M705.1378728193584 140.0L710.1378728193584 145.0L705.1378728193584 150.0L700.1378728193584 145.0Z"/>
+<line class="ci" x1="724.1172320536186" x2="788.3007646559049" y1="175.0" y2="175.0"/>
+<circle class="dot" cx="756.9068895935428" cy="175.0" r="4.5"/>
+<circle class="ch" cx="658.5392505044681" cy="175.0" r="4.5"/>
+<path class="tr" d="M705.1378728193584 170.0L710.1378728193584 175.0L705.1378728193584 180.0L700.1378728193584 175.0Z"/>
+<line class="ci" x1="706.0561625997848" x2="771.689305583011" y1="205.0" y2="205.0"/>
+<circle class="dot" cx="737.6869119857485" cy="205.0" r="4.5"/>
+<circle class="ch" cx="645.4765685019206" cy="205.0" r="4.5"/>
+<path class="tr" d="M708.0851063829787 200.0L713.0851063829787 205.0L708.0851063829787 210.0L703.0851063829787 205.0Z"/>
+<line class="ci" x1="708.0545444363554" x2="760.1063456818979" y1="235.0" y2="235.0"/>
+<circle class="dot" cx="734.1114466412171" cy="235.0" r="4.5"/>
+<circle class="ch" cx="641.4561620420488" cy="235.0" r="4.5"/>
+<path class="tr" d="M708.0851063829787 230.0L713.0851063829787 235.0L708.0851063829787 240.0L703.0851063829787 235.0Z"/>
+</svg>

@@ -61,6 +61,9 @@ def cache_key(request: LLMRequest, spec: ModelSpec) -> str:
         # Only when set: a spec with no effort keys exactly as it did before the field
         # existed, so every cache and golden fixture written earlier still hits.
         *(() if spec.effort is None else (f"effort={spec.effort}",)),
+        # Same rule for temperature: a spec at the default 0.0 keys as before, one that samples
+        # does not replay the temperature-0 answer (the request's own temperature is separate).
+        *(() if spec.temperature == 0.0 else (f"temperature={spec.temperature}",)),
         *request.cache_key_parts(),
     )
     hasher = hashlib.blake2b(digest_size=16)

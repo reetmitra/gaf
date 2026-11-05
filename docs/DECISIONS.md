@@ -3443,3 +3443,24 @@ thresholds: tau_low above tau_high is accepted, and a pair that leaves the judge
 caller's to avoid.
 
 *What remains open.* Which values, if any, become the defaults.
+
+## ADR-0055 — The response cache keys on a model's temperature when it is not zero
+
+**Status:** proposed (branch `live-run-oct`, 5 November 2026; amends no frozen contract: the
+key gains one part only for a spec that samples, so every key written before it is unchanged)
+
+*Context.* `cache_key` hashed the provider, the model, the effort (when set) and the request,
+whose own `temperature` is normally unset. A profile can set a role's temperature, so changing it
+and re-using a cache directory replayed the temperature-0 answers and reported them as a new run.
+It was found while setting up repeat runs at temperature 0.7 on 5 November, before any such run
+used a shared cache.
+
+*Decision.* A spec whose temperature is not 0.0 adds `temperature=<value>` to the key. A spec at
+the default adds nothing, which is the rule ADR-0051 used for effort, so existing caches and
+golden fixtures still hit.
+
+*Consequences.* A sampling run does not replay a greedy run. The seed is still not in the key,
+so two runs at the same non-zero temperature and different seeds would share replies if they
+shared a cache directory; they should not, and the repeat runs use a fresh `--cache-dir` each.
+
+*What remains open.* Whether the seed belongs in the key.

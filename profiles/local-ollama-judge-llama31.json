@@ -1,0 +1,27 @@
+{
+  "description": "Control for the judge question: the judge is llama3.1:8b (a third maker, Meta), coders and refactorer as in local-ollama.json. Coder prompts are identical to the default run, so they replay from the cache; only judge calls are new. Local only (ADR-0049).",
+  "models": {
+    "coder_a": {
+      "provider": "local",
+      "model": "qwen3.5:9b"
+    },
+    "coder_b": {
+      "provider": "local",
+      "model": "gemma4:12b"
+    },
+    "judge": {
+      "provider": "local",
+      "model": "llama3.1:8b"
+    },
+    "refactorer": {
+      "provider": "local",
+      "model": "gemma4:12b",
+      "max_output_tokens": 8192
+    }
+  },
+  "embedding": {
+    "mode": "local",
+    "model": "embeddinggemma",
+    "dim": 768
+  }
+}

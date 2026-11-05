@@ -11,10 +11,13 @@ what has not been tried. Each folder has its own README with the tables behind t
 - The pipeline runs end to end on local models, costs nothing, and takes about 105 seconds
   of model time per response. Two coders from different model families code each response,
   a judge rules on the disagreements, and every step is logged.
-- **Its codes do not line up with the PI's.** On the 19 held-out responses he coded, code-level
+- **Its leaf codes do not line up with the PI's.** On the 19 held-out responses he coded, code-level
   kappa lies between -0.038 and +0.092 and F1 between 0.028 and 0.150 across twelve
   measurements and six configurations. By the exporter's own rule, a kappa under 0.1 is
-  within chance. Why is not yet diagnosed.
+  within chance. Rolled up to his 15 families the same runs reach kappa +0.34 to +0.56, above a
+  shuffled-response chance level, but not clearly above a predictor that only repeats his most
+  common themes. So part of the leaf-level zero is vocabulary; the rest is not yet diagnosed
+  ([agreement-checks.md](agreement-checks.md)).
 - **Nothing tried so far moves that number.** More responses (39 to 200), different
   thresholds, and three different coder models changed the size of the codebook a lot (20
   to 48 families, 73 to 162 codes) and agreement hardly at all.
@@ -26,6 +29,8 @@ what has not been tried. Each folder has its own README with the tables behind t
 
 | folder | what it is |
 |---|---|
+| [`HOW-THE-RESULTS-WERE-REACHED.md`](HOW-THE-RESULTS-WERE-REACHED.md) | The run history: twelve steps, each with the question it asked, what changed, what happened and what it led to. |
+| [`agreement-checks.md`](agreement-checks.md) | Agreement with the PI with intervals, a chance level, a trivial predictor, a family-level roll-up, and four-fold calibration. |
 | [`india-process-39-local/`](india-process-39-local/README.md) | The 39 responses the PI coded, coded cold by local models, plus four comparison runs on the same 39 (one threshold change, three coder swaps). Start at `00-at-a-glance.md`; the side-by-side is `17-comparison.md`. |
 | [`india-process-1-200-local/`](india-process-1-200-local/README.md) | All 200 responses coded cold by local models: vocabulary growth, saturation, the full analysis tail. |
 | [`india-process-1-200/`](india-process-1-200/README.md) | The same 200 with the offline stand-in coder (a keyword table, not a model), with a seeded run and a halt-and-resume. The baseline the local runs are read against. |
@@ -58,6 +63,8 @@ human gate; 151 responses remain uncoded and the gate has not been run.
 ![runs compared](india-process-39-local/comparison.svg)
 
 ## What the runs show
+
+(Findings 1 to 9 come from the runs; finding 10 from re-reading them.)
 
 1. **Agreement with the PI is at chance in every configuration.** Across the five 39-response
    runs, and the 200-response run on the same held-out fold, no kappa reaches 0.1. The offline
@@ -94,6 +101,19 @@ human gate; 151 responses remain uncoded and the gate has not been run.
    200-response run (stop reason empty, so malformed output, not truncation).
 9. **Cost is zero and speed is steady.** Everything ran on one laptop. Model time averaged 104
    seconds a response on the 200 run and 108 on the 39.
+
+10. **Re-reading the same runs with more care changes the story a little.** With an interval, a
+    chance level and a trivial predictor beside it (see [agreement-checks.md](agreement-checks.md)):
+    every leaf-level kappa is within about 0.07 of zero and below a predictor that repeats the PI's
+    commonest codes (+0.20 to +0.23), because only about 4 of the machine's 56 codes on the fold are
+    accepted as the same code as one of his 71; every leaf-level kappa is still a little above the
+    shuffled-response level (-0.03 to -0.06), so the codes land on the right responses slightly more
+    often than chance; and at family level kappa is +0.34 to +0.56 against a chance level of +0.11 to
+    +0.23, but the machine's F1 is not clearly above the trivial predictor's (the interval on the gap
+    includes zero in 11 of 12 cases). Four-fold calibration repeats the two-fold result: about 0.95 for
+    all three thresholds in every fold.
+
+![agreement with the PI, with intervals](agreement-checks.svg)
 
 ![model time by role](india-process-39-local/model-time.svg)
 
@@ -150,7 +170,9 @@ Most of this branch (`live-run-oct`) is plumbing that let real models run safely
 | A spend cap that stops before a call, and run statistics | `--max-usd`, `stats.json` | ADR-0053 |
 | A run can take its thresholds from a frozen file; the defaults do not move | `gaf run --thresholds` | ADR-0054 |
 | A pre-registered held-out split (ids only, hashed) | split file | recorded in the pack READMEs |
-| Six shipped profiles, including three single-swap profiles for the model tests | `profiles/` | tested by the shipped-profile tests |
+| Eight shipped profiles: the all-local default, two hosted, three coder swaps, a judge swap and a temperature-0.7 profile | `profiles/` | tested by the shipped-profile tests |
+| The response cache keys on a model's temperature when it is not zero; found while setting up repeat runs | `gaf/llm/cache.py` | ADR-0055 |
+| Agreement checks: bootstrap intervals, family-level roll-up, shuffled-response chance, trivial predictor, one figure | `scripts/agreement_checks.py` (with tests) | this page |
 | An at-a-glance page (four figures, rule-based realisations) in every export | `scripts/export_results.py` | commit `d544b4f` |
 | A run-comparison page and figure (`--compare`) | `scripts/export_results.py` | commits `dfd6fd5`, `a764cb5` |
 | Exporter guard repairs: padding around a string, whole short responses, finding text, every real source cell fed in | `scripts/export_results.py` | commits `dc267c0`, `e659136` |
@@ -203,33 +225,39 @@ Not tested, and not claimed:
 - **Schedule repeats.** One run per configuration cannot separate a setting from noise.
 - **Keep the analysis scripts in the repository.** The calibration and agreement scripts and the run
   drivers live in the gitignored `runs/` folder because they touch respondent data. The agreement
-  and calibration numbers cannot be reproduced from a fresh clone. A version that reads paths from
-  arguments and writes only aggregates could be committed.
+  and calibration numbers cannot be reproduced from a fresh clone. The new `scripts/agreement_checks.py`
+  reads paths from arguments, writes only aggregates and is committed; the report it reads is still
+  written by a script that is not.
+- **Measure the metric before blaming the model.** Three coder swaps, a threshold change and a 5x larger
+  corpus were tried before the measure itself was re-read with an interval, a chance level and a
+  trivial predictor. The family-level view should have come first because it was free.
 - **Ask the PI what level of agreement he cares about.** The runs measure leaf-level codes (117 of
   his), the strictest reading. He may care about families (15) or concepts.
 - **Pace the work against the machine.** The baseline lost an hour to a sleep window (the laptop
   was on battery), and the later chains waited for AC power. Keep-awake does not stop low-power sleep;
   the laptop has to be plugged in.
 
+## Tried on 5 November, after the main runs
+
+These were listed as untried and have now been run. The first four needed no model calls; the rest
+need the four runs started at 22:04 on 5 November, whose results are not in this page unless noted.
+
+- **Family-level agreement, bootstrap intervals, a shuffled-response chance level, a trivial
+  predictor.** Done: [agreement-checks.md](agreement-checks.md).
+- **K-fold calibration.** Done, with four folds of the 39: same direction, about 0.95, every fold.
+- **A third-family judge** (`llama3.1:8b` as judge, coders as in the baseline). Started.
+- **Repeat the baseline with a fresh cache** to see whether a temperature-0 run reproduces. Started.
+- **Two repeats with both coders at temperature 0.7, seeds 1 and 2**, to set a run-to-run spread.
+  Started.
+
 ## Not yet tried
 
 Everything in this section is an idea. None of it has been run, and nothing above depends on it.
 
-**Cheap checks on data already in hand (no new model calls)**
-
-- Score agreement at family level (15 families) instead of leaf level (117); the existing runs
-  already have the family assignments.
-- Bootstrap intervals over the 19 held-out responses, so every kappa has a range.
-- A k-fold calibration across all 39 instead of two folds, to see whether the 0.95 plateau holds.
-- A private worked-disagreement appendix for the PI: the strongest and weakest agreements, with
-  respondent text, never committed.
-
 **Questions that need new runs**
 
-- Repeat the baseline three or more times, to set the run-to-run spread that every comparison
-  here lacks.
-- A third family as judge, and a judge that can back coder B (balanced or randomised order), to
-  separate the judge's behaviour from its construction.
+- A judge that can back coder B (balanced or randomised order), to separate the judge's behaviour from
+  its construction.
 - Three-model consensus: take only codes two of three coders produce.
 - Rank and cap the codes shown in each prompt (top-k retrieval) so that the prompt prefix stays
   stable and the cache works harder.
@@ -237,15 +265,17 @@ Everything in this section is an idea. None of it has been run, and nothing abov
 - Cap coder output length and run coders in parallel, since coders take 61% of model time.
 - Alternative embedders, and a re-run of the analysis tail on `embeddinggemma`.
 - A seeded run that goes through the human gate, then resumes.
+- A stricter family roll-up (accepted matches only), to bound the family-level numbers from below.
 
-**Things that would change the measurement**
+**Things that need a person**
 
-- A second human double-coding the 39 responses, to set the kappa ceiling any machine could
-  reach.
-- Active selection: choose which responses the PI hand-codes next by where the machine is least
-  sure, so each hand-coded response adds the most.
-- A concept-level crosswalk between the machine's codes and his, judged by a person, to replace
-  string and description matching.
+- A private worked-disagreement appendix for the PI: the strongest and weakest agreements, with
+  respondent text, never committed.
+- A second human double-coding the 39 responses, to set the kappa ceiling any machine could reach.
+- Active selection: choose which responses the PI hand-codes next by where the machine is least sure,
+  so each hand-coded response adds the most.
+- A concept-level crosswalk between the machine's codes and his, judged by a person, to replace string
+  and description matching.
 
 ## Reproducing a run
 

@@ -1,0 +1,29 @@
+{
+  "description": "Stochastic repeat: both coders sample at temperature 0.7, judge and refactorer stay at 0. Run with --seed N and a fresh --cache-dir (the response cache does not key on a model's temperature, so a shared cache would replay the temperature-0 answers). Local only (ADR-0049).",
+  "models": {
+    "coder_a": {
+      "provider": "local",
+      "model": "qwen3.5:9b",
+      "temperature": 0.7
+    },
+    "coder_b": {
+      "provider": "local",
+      "model": "gemma4:12b",
+      "temperature": 0.7
+    },
+    "judge": {
+      "provider": "local",
+      "model": "gemma4:12b"
+    },
+    "refactorer": {
+      "provider": "local",
+      "model": "gemma4:12b",
+      "max_output_tokens": 8192
+    }
+  },
+  "embedding": {
+    "mode": "local",
+    "model": "embeddinggemma",
+    "dim": 768
+  }
+}

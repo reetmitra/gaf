@@ -569,6 +569,17 @@ def test_a_spec_with_no_effort_keys_exactly_as_it_did_before_the_field_existed()
     assert cache_key(request, spec) == legacy.hexdigest()
 
 
+def test_a_spec_that_samples_never_replays_the_temperature_zero_reply() -> None:
+    from dataclasses import replace
+
+    request = coding_request(synthetic_corpus()[0].content, 3)
+    spec = MOCK_REGISTRY.coder_a
+    assert spec.temperature == 0.0
+    warm = replace(spec, temperature=0.7)
+    assert cache_key(request, warm) != cache_key(request, spec), "a sampling spec is its own question"
+    assert cache_key(request, warm) == cache_key(request, replace(spec, temperature=0.7)), "and it is stable"
+
+
 def test_a_role_whose_effort_changes_never_replays_the_old_reply(tmp_path) -> None:  # type: ignore[no-untyped-def]
     from dataclasses import replace
 
