@@ -70,6 +70,7 @@ SHORT_MIN = 12
 #: What stands in for a description that shares wording with a response. The code name
 #: is still emitted beside it: withholding a definition is not withholding the code.
 WITHHELD_DESCRIPTION = "*definition withheld: shares wording with a response*"
+WITHHELD_MESSAGE = "*message withheld: shares wording with a response*"
 
 #: Where the offending run itself is written when the guard fires, inside the **run**
 #: directory. A guard that prints the text it caught puts respondent words into a
@@ -1320,6 +1321,15 @@ def _agreement_block(title: str, j: Json, withheld: Withheld) -> list[str]:
     return parts
 
 
+def _finding_text(ctx: Ctx, text: Any, what: str) -> str:
+    """A finding's message or subject through the per-item guard: a check can quote what it checked."""
+    emitted, clean = guarded_description(text, ctx.withheld)
+    if clean:
+        return emitted
+    ctx.withheld_descriptions[what] = ctx.withheld_descriptions.get(what, 0) + 1
+    return WITHHELD_MESSAGE
+
+
 def _offline(run: Path) -> bool:
     """Whether the run used mock clients. A run without stats is read as offline, as before."""
     return bool((_quiet_load(run / "stats.json") or {}).get("offline", True))
@@ -1477,9 +1487,9 @@ def section_machine_run(ctx: Ctx) -> str | None:
             marker = str((x.get("data") or {}).get("marker", "-"))
             by_marker[(x["check_id"], x["severity"], marker)] += 1
             if x["severity"] in ("ERROR", "WARN"):
-                flagged[
-                    (x["check_id"], x["severity"], marker, str(x.get("subject", "-")), x["message"])
-                ] += 1
+                subject = _finding_text(ctx, str(x.get("subject", "-")), "a finding's subject")
+                message = _finding_text(ctx, x["message"], "a finding's message")
+                flagged[(x["check_id"], x["severity"], marker, subject, message)] += 1
         frows_marker = [[c, sev, mk, n] for (c, sev, mk), n in sorted(by_marker.items())]
     top2 = per_code.most_common(2)
     coder = "offline stand-in coder" if stats.get("offline", True) else "live-model coders"

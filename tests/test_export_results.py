@@ -1635,3 +1635,17 @@ def test_the_at_a_glance_files_are_byte_identical_and_free_of_respondent_text(tm
         assert body == (out_b / name).read_bytes(), name
         text = body.decode("utf-8").casefold()
         assert PLANTED.casefold()[:30] not in text and PLANTED_TWO.casefold()[:30] not in text
+
+
+def test_a_finding_that_quotes_a_response_is_withheld_not_fatal(tmp_path: Path):
+    """A check on a model-written candidate can quote what it checked. The page keeps the row."""
+    run = build_run(tmp_path)
+    human = build_human(tmp_path)
+    build_analysis(run)
+    finding = {"check_id": "S2", "severity": "WARN", "subject": "c-1", "message": PLANTED, "data": {}}
+    _write_json(run / "findings.json", [finding])
+    code, out = export(tmp_path, run, human=human)
+    assert code == 0
+    body = (out / "08-machine-run.md").read_text(encoding="utf-8")
+    assert PLANTED.casefold()[:30] not in body.casefold()
+    assert xr.WITHHELD_MESSAGE in body
