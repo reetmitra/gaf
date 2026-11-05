@@ -35,7 +35,7 @@ to; this page is about the reasoning.
 | 9. Cold run on all 200 | 30 Oct | Hypothesis: more responses improve agreement | all 200 coded with no seed | **refuted** for agreement: codes grew from 91 to 162 and saturated at batch 18, held-out kappa stayed at -0.009 | more data adds vocabulary; look at the coder and at how agreement is measured |
 | 10. Coder swaps | 5 Nov | Hypothesis: coder A is the bottleneck | qwen3.5:9b replaced by qwen2.5:7b-instruct, llama3.1:8b, mistral:7b-instruct in turn | **mostly refuted**: codebook size moved (20 to 36 families) and agreement did not | the measure itself deserves a second look |
 | 11. Re-examining the measure | 5 Nov | Is "kappa near zero" the whole story? | bootstrap intervals, a shuffled-response chance level, a trivial predictor, and a roll-up to the PI's 15 families | leaf-level agreement is at zero and below the trivial predictor because the vocabularies differ; at family level kappa is 0.34 to 0.56, above chance, but not clearly above the trivial predictor | part of the near-zero is vocabulary mismatch; the diagnosis is partial |
-| 12. New strategies | 5 Nov | Is the judge the problem? Is a run reproducible? How big is run-to-run variation? | a third-family judge; a repeat with a fresh cache; two repeats with both coders at temperature 0.7 | started 22:04; see the results index for what has finished | the answers decide whether any single-run comparison above is worth more than its interval |
+| 12. New strategies | 5 to 6 Nov | Is the judge the problem? Is a run reproducible? How big is run-to-run variation? | a third-family judge; a repeat with a fresh cache; two repeats with both coders at temperature 0.7 (seeds 1 and 2), run back to back from 22:04 to 01:53 | **the judge is the one lever that moved the codebook beyond noise** (23 codes against 91, and the lowest family-level agreement); **a repeat is not a replay** (78 codes against 91, every first-batch reply different at temperature 0); temperature 0.7 made coder A's output volume vary four-fold | any single-run comparison above is worth about as much as the gap a repeat shows; the coder-swap differences in codebook size are within it |
 
 ## What each result taught
 
@@ -51,8 +51,16 @@ to; this page is about the reasoning.
 - **A comparison needs fresh calls counted separately from replayed ones.** The baseline replayed 114
   judge calls from earlier runs, which flattered its timings until the comparison page counted fresh
   calls on their own.
-- **The coder's effect is on the codebook's shape.** Twenty to thirty-six families from the same
-  responses, with agreement unmoved.
+- **The coder's effect is on the codebook's shape, but so is the repeat's.** Twenty to thirty-six
+  families from the same responses, with agreement unmoved; and a repeat of the baseline alone moved
+  the codebook by 13 codes and 10 families. The coder swaps are not clearly more than that.
+- **The judge is the larger lever.** A different judge model made 23 codes where the others made 57 to
+  125, and agreement at family level fell. The coders had been the thing to vary first because they take
+  most of the clock; the judge decides how much of what they propose becomes a code.
+- **"Temperature 0" did not make a run reproducible.** The cache had hidden that by replaying replies.
+  With a fresh cache the same request, temperature and seed gave a different reply from one run to the
+  next, and the differences compound through the codebook. A short test in a single session, repeating
+  a request, does reproduce, which is why it was easy to assume.
 - **Leaf-level agreement was the wrong headline on its own.** It mixes "did not find the theme" with
   "named it differently". The family-level roll-up separates them, and says the machine finds the PI's
   themes better than chance.
@@ -73,8 +81,16 @@ to; this page is about the reasoning.
 - While setting up the repeat runs, the response cache turned out not to key on a model's temperature, so
   a changed temperature would have replayed the old answers. It was fixed (ADR-0055) and the repeat runs
   use a fresh cache each.
+- A first check of whether replies reproduced compared the wrong field of the cache files and so
+  reported "20 of 20 identical" for what was 0 of 20. A second pass caught it; the figures in the pages
+  are from the corrected check. The check reads respondent text, so it ran on the machine and only its
+  counts were kept.
+- The comparison page's configuration table listed model names and thresholds only, so the repeats looked
+  identical to the baseline. The table now lists temperature, seed and cache directory.
 
 ## What is still open
 
-The hosted-model run, the human gate, repeats (started), the private worked-disagreement appendix, and a
-reading of why the leaf vocabularies differ. The ideas not yet run are listed in the results index.
+The hosted-model run, the human gate, why a temperature-0, fixed-seed run does not reproduce, a measured
+run-to-run spread (three or four repeats of one configuration), the private worked-disagreement
+appendix, and a reading of why the leaf vocabularies differ. The ideas not yet run are listed in the
+results index.

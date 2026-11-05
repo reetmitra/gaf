@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" role="img" aria-label="Agreement with the PI: kappa with intervals, code level and family level">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" role="img" aria-label="Agreement with the PI: kappa with intervals, code level and family level">
 <style>:root{--bg:#fcfcfb;--ink:#0b0b0b;--mute:#898781;--grid:#e1e0d9;--s1:#2a78d6;--s2:#eb6834}@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--grid:#2c2c2a;--s1:#3987e5;--s2:#d95926}}.bg{fill:var(--bg)}text{fill:var(--ink);font:12px system-ui,-apple-system,Helvetica,Arial,sans-serif}.m{fill:var(--mute)}.g{stroke:var(--grid)}.ci{stroke:var(--s1);stroke-width:2}.dot{fill:var(--s1)}.ch{fill:none;stroke:var(--mute);stroke-width:1.5}.tr{fill:var(--s2)}</style>
-<rect class="bg" width="880" height="300"/>
+<rect class="bg" width="880" height="420"/>
 <text x="16" y="24" font-weight="600" font-size="15">Agreement with the PI, held-out fold (kappa, 95% interval)</text>
 <text class="m" x="16" y="44">dot = machine  |  open circle = chance with responses shuffled  |  diamond = a predictor that gives every response the PI's most common codes</text>
 <text x="190.0" y="62" font-weight="600">Leaf codes (116)</text>
-<line class="g" x1="250.0" x2="250.0" y1="70" y2="250"/>
-<text class="m" x="242.0" y="266">0</text>
-<line class="g" x1="310.0" x2="310.0" y1="70" y2="250"/>
-<text class="m" x="302.0" y="266">0.2</text>
-<line class="g" x1="370.0" x2="370.0" y1="70" y2="250"/>
-<text class="m" x="362.0" y="266">0.4</text>
-<line class="g" x1="430.0" x2="430.0" y1="70" y2="250"/>
-<text class="m" x="422.0" y="266">0.6</text>
+<line class="g" x1="250.0" x2="250.0" y1="70" y2="370"/>
+<text class="m" x="242.0" y="386">0</text>
+<line class="g" x1="310.0" x2="310.0" y1="70" y2="370"/>
+<text class="m" x="302.0" y="386">0.2</text>
+<line class="g" x1="370.0" x2="370.0" y1="70" y2="370"/>
+<text class="m" x="362.0" y="386">0.4</text>
+<line class="g" x1="430.0" x2="430.0" y1="70" y2="370"/>
+<text class="m" x="422.0" y="386">0.6</text>
 <text x="180" y="89.0" text-anchor="end">eval39</text>
 <line class="ci" x1="237.11890842830815" x2="257.5753039909854" y1="85.0" y2="85.0"/>
 <circle class="dot" cx="246.87434983876022" cy="85.0" r="4.5"/>
@@ -42,15 +42,35 @@
 <circle class="dot" cx="247.2940703152378" cy="235.0" r="4.5"/>
 <circle class="ch" cx="234.01949800786485" cy="235.0" r="4.5"/>
 <path class="tr" d="M315.7286802654215 230.0L320.7286802654215 235.0L315.7286802654215 240.0L310.7286802654215 235.0Z"/>
+<text x="180" y="269.0" text-anchor="end">eval39-judge-llama31</text>
+<line class="ci" x1="226.52485802530646" x2="235.72765328736781" y1="265.0" y2="265.0"/>
+<circle class="dot" cx="230.6002256092762" cy="265.0" r="4.5"/>
+<circle class="ch" cx="229.21669225320704" cy="265.0" r="4.5"/>
+<path class="tr" d="M300.21761969082996 260.0L305.21761969082996 265.0L300.21761969082996 270.0L295.21761969082996 265.0Z"/>
+<text x="180" y="299.0" text-anchor="end">eval39-repeat1</text>
+<line class="ci" x1="236.49604238546425" x2="267.82178217821763" y1="295.0" y2="295.0"/>
+<circle class="dot" cx="250.869615254591" cy="295.0" r="4.5"/>
+<circle class="ch" cx="237.10728060017124" cy="295.0" r="4.5"/>
+<path class="tr" d="M314.43115382030777 290.0L319.43115382030777 295.0L314.43115382030777 300.0L309.43115382030777 295.0Z"/>
+<text x="180" y="329.0" text-anchor="end">eval39-t07-s1</text>
+<line class="ci" x1="242.02699611072987" x2="272.32746955345067" y1="325.0" y2="325.0"/>
+<circle class="dot" cx="256.5990542990958" cy="325.0" r="4.5"/>
+<circle class="ch" cx="238.1241937112731" cy="325.0" r="4.5"/>
+<path class="tr" d="M308.9438844591544 320.0L313.9438844591544 325.0L308.9438844591544 330.0L303.9438844591544 325.0Z"/>
+<text x="180" y="359.0" text-anchor="end">eval39-t07-s2</text>
+<line class="ci" x1="230.138878861666" x2="236.6404448664045" y1="355.0" y2="355.0"/>
+<circle class="dot" cx="232.87373004354112" cy="355.0" r="4.5"/>
+<circle class="ch" cx="231.17779390420873" cy="355.0" r="4.5"/>
+<path class="tr" d="M315.2373075454892 350.0L320.2373075454892 355.0L315.2373075454892 360.0L310.2373075454892 355.0Z"/>
 <text x="530.0" y="62" font-weight="600">Families (15)</text>
-<line class="g" x1="590.0" x2="590.0" y1="70" y2="250"/>
-<text class="m" x="582.0" y="266">0</text>
-<line class="g" x1="650.0" x2="650.0" y1="70" y2="250"/>
-<text class="m" x="642.0" y="266">0.2</text>
-<line class="g" x1="710.0" x2="710.0" y1="70" y2="250"/>
-<text class="m" x="702.0" y="266">0.4</text>
-<line class="g" x1="770.0" x2="770.0" y1="70" y2="250"/>
-<text class="m" x="762.0" y="266">0.6</text>
+<line class="g" x1="590.0" x2="590.0" y1="70" y2="370"/>
+<text class="m" x="582.0" y="386">0</text>
+<line class="g" x1="650.0" x2="650.0" y1="70" y2="370"/>
+<text class="m" x="642.0" y="386">0.2</text>
+<line class="g" x1="710.0" x2="710.0" y1="70" y2="370"/>
+<text class="m" x="702.0" y="386">0.4</text>
+<line class="g" x1="770.0" x2="770.0" y1="70" y2="370"/>
+<text class="m" x="762.0" y="386">0.6</text>
 <line class="ci" x1="718.2082641740194" x2="765.5458515283843" y1="85.0" y2="85.0"/>
 <circle class="dot" cx="741.853429910524" cy="85.0" r="4.5"/>
 <circle class="ch" cx="644.357443544951" cy="85.0" r="4.5"/>
@@ -75,4 +95,20 @@
 <circle class="dot" cx="734.1114466412171" cy="235.0" r="4.5"/>
 <circle class="ch" cx="641.4561620420488" cy="235.0" r="4.5"/>
 <path class="tr" d="M708.0851063829787 230.0L713.0851063829787 235.0L708.0851063829787 240.0L703.0851063829787 235.0Z"/>
+<line class="ci" x1="661.7108337227155" x2="715.9622501850481" y1="265.0" y2="265.0"/>
+<circle class="dot" cx="689.0378889968347" cy="265.0" r="4.5"/>
+<circle class="ch" cx="641.6654924942807" cy="265.0" r="4.5"/>
+<path class="tr" d="M701.8279569892474 260.0L706.8279569892474 265.0L701.8279569892474 270.0L696.8279569892474 265.0Z"/>
+<line class="ci" x1="692.6182432432433" x2="769.6293635971844" y1="295.0" y2="295.0"/>
+<circle class="dot" cx="730.2695944586555" cy="295.0" r="4.5"/>
+<circle class="ch" cx="649.3477136205559" cy="295.0" r="4.5"/>
+<path class="tr" d="M708.0851063829787 290.0L713.0851063829787 295.0L708.0851063829787 300.0L703.0851063829787 295.0Z"/>
+<line class="ci" x1="693.0145698802609" x2="755.573865952367" y1="325.0" y2="325.0"/>
+<circle class="dot" cx="725.4186717998075" cy="325.0" r="4.5"/>
+<circle class="ch" cx="637.6690507699711" cy="325.0" r="4.5"/>
+<path class="tr" d="M705.1378728193584 320.0L710.1378728193584 325.0L705.1378728193584 330.0L700.1378728193584 325.0Z"/>
+<line class="ci" x1="705.3846153846154" x2="762.0457433290978" y1="355.0" y2="355.0"/>
+<circle class="dot" cx="733.9649605525451" cy="355.0" r="4.5"/>
+<circle class="ch" cx="645.2179914085971" cy="355.0" r="4.5"/>
+<path class="tr" d="M708.0851063829787 350.0L713.0851063829787 355.0L708.0851063829787 360.0L703.0851063829787 355.0Z"/>
 </svg>

@@ -31,9 +31,9 @@ Produced by `scripts/export_results.py` from run directories that stay on the re
 5. **What did it cost, and how long did it take?** USD 0. Model time averaged **108 seconds per response** (median 101, 90th percentile 155) over the 26 responses not already cached, with 229 fresh calls averaging 12.3 seconds. About 47 minutes of active running; the run's 106-minute wall clock includes an hour in which the laptop slept.
 6. **Where does it fail?** Worked disagreement cases need respondent text and belong in a private appendix for the PI only. Not produced.
 
-## Model tests: does swapping coder A change anything?
+## Model tests: does changing one thing change anything?
 
-Four more cold runs on the same 39 responses, the same held-out fold and the same agreement code. Each changes **one thing** from the baseline: the three thresholds (the plateau run above), or coder A (`qwen3.5:9b` replaced by `qwen2.5:7b-instruct`, `llama3.1:8b` or `mistral:7b-instruct`, all served by Ollama on the laptop). Coder B, the judge and the refactorer stayed `gemma4:12b` and the embedder `embeddinggemma`. Numbers come from each run's own `stats.json`, database and agreement files; the full tables are in [17-comparison.md](17-comparison.md).
+Eight more cold runs on the same 39 responses, the same held-out fold and the same agreement code. Each changes **one thing** from the baseline: the three thresholds, coder A (`qwen3.5:9b` replaced by `qwen2.5:7b-instruct`, `llama3.1:8b` or `mistral:7b-instruct`), the judge (`gemma4:12b` replaced by `llama3.1:8b`), or it repeats a configuration to see how much a run moves on its own: once with a fresh cache at temperature 0, and twice with both coders at temperature 0.7 (seeds 1 and 2). Everything is served by Ollama on the laptop. Unless stated, coder B, the judge and the refactorer stayed `gemma4:12b` and the embedder `embeddinggemma`. Numbers come from each run's own `stats.json`, database and agreement files; the full tables are in [17-comparison.md](17-comparison.md), and the intervals, chance level and family-level view are in [../agreement-checks.md](../agreement-checks.md).
 
 | run | what changed | codes (families) | judge calls, all / fresh | fresh model minutes | F1 / kappa, with descriptions | F1 / kappa, by name only | agreed cells of 146 (desc. / name) |
 |---|---|---:|---:|---:|---:|---:|---:|
@@ -42,14 +42,20 @@ Four more cold runs on the same 39 responses, the same held-out fold and the sam
 | `-qwen25` | coder A: qwen2.5:7b-instruct | 73 (22) | 255 / 254 | 49.3 | 0.068 / +0.006 | 0.150 / +0.092 | 9 / 20 |
 | `-llama31` | coder A: llama3.1:8b | 93 (36) | 280 / 272 | 52.4 | 0.043 / -0.016 | 0.057 / -0.001 | 6 / 8 |
 | `-mistral` | coder A: mistral:7b-instruct | 75 (20) | 247 / 236 | 50.2 | 0.028 / -0.038 | 0.057 / -0.010 | 4 / 8 |
+| `-judge-llama31` | the judge: llama3.1:8b | 23 (12) | 312 / 312 | 41.4 | 0.008 / -0.065 | 0.066 / -0.006 | 1 / 8 |
+| `-repeat1` | nothing; fresh cache, seed 1729 | 78 (21) | 268 / 266 | 64.4 | 0.066 / +0.003 | 0.058 / -0.006 | 9 / 8 |
+| `-t07-s1` | both coders at temperature 0.7, seed 1 | 57 (15) | 170 / 170 | 49.4 | 0.080 / +0.022 | 0.104 / +0.046 | 10 / 13 |
+| `-t07-s2` | both coders at temperature 0.7, seed 2 | 77 (26) | 259 / 259 | 69.1 | 0.007 / -0.057 | 0.014 / -0.051 | 1 / 2 |
 
 What the table supports, and what it does not:
 
-- **Every run agrees with the PI at about chance.** No kappa reaches 0.1 in either matching. The best single figure is `-qwen25` by name only (20 of his 146 cells, F1 0.150, kappa +0.092); it is one run, matched on names, and the same run with descriptions gives 9 cells. The spread across the five runs, 4 to 11 cells with descriptions, is a few cells, so no model is shown to be better.
-- **The coder changes the shape of the codebook far more than it changes agreement.** Families range from 20 to 39 and codes from 73 to 125; agreement barely moves. A stronger or weaker coder A does not, on this evidence, bring the vocabulary closer to his 117 leaves.
-- **No run produced a fail-safe**, so none of the four local models failed to return usable output on these 39 responses.
-- **The model-minute column favours the baseline.** The baseline replayed 114 of its judge calls from an earlier cache, so only 177 were timed; the others timed 236 to 398. Per fresh judge call the time is about the same in every run (5.4 to 6.2 seconds, the same judge model), so compare calls, not minutes.
-- One run per configuration, 19 held-out responses, and none of these models is the approved line-up. These are tests of the pipeline's plumbing and of how sensitive it is to the coder, not a ranking of models.
+- **Every run agrees with the PI at about chance or below.** No kappa reaches 0.1 in either matching. The best single figure is `-qwen25` by name only (20 of his 146 cells, F1 0.150, kappa +0.092); it is one run, matched on names, and the same run with descriptions gives 9 cells. Across the nine runs the count with descriptions is 1 to 11 of 146 cells.
+- **A repeat moves about as much as most changes do.** The baseline and its repeat are the same configuration. They differ by 13 codes (91 against 78), 10 families (31 against 21), 2 agreed cells (7 against 9), and a family-level kappa of +0.506 against +0.468. So the codebook-size differences between the coder swaps (20 to 39 families, 73 to 125 codes) are not clearly more than one run's own variation. Two repeats cannot put a number on that variation, only show that it is there.
+- **The one change that stands out is the judge.** Swapping the judge for `llama3.1:8b` gave 23 codes in 12 families, far below every other run (57 to 125 codes) and by more than the repeat's difference. It also scored lowest at family level (kappa +0.330 against +0.45 to +0.56 in the other eight 39-response runs) and, matched by name, is the one run clearly below a predictor that only repeats his commonest themes. Its judge calls were also faster: 312 fresh calls took 12.4 minutes, 2.4 seconds each, against 6.2 for `gemma4:12b`.
+- **Temperature 0.7 makes coder A's output volatile.** Coder A wrote 6,196 output tokens in one seed and 24,751 in the other (17,865 in the repeat at temperature 0), and the two seeds had 1 and 3 fail-safes where none of the temperature-0 runs on these 39 responses had any. Codebooks of 57 and 77 codes came from them.
+- **Identical requests did not give identical replies across runs.** The 20 coder requests of the first batch, where the codebook is still empty, are byte-identical in the shared cache from the earlier runs and in the repeat's fresh cache (temperature 0, seed 1729 both times). The repeat's replies differed from the stored ones in all 20. Replaying four of them now gave the same reply twice in a row every time, matched the repeat's own reply from hours earlier in 2 of 4, and matched the stored earlier reply in none. So the model is steady over minutes and not between runs. A difference in the first batch changes the codebook, which changes every later prompt, so differences compound. The cause (a server update, a reloaded model, load) is not established.
+- **The model-minute column favours the baseline.** The baseline replayed 114 of its judge calls from an earlier cache, so only 177 were timed; the others timed 236 to 398. Per fresh judge call the time is about the same in every `gemma4:12b`-judge run (5.4 to 6.2 seconds), so compare calls, not minutes.
+- One run per configuration (two for the temperature-0.7 pair), 19 held-out responses, and none of these models is the approved line-up. These are tests of the pipeline's plumbing and of how sensitive it is to its settings, not a ranking of models.
 
 ## Files
 
@@ -62,7 +68,7 @@ Start with [00-at-a-glance.md](00-at-a-glance.md): four figures and the findings
 | [06-agreement.md](06-agreement.md) | his coding against the machine's, both ways, on the held-out 19 |
 | [07-calibration.md](07-calibration.md) | the threshold sweeps on the calibration fold |
 | [08-machine-run.md](08-machine-run.md) to [14-timeline.md](14-timeline.md) | the machine run, growth, handover, patterns, affinity, crosswalk, timeline |
-| [17-comparison.md](17-comparison.md) | the default run set against four others (plateau thresholds; coder A swapped for qwen2.5, llama3.1, mistral): summary table, configuration, calls, codes, agreement, one figure, realisations per run |
+| [17-comparison.md](17-comparison.md) | the default run set against eight others (plateau thresholds; coder A swapped for qwen2.5, llama3.1, mistral; judge swapped for llama3.1; a temperature-0 repeat; two temperature-0.7 repeats): summary table, configuration, calls, codes, agreement, one figure, realisations per run |
 | [views-machine/views.html](views-machine/views.html) | a self-contained page of figures |
 
 ## Read these caveats first

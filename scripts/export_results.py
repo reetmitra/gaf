@@ -3324,12 +3324,15 @@ def _replays(f: RunFacts) -> tuple[int, int] | None:
 
 
 def _settings(config: Json) -> dict[str, Any]:
-    """The configuration worth comparing: thresholds, model bindings and the embedding space."""
+    """The configuration worth comparing: thresholds, model bindings, sampling and the embedding space."""
     out: dict[str, Any] = {f"rules.{k}": v for k, v in (config.get("rules") or {}).items()}
+    out["seed"] = config.get("seed")
+    out["cache_dir"] = config.get("cache_dir")
     for role, m in sorted((config.get("models") or {}).items()):
         if isinstance(m, dict):
             out[f"models.{role}.provider"] = m.get("provider")
             out[f"models.{role}.model"] = m.get("model")
+            out[f"models.{role}.temperature"] = m.get("temperature")
     out.update({f"embedding.{k}": v for k, v in (config.get("embedding") or {}).items()})
     return out
 
@@ -3629,7 +3632,10 @@ def section_comparison(ctx: Ctx) -> str | None:
             "",
         ]
     else:
-        parts += ["The thresholds, the model bindings and the embedding space are identical in every run.", ""]
+        parts += [
+            "The thresholds, model bindings, temperatures, seed, cache and embedding space are identical in every run.",
+            "",
+        ]
     for b in others:
         parts += [f"## `{b.name}` against `{a.name}`", "", *_table_for(ctx, name, a, b), ""]
     parts += ["## Agreement with his coding", "", *_agreement_for(ctx, name, facts), ""]

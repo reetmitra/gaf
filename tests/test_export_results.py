@@ -1854,6 +1854,13 @@ def test_compare_writes_the_page_and_the_figure_and_lists_only_what_differs(tmp_
     assert "[17-comparison.md](17-comparison.md)" in readme
 
 
+def test_settings_include_the_temperature_seed_and_cache_so_a_repeat_can_be_told_from_its_baseline():
+    config = {"seed": 7, "cache_dir": "c1", "models": {"coder_a": {"provider": "local", "model": "m", "temperature": 0.7}}}
+    s = xr._settings(config)
+    assert s["models.coder_a.temperature"] == 0.7 and s["seed"] == 7 and s["cache_dir"] == "c1"
+    assert xr._settings({**config, "seed": 1729}) != s
+
+
 def test_without_compare_there_is_no_comparison_page(tmp_path: Path):
     code, out = compare_export(tmp_path, [])
     assert code == 0
