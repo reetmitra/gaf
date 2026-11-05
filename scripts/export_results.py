@@ -49,6 +49,7 @@ import json
 import math
 import re
 import shutil
+import sqlite3
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
@@ -468,6 +469,8 @@ class Ctx:
     seeded: Path | None = None
     halted: Path | None = None
     resumed: Path | None = None
+    #: the runs `--compare` sets beside this one (A, the baseline, is `run`)
+    compare: list[Path] = field(default_factory=list)
     #: section file name -> why it could not be produced
     missing: dict[str, str] = field(default_factory=dict)
     #: how many descriptions the per-item guard replaced, by source
@@ -2521,14 +2524,14 @@ FIG_W = 760
 #: steps 600/400/250 clear its 2:1 floor on both. Text wears ink tokens, never a series colour.
 FIG_CSS = (
     ":root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mute:#898781;--grid:#e1e0d9;--axis:#c3c2b7;"
-    "--s1:#2a78d6;--s2:#eb6834;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}"
+    "--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--o1:#184f95;--o2:#3987e5;--o3:#86b6ef}"
     "@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;"
-    "--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926}}"
+    "--grid:#2c2c2a;--axis:#383835;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500}}"
     ".bg{fill:var(--bg)}"
     "text{fill:var(--ink);font:12px system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}"
     ".ttl{font-size:14px;font-weight:600}.sub,.tick{fill:var(--ink2)}.tick{font-size:11px}"
     "line{stroke-width:1}.grid{stroke:var(--grid)}.axis{stroke:var(--axis)}.zero{stroke:var(--ink2)}"
-    ".s1{fill:var(--s1)}.s2{fill:var(--s2)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}"
+    ".s1{fill:var(--s1)}.s2{fill:var(--s2)}.s3{fill:var(--s3)}.s4{fill:var(--s4)}.o1{fill:var(--o1)}.o2{fill:var(--o2)}.o3{fill:var(--o3)}"
     ".gray{fill:var(--mute)}.cur{fill:var(--ink2)}.ring{stroke:var(--bg);stroke-width:2}"
     ".ln{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}"
     ".wash{fill:var(--s1);fill-opacity:.1}"
@@ -2827,13 +2830,19 @@ class Glance:
     models: dict[str, str] = field(default_factory=dict)  # role -> model, from the run's config
 
 
-def _load_glance(run: Path) -> Glance:
-    stats = _quiet_load(run / "stats.json") or {}
-    agreement = []
+def _agreements(run: Path) -> list[tuple[str, Json]]:
+    """``(way of matching, agreement.json)`` for each variant the run holds a code-level kappa for."""
+    found = []
     for sub, how in (("agreement", "with descriptions"), ("agreement_nameonly", "by name only")):
         j = _quiet_load(run / sub / "agreement.json")
         if isinstance(((j or {}).get("code_level") or {}).get("cohens_kappa"), int | float):
-            agreement.append((how, j))
+            found.append((how, j))
+    return found
+
+
+def _load_glance(run: Path) -> Glance:
+    stats = _quiet_load(run / "stats.json") or {}
+    agreement = _agreements(run)
     config = (_quiet_load(run / "run.json") or {}).get("config") or {}
     models = {
         role: m["model"] for role, m in (config.get("models") or {}).items() if isinstance(m, dict) and m.get("model")
@@ -3215,6 +3224,453 @@ def section_at_a_glance(ctx: Ctx) -> str | None:
     return "\n".join(parts + figures)
 
 
+# ------------------------------------------------------------------- comparing runs
+#
+# `--compare RUN_DIR` (repeatable) sets other runs beside the exported one, A, the baseline.
+# Page 17 reports what differs and by how much; it never says why. Every input is a count, a
+# sum, a threshold, a role or model name or a run id: the llm_calls table is only ever
+# aggregated (counts and sums), and no text column is selected.
+
+#: A change smaller than this share of A's value is not worth a sentence.
+COMPARE_MATERIAL = 0.10
+
+#: The figure draws this many runs (A and the first three compared): the palette's first four slots.
+COMPARE_FIGURE_RUNS = 4
+
+#: What the page says under its realisations, once.
+COMPARE_CAVEAT = (
+    "Each line reports a difference and none says why. The configuration differences above are the "
+    "only ones this page can see, and one run of each cannot tell a setting's effect from "
+    "run-to-run variation."
+)
+
+
+@dataclass
+class RunFacts:
+    """What the comparison reads from one run directory."""
+
+    name: str  # the run's run_id
+    offline: bool
+    stats: Json
+    config: Json
+    #: ``(role, task, calls, cache replays, model-seconds on fresh calls)`` from ``gaf.sqlite``
+    llm: list[tuple[str, str, int, int, float]] | None = None
+    agreement: list[tuple[str, Json]] = field(default_factory=list)
+
+
+def _llm_rows(run: Path) -> list[tuple[str, str, int, int, float]] | None:
+    """Aggregates of ``llm_calls`` by role and task: counts and sums, never a text column.
+
+    One database per run directory. Opened read-only, so reading a run never writes to it.
+    """
+    db = run / "gaf.sqlite"
+    if not db.is_file():
+        return None
+    try:
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        try:
+            return [
+                (str(r), str(t), int(n), int(h or 0), float(ms or 0.0) / 1000.0)
+                for r, t, n, h, ms in con.execute(
+                    "SELECT role, task, COUNT(*), SUM(cache_hit), "
+                    "SUM(CASE WHEN cache_hit = 0 THEN latency_ms ELSE 0 END) "
+                    "FROM llm_calls GROUP BY role, task ORDER BY role, task"
+                )
+            ]
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return None
+
+
+def _load_facts(run: Path) -> RunFacts | None:
+    """``None`` when the run has no ``stats.json``: there is then nothing to compare."""
+    stats = _quiet_load(run / "stats.json")
+    if stats is None:
+        return None
+    config = (_quiet_load(run / "run.json") or {}).get("config") or {}
+    return RunFacts(
+        name=str(stats.get("run_id") or config.get("run_id") or run.name),
+        offline=bool(stats.get("offline", True)),
+        stats=stats,
+        config=config,
+        llm=_llm_rows(run),
+        agreement=_agreements(run),
+    )
+
+
+def _judge(f: RunFacts) -> tuple[int, int, int] | None:
+    """``(calls in all, fresh, cache replays)`` for the judge; ``None`` without a database."""
+    if f.llm is None:
+        return None
+    calls = sum(n for role, _, n, _, _ in f.llm if role == "judge")
+    replays = sum(h for role, _, _, h, _ in f.llm if role == "judge")
+    return calls, calls - replays, replays
+
+
+def _seconds(f: RunFacts) -> dict[str, float] | None:
+    """Model-seconds on fresh calls by role. ``None`` for an offline run, or when none was timed."""
+    if f.llm is None or f.offline:
+        return None
+    by_role: dict[str, float] = {}
+    for role, _, _, _, secs in f.llm:
+        by_role[role] = by_role.get(role, 0.0) + secs
+    by_role = {r: s for r, s in by_role.items() if s > 0}
+    return by_role or None
+
+
+def _replays(f: RunFacts) -> tuple[int, int] | None:
+    """``(cache replays, calls)`` over every role."""
+    if f.llm is None:
+        return None
+    return sum(h for _, _, _, h, _ in f.llm), sum(n for _, _, n, _, _ in f.llm)
+
+
+def _settings(config: Json) -> dict[str, Any]:
+    """The configuration worth comparing: thresholds, model bindings and the embedding space."""
+    out: dict[str, Any] = {f"rules.{k}": v for k, v in (config.get("rules") or {}).items()}
+    for role, m in sorted((config.get("models") or {}).items()):
+        if isinstance(m, dict):
+            out[f"models.{role}.provider"] = m.get("provider")
+            out[f"models.{role}.model"] = m.get("model")
+    out.update({f"embedding.{k}": v for k, v in (config.get("embedding") or {}).items()})
+    return out
+
+
+def _shown(value: Any) -> str:
+    if value is None:
+        return "-"
+    return f"{value:.2f}" if isinstance(value, float) else str(value)
+
+
+def _count(value: float | None) -> str:
+    if value is None:
+        return "-"
+    return f"{value:,.1f}" if isinstance(value, float) else f"{value:,}"
+
+
+def _change(a: float | None, b: float | None) -> str:
+    if a is None or b is None:
+        return "-"
+    d = b - a
+    return (f"{d:+,.1f}" if isinstance(d, float) else f"{d:+,}") + (f" ({d / a:+.1%})" if a else "")
+
+
+def _measures(a: RunFacts, b: RunFacts) -> list[tuple[str, float | None, float | None]]:
+    """The rows of one run's table against A. A value a run does not hold is ``None``."""
+    ja, jb = _judge(a), _judge(b)
+    rows: list[tuple[str, Any, Any]] = [
+        (f"judge calls, {what}", ja and ja[i], jb and jb[i])
+        for i, what in enumerate(("in all", "fresh", "cache replays"))
+    ]
+    sa, sb = _seconds(a), _seconds(b)
+    for role in sorted(set(sa or {}) | set(sb or {}), key=lambda r: (not r.startswith("coder"), r)):
+        rows.append((f"fresh model-seconds, {role}", sa and sa.get(role, 0.0), sb and sb.get(role, 0.0)))
+    if sa or sb:
+        rows.append(("fresh model-seconds, all roles", sa and sum(sa.values()), sb and sum(sb.values())))
+    for label, path in (
+        ("fail-safes", ("llm", "fail_safes")),
+        ("codes created", ("codes_created",)),
+        ("families in the final codebook", ("families_final",)),
+        ("assignments", ("assignments",)),
+        ("escalations to the judge", ("escalations",)),
+    ):
+        pair = []
+        for f in (a, b):
+            v: Any = f.stats
+            for key in path:
+                v = v.get(key) if isinstance(v, dict) else None
+            pair.append(v if isinstance(v, int | float) else None)
+        rows.append((label, *pair))
+    return rows
+
+
+def _unique_names(facts: list[RunFacts], dirs: list[Path]) -> None:
+    """Two runs with one run_id would be indistinguishable in a table: add the directory name."""
+    seen = [f.name for f in facts]
+    for f, d in zip(facts, dirs, strict=True):
+        if seen.count(f.name) > 1:
+            f.name = f"{f.name} ({d.name})"
+
+
+# -- the figure
+
+
+def _hbars(x0: float, y0: float, w: float, title: str, values: list[float | None], fmt: str, names: list[str], hi: float | None = None) -> tuple[list[str], float]:
+    """One small multiple: a title and one bar per run, the value at the tip. Returns (svg, height).
+
+    Each starts at its own zero. A run that holds no value is labelled so, not drawn as nothing.
+    """
+    top, row = y0 + 14, 26
+    top_value = hi or max((v for v in values if v), default=1.0)
+    body = [_t(x0, y0, title)]
+    body.append(_ln(x0, top - 2, x0, top + row * len(values), "axis"))
+    for i, (name, v) in enumerate(zip(names, values, strict=True)):
+        y = top + row * i + 4
+        if v is None:
+            body.append(_t(x0 + 8, y + 13, "not available", "tick"))
+            continue
+        x1 = x0 + (w - 56) * v / top_value
+        body.append(_bar(x0, x1, y, 18, f"s{i + 1}", f"{name}: {title} {fmt.format(v)}"))
+        body.append(_t(x1 + 8, y + 13, fmt.format(v)))
+    return body, 14 + row * len(values) + 8
+
+
+def figure_comparison(names: list[str], measures: list[tuple[str, list[float | None], str]], f1: list[tuple[str, list[float | None]]]) -> str:
+    """Bars per run: judge calls, codes created and model minutes, then F1 for each way of matching.
+
+    `names` are the run ids, in order; run i keeps slot i+1 of the palette. Each measure is its
+    own small multiple, so counts, minutes and a 0-to-1 score never share an axis.
+    """
+    names = names[:COMPARE_FIGURE_RUNS]
+    width = (FIG_W - 32 - 28 * 2) / 3
+    body = [_t(16, 24, "Runs compared", "ttl")]
+    legend_x = 16.0
+    for i, name in enumerate(names):
+        body += [_swatch(legend_x, 36, f"s{i + 1}"), _t(legend_x + 16, 45, name)]
+        legend_x += 16 + 7 * len(name) + 24
+    said = []
+    y = 76.0
+    for header, panels in (
+        ("Calls, codes and time", [(t, v[: len(names)], fmt, None) for t, v, fmt in measures]),
+        ("F1 against his coding, scale 0 to 1", [(f"F1, {how}", v[: len(names)], "{:.3f}", 1.0) for how, v in f1]),
+    ):
+        if not panels:
+            continue
+        body.append(_t(16, y, header, "sub"))
+        y += 22
+        tallest = 0.0
+        for k, (title, values, fmt, hi) in enumerate(panels):
+            lines, h = _hbars(16 + k * (width + 28), y, width, title, values, fmt, names, hi)
+            body += lines
+            tallest = max(tallest, h)
+            said.append(
+                f"{title}: " + ", ".join(f"{n} {'not available' if v is None else fmt.format(v)}" for n, v in zip(names, values, strict=True))
+            )
+        y += tallest + 30
+    return _svg(y - 6, "Runs compared", "Bars per run, one small chart per measure. " + "; ".join(said) + ".", body)
+
+
+# -- the rules. Each reports a difference between A and one other run, and none says why.
+
+
+def _more(delta: float) -> str:
+    return "more" if delta > 0 else "fewer"
+
+
+def rule_compare_judge_calls(runs: list[RunFacts]) -> list[str]:
+    a, out = runs[0], []
+    for b in runs[1:]:
+        ja, jb = _judge(a), _judge(b)
+        if a.offline or b.offline or not ja or not jb or not ja[0] or abs(jb[0] - ja[0]) / ja[0] < COMPARE_MATERIAL:
+            continue
+        out.append(
+            f"`{b.name}` needed {abs(jb[0] - ja[0]) / ja[0]:.0%} {_more(jb[0] - ja[0])} judge calls than "
+            f"`{a.name}`: {jb[0]:,} against {ja[0]:,} ({jb[1]:,} against {ja[1]:,} once cache replays are set aside)."
+        )
+    return out
+
+
+def rule_compare_codes(runs: list[RunFacts]) -> list[str]:
+    a, out = runs[0], []
+    for b in runs[1:]:
+        ca, cb = a.stats.get("codes_created"), b.stats.get("codes_created")
+        if not isinstance(ca, int) or not isinstance(cb, int) or not ca or abs(cb - ca) / ca < COMPARE_MATERIAL:
+            continue
+        fa, fb = a.stats.get("families_final"), b.stats.get("families_final")
+        families = f", in {fb:,} families against {fa:,}" if isinstance(fa, int) and isinstance(fb, int) else ""
+        out.append(
+            f"`{b.name}` created {abs(cb - ca):,} {_more(cb - ca)} codes than `{a.name}`: {cb:,} against {ca:,}"
+            f" ({(cb - ca) / ca:+.0%}){families}."
+        )
+    return out
+
+
+def rule_compare_agreement(runs: list[RunFacts]) -> list[str]:
+    a, out = runs[0], []
+    for b in runs[1:]:
+        theirs = dict(b.agreement)
+        for how, ja in a.agreement:
+            if how not in theirs:
+                continue
+            ca, cb = ja["code_level"], theirs[how]["code_level"]
+            if all(ca.get(k) == cb.get(k) for k in ("cohens_kappa", "f1", "tp", "fp", "fn")):
+                continue
+            filled = ca["tp"] + ca["fn"]
+            of = f" of the {filled:,} cells his coding fills" if filled == cb["tp"] + cb["fn"] else ""
+            said = (
+                f"Matching {how}, agreement with his coding moved from kappa {ca['cohens_kappa']:+.3f} in `{a.name}` "
+                f"to {cb['cohens_kappa']:+.3f} in `{b.name}` and from F1 {ca['f1']:.3f} to {cb['f1']:.3f}; true positives "
+                f"went from {ca['tp']:,} to {cb['tp']:,}, which is {abs(cb['tp'] - ca['tp']):,} cells{of}."
+            )
+            if abs(ca["cohens_kappa"]) < CHANCE_KAPPA and abs(cb["cohens_kappa"]) < CHANCE_KAPPA:
+                said += f" Both kappas are under {CHANCE_KAPPA:g} in size, which is within chance."
+            out.append(said)
+    return out
+
+
+def rule_compare_time(runs: list[RunFacts]) -> list[str]:
+    a, out = runs[0], []
+    for b in runs[1:]:
+        sa, sb = _seconds(a), _seconds(b)
+        if not sa or not sb:
+            continue
+        ta, tb = sum(sa.values()), sum(sb.values())
+        if abs(tb - ta) / ta < COMPARE_MATERIAL:
+            continue
+        role = max(set(sa) | set(sb), key=lambda r: abs(sb.get(r, 0.0) - sa.get(r, 0.0)))
+        said = (
+            f"`{b.name}` was {'slower' if tb > ta else 'faster'} than `{a.name}` in model time: {tb / 60:.1f} against "
+            f"{ta / 60:.1f} model-minutes on calls that reached a model ({(tb - ta) / ta:+.0%}). The largest change is the "
+            f"{role}, from {sa.get(role, 0.0) / 60:.1f} to {sb.get(role, 0.0) / 60:.1f} minutes."
+        )
+        ra, rb = _replays(a), _replays(b)
+        if ra and rb and abs(ra[0] / ra[1] - rb[0] / rb[1]) >= COMPARE_MATERIAL:
+            said += (
+                f" A cache replay takes no time, and the runs replayed different shares ({ra[0]:,} of {ra[1]:,} calls in "
+                f"`{a.name}`, {rb[0]:,} of {rb[1]:,} in `{b.name}`), so this compares fresh calls only."
+            )
+        out.append(said)
+    return out
+
+
+COMPARE_RULES = (rule_compare_judge_calls, rule_compare_codes, rule_compare_agreement, rule_compare_time)
+
+
+def section_comparison(ctx: Ctx) -> str | None:
+    name = "17-comparison.md"
+    if not ctx.compare:
+        return None
+    base = _load_facts(ctx.run)
+    if base is None:
+        ctx.skip(name, "no `stats.json` in the baseline run")
+        return None
+    dirs, facts = [ctx.run], [base]
+    notes: list[str] = []
+    for d in ctx.compare:
+        f = _load_facts(d)
+        if f is None:
+            why = f"no `stats.json` in `{d.name}`, so it is not compared"
+            ctx.skip(f"{name} ({d.name})", why)
+            print(f"  skip  {name} ({d.name}) - {why}")
+            notes.append(f"*Not compared: {why}.*")
+            continue
+        dirs.append(d)
+        facts.append(f)
+    if len(facts) < 2:
+        ctx.skip(name, "no run to compare with could be read")
+        return None
+    _unique_names(facts, dirs)
+    a, others = facts[0], facts[1:]
+    parts = [f"# 17 - `{a.name}` against {len(others)} other run(s)", ""]
+    parts += [
+        "Run A, the baseline, is the exported run. Each later run is set against it; a figure is a count, "
+        "a sum or a score the run recorded, and a difference is reported, not explained.",
+        "",
+        _table(
+            ["", "run", "models"],
+            [
+                [chr(65 + i), f"`{f.name}`", "an offline stand-in: no model was called" if f.offline else "live models"]
+                for i, f in enumerate(facts)
+            ],
+            align="lll",
+        ),
+        "",
+        *notes,
+        "## Configuration: what differs from A",
+        "",
+    ]
+    base_settings = _settings(a.config)
+    settings = [_settings(f.config) for f in facts]
+    changed = [
+        k for k in sorted(set().union(*settings)) if any(s.get(k) != base_settings.get(k) for s in settings[1:])
+    ]
+    if not a.config:
+        parts += ["*Not compared: no `run.json` for the baseline, so no configuration is known.*", ""]
+    elif changed:
+        parts += [
+            _table(
+                ["setting", *(f"`{f.name}`" for f in facts)],
+                [[f"`{k}`", *(_shown(s.get(k)) for s in settings)] for k in changed],
+                align="l" + "l" * len(facts),
+            ),
+            "",
+        ]
+    else:
+        parts += ["The thresholds, the model bindings and the embedding space are identical in every run.", ""]
+    for b in others:
+        parts += [f"## `{b.name}` against `{a.name}`", "", *_table_for(ctx, name, a, b), ""]
+    parts += ["## Agreement with his coding", "", *_agreement_for(ctx, name, facts), ""]
+    parts += ["## Figure", "", *_figure_for(ctx, facts), ""]
+    realisations = [line for rule in COMPARE_RULES for line in rule(facts)]
+    parts += ["## Realisations", ""]
+    parts += [f"- {r}" for r in realisations] or ["- No rule had grounds to fire on these runs' inputs."]
+    parts += ["", COMPARE_CAVEAT, ""]
+    return "\n".join(parts)
+
+
+def _table_for(ctx: Ctx, name: str, a: RunFacts, b: RunFacts) -> list[str]:
+    shown = [
+        [label, _count(x), _count(y), _change(x, y)] for label, x, y in _measures(a, b) if x is not None or y is not None
+    ]
+    if a.llm is None or b.llm is None:
+        gone = a.name if a.llm is None else b.name
+        why = f"no `gaf.sqlite` for `{gone}`, so its judge calls and model time are not compared"
+        ctx.skip(f"{name} (calls for {b.name})", why)
+        print(f"  skip  {name} (calls for {b.name}) - {why}")
+        shown.insert(0, [f"*{why}*", "", "", ""])
+    return [_table(["measure", f"`{a.name}`", f"`{b.name}`", "change"], shown, align="lrrr")]
+
+
+def _agreement_for(ctx: Ctx, name: str, facts: list[RunFacts]) -> list[str]:
+    rows: list[list[Any]] = []
+    for f in facts:
+        if not f.agreement:
+            why = f"no agreement file for `{f.name}`"
+            ctx.skip(f"{name} (agreement for {f.name})", why + " (`agreement/` or `agreement_nameonly/`)")
+            print(f"  skip  {name} (agreement for {f.name}) - {why}")
+            rows.append([f"`{f.name}`", "*not available*", "-", "-", "-", "-", "-"])
+        for how, j in f.agreement:
+            cl = j["code_level"]
+            rows.append(
+                [f"`{f.name}`", how, f"{cl['cohens_kappa']:+.3f}", f"{cl['f1']:.3f}", cl["tp"], cl["fp"], cl["fn"]]
+            )
+    return [_table(["run", "matching", "kappa", "F1", "TP", "FP", "FN"], rows, align="llrrrrr")]
+
+
+def _figure_for(ctx: Ctx, facts: list[RunFacts]) -> list[str]:
+    figure = "comparison.svg"
+    shown = facts[:COMPARE_FIGURE_RUNS]
+    names = [f.name for f in shown]
+    judge = [(j := _judge(f)) and float(j[0]) for f in shown]
+    codes = [float(c) if isinstance(c := f.stats.get("codes_created"), int) else None for f in shown]
+    minutes = [(s := _seconds(f)) and sum(s.values()) / 60.0 for f in shown]
+    measures: list[tuple[str, list[float | None], str]] = [
+        ("Judge calls", judge, "{:,.0f}"),
+        ("Codes created", codes, "{:,.0f}"),
+        ("Model minutes, fresh calls", minutes, "{:,.1f}"),
+    ]
+    measures = [m for m in measures if any(v is not None for v in m[1])]
+    f1 = [
+        (how, [dict(f.agreement).get(how, {}).get("code_level", {}).get("f1") for f in shown])
+        for how in ("with descriptions", "by name only")
+        if any(how in dict(f.agreement) for f in shown)
+    ]
+    if not measures and not f1:
+        why = "none of the runs holds a judge count, a code count, model time or an agreement file"
+        ctx.skip(figure, why)
+        print(f"  skip  {figure} - {why}")
+        return [f"*Not drawn: {why}.*"]
+    if not _drawn(ctx, figure, figure_comparison(names, measures, f1)):
+        return ["*Not drawn: withheld by the guard.*"]
+    note = (
+        [f"The figure shows the first {COMPARE_FIGURE_RUNS} of {len(facts)} runs; the tables cover all of them.", ""]
+        if len(facts) > COMPARE_FIGURE_RUNS
+        else []
+    )
+    return [f"![runs compared]({figure})", "", *note]
+
+
 # ------------------------------------------------------------------- pages and README
 
 
@@ -3346,8 +3802,9 @@ def section_readme(ctx: Ctx, produced: list[tuple[str, str]]) -> str:
         "",
         _table(["file", "what it holds"], rows, align="ll"),
         "",
-        "Plus this README and the figures — `dendrogram.svg`, `saturation.svg` and the four drawn on",
-        "`00-at-a-glance.md` — which are embedded in the sections that discuss them rather than listed above.",
+        "Plus this README and the figures — `dendrogram.svg`, `saturation.svg`, the four drawn on",
+        "`00-at-a-glance.md` and `comparison.svg` — which are embedded in the sections that discuss them",
+        "rather than listed above.",
         "",
         "## What was run",
         "",
@@ -3722,6 +4179,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seeded", default=None, type=Path, help="a run seeded from his codebook")
     ap.add_argument("--halted", default=None, type=Path, help="a run stopped at the first handover")
     ap.add_argument("--resumed", default=None, type=Path, help="the run that resumed the halted one")
+    ap.add_argument(
+        "--compare",
+        action="append",
+        default=[],
+        type=Path,
+        metavar="RUN_DIR",
+        help=(
+            "another run to set beside --run (A, the baseline); repeatable. Writes 17-comparison.md "
+            "and comparison.svg: what differs in the configuration, and by how much the counts, "
+            "model time and agreement with his coding differ. A difference is reported, not explained."
+        ),
+    )
     args = ap.parse_args(argv)
     run: Path = args.run
     out: Path = args.out
@@ -3734,6 +4203,7 @@ def main(argv: list[str] | None = None) -> int:
         ("--seeded", args.seeded),
         ("--halted", args.halted),
         ("--resumed", args.resumed),
+        *(("--compare", d) for d in args.compare),
     ):
         if directory is not None and not Path(directory).is_dir():
             print(f"not a directory: {label_} {directory}", file=sys.stderr)
@@ -3748,12 +4218,13 @@ def main(argv: list[str] | None = None) -> int:
         seeded=args.seeded,
         halted=args.halted,
         resumed=args.resumed,
+        compare=list(args.compare),
     )
 
     # Feed the guard *before* a single section runs. A section that forgets to withhold
     # a field it read is then still covered, because the directory it read it from was
     # already emptied into Withheld in full.
-    for directory in (run, ctx.seeded, ctx.halted, ctx.resumed):
+    for directory in (run, ctx.seeded, ctx.halted, ctx.resumed, *ctx.compare):
         if directory is not None:
             feed_run(Path(directory), ctx.withheld)
     feed_human(human, ctx.withheld)
@@ -3776,6 +4247,7 @@ def main(argv: list[str] | None = None) -> int:
         ("14-timeline.md", "when each code was generated, and what happened to it", section_timeline),
         ("15-seeded-run.md", "coding into his organisation — a demonstration, not a result", section_seeded),
         ("16-halt-and-resume.md", "halting at the handover, and resuming without loss", section_halt_resume),
+        ("17-comparison.md", "this run against other runs: configuration, counts, model time, agreement", section_comparison),
     ]
     produced: list[tuple[str, str]] = []
     for name, what, build in sections:

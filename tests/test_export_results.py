@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sqlite3
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -1315,10 +1316,10 @@ def metrics_payload(**over: Any) -> dict[str, Any]:
     return {**base, **over}
 
 
-def agreement_payload(kappa: float = 0.04, f1: float = 0.1) -> dict[str, Any]:
+def agreement_payload(kappa: float = 0.04, f1: float = 0.1, tp: int = 3) -> dict[str, Any]:
     """An invented `agreement.json`, whole enough for the agreement section to render it too."""
     cl = {
-        "cohens_kappa": kappa, "f1": f1, "precision": 0.1, "recall": 0.1, "tp": 3, "fp": 20, "fn": 22,
+        "cohens_kappa": kappa, "f1": f1, "precision": 0.1, "recall": 0.1, "tp": tp, "fp": 20, "fn": 25 - tp,
         "tn": 800, "n_responses": 3, "n_codes": 9, "n_cells": 27,
         "observed_agreement": 0.9, "expected_agreement": 0.9,
     }  # fmt: skip
@@ -1649,3 +1650,270 @@ def test_a_finding_that_quotes_a_response_is_withheld_not_fatal(tmp_path: Path):
     body = (out / "08-machine-run.md").read_text(encoding="utf-8")
     assert PLANTED.casefold()[:30] not in body.casefold()
     assert xr.WITHHELD_MESSAGE in body
+
+
+# --------------------------------------------------------------------------- #
+# 7. Comparing runs: --compare, page 17 and comparison.svg
+#
+# The run ids, numbers and models are invented; the databases are built here, row by row.
+# --------------------------------------------------------------------------- #
+
+
+def build_compare_run(
+    root: Path,
+    name: str,
+    *,
+    offline: bool = False,
+    tau_fit: float = 0.3,
+    judge_calls: int = 10,
+    judge_replays: int = 2,
+    judge_ms: float = 2000.0,
+    codes: int | None = 20,
+    families: int = 5,
+    kappa: float = 0.04,
+    tp: int = 3,
+    stats: bool = True,
+    db: bool = True,
+    agreement: bool = True,
+) -> Path:
+    """A run directory holding what the comparison reads: stats, config, an llm_calls table, agreement."""
+    run = root / name
+    run.mkdir(parents=True)
+    if stats:
+        counts = {"codes_created": codes, "families_final": families} if codes is not None else {}
+        _write_json(run / "stats.json", {
+            "run_id": name, "offline": offline, "assignments": 30, "escalations": 7,
+            "llm": {"fail_safes": 0}, **counts,
+        })  # fmt: skip
+    models = {"coder_a": "model-one", "judge": "model-two"}
+    _write_json(run / "run.json", {"config": {
+        "rules": {"tau_fit": tau_fit, "tau_high": 0.8},
+        "models": {r: {"provider": "invented", "model": m} for r, m in models.items()},
+        "embedding": {"mode": "lexical", "dim": 512},
+    }})  # fmt: skip
+    if db:
+        con = sqlite3.connect(run / "gaf.sqlite")
+        con.execute("CREATE TABLE llm_calls (role TEXT, task TEXT, cache_hit INTEGER, latency_ms REAL)")
+        rows = [("judge", "judge_fit", int(i < judge_replays), 0.0 if i < judge_replays else judge_ms) for i in range(judge_calls)]
+        rows += [("coder_a", "code", 0, 500.0)] * 4
+        con.executemany("INSERT INTO llm_calls VALUES (?, ?, ?, ?)", rows)
+        con.commit()
+        con.close()
+    if agreement:
+        _write_json(run / "agreement" / "agreement.json", agreement_payload(kappa, 0.1, tp))
+        _write_json(run / "agreement_nameonly" / "agreement.json", agreement_payload(kappa, 0.2, tp))
+    return run
+
+
+def facts_of(tmp_path: Path, name: str, **kw: Any) -> Any:
+    return xr._load_facts(build_compare_run(tmp_path, name, **kw))
+
+
+def pair(tmp_path: Path, **b: Any) -> list[Any]:
+    """Run A (the invented baseline) and a run B that differs by whatever `b` says."""
+    return [facts_of(tmp_path, "alpha"), facts_of(tmp_path, "beta", **b)]
+
+
+# -- the figure
+
+
+def test_the_comparison_figure_is_xml_names_each_run_and_labels_each_value():
+    measures = [("Judge calls", [100.0, 150.0], "{:,.0f}"), ("Codes created", [50.0, 40.0], "{:,.0f}")]
+    svg = xr.figure_comparison(["alpha", "beta"], measures, [("with descriptions", [0.05, None])])
+    root = svg_root(svg)
+    texts = svg_texts(root)
+    assert {"alpha", "beta", "100", "150", "50", "40", "0.050", "not available"} <= set(texts)
+    assert 'class="s1"' in svg and 'class="s2"' in svg and 'class="s3"' not in svg
+    titles = "".join(t.text or "" for t in root.iter("{http://www.w3.org/2000/svg}title"))
+    assert "beta: Judge calls 150" in titles
+    assert svg == xr.figure_comparison(["alpha", "beta"], measures, [("with descriptions", [0.05, None])])
+
+
+def test_the_comparison_figure_draws_only_as_many_runs_as_the_palette_has_slots():
+    five = [f"run{i}" for i in range(5)]
+    svg = xr.figure_comparison(five, [("Codes created", [1.0, 2.0, 3.0, 4.0, 5.0], "{:,.0f}")], [])
+    texts = svg_texts(svg_root(svg))
+    assert "run3" in texts and "run4" not in texts and "5" not in texts
+    assert 'class="s4"' in svg and 'class="s5"' not in svg
+
+
+# -- the rules: each fires, each does not
+
+
+def test_judge_calls_rule_fires_on_a_material_change_and_not_below_it(tmp_path: Path):
+    (said,) = xr.rule_compare_judge_calls(pair(tmp_path, judge_calls=15, judge_replays=0))
+    assert "`beta` needed 50% more judge calls than `alpha`: 15 against 10 (15 against 8 once cache replays" in said
+    (fewer,) = xr.rule_compare_judge_calls(pair(tmp_path / "f", judge_calls=5, judge_replays=0))
+    assert "50% fewer" in fewer
+    assert xr.rule_compare_judge_calls(pair(tmp_path / "s", judge_calls=10, judge_replays=0)) == [], "same total"
+    assert xr.rule_compare_judge_calls(pair(tmp_path / "t", judge_calls=10, judge_replays=9)) == []
+
+
+def test_judge_calls_rule_needs_a_database_and_two_live_runs(tmp_path: Path):
+    assert xr.rule_compare_judge_calls(pair(tmp_path / "a", judge_calls=15, db=False)) == []
+    assert xr.rule_compare_judge_calls(pair(tmp_path / "b", judge_calls=15, offline=True)) == []
+    runs = pair(tmp_path / "c", judge_calls=15)
+    runs[0] = facts_of(tmp_path / "d", "alpha", offline=True)
+    assert xr.rule_compare_judge_calls(runs) == []
+
+
+def test_codes_rule_reports_the_count_and_the_families_and_stays_silent_when_small(tmp_path: Path):
+    (said,) = xr.rule_compare_codes(pair(tmp_path, codes=30, families=8))
+    assert "`beta` created 10 more codes than `alpha`: 30 against 20 (+50%), in 8 families against 5." in said
+    assert "5 fewer codes" in xr.rule_compare_codes(pair(tmp_path / "f", codes=15))[0]
+    assert xr.rule_compare_codes(pair(tmp_path / "s", codes=21)) == [], "5% is not worth a sentence"
+    assert xr.rule_compare_codes(pair(tmp_path / "m", codes=None)) == [], "no count, no claim"
+
+
+def test_agreement_rule_reports_the_move_in_cells_and_names_chance(tmp_path: Path):
+    said = xr.rule_compare_agreement(pair(tmp_path, kappa=0.06, tp=5))
+    assert len(said) == 2, "one line for each way of matching"
+    assert "moved from kappa +0.040 in `alpha` to +0.060 in `beta`" in said[0]
+    assert "true positives went from 3 to 5, which is 2 cells of the 25 cells his coding fills" in said[0]
+    assert "Both kappas are under 0.1 in size, which is within chance." in said[0]
+    (clear,) = [s for s in xr.rule_compare_agreement(pair(tmp_path / "c", kappa=0.5, tp=5)) if "with descriptions" in s]
+    assert "within chance" not in clear, "a kappa of 0.5 is not"
+    runs = pair(tmp_path / "d", kappa=0.06, tp=5)
+    runs[1].agreement[0][1]["code_level"]["fn"] += 1
+    assert "which is 2 cells." in xr.rule_compare_agreement(runs)[0], "no 'of n' when the two grids differ"
+
+
+def test_agreement_rule_is_silent_when_nothing_moved_or_a_side_is_missing(tmp_path: Path):
+    assert xr.rule_compare_agreement(pair(tmp_path / "a")) == []
+    assert xr.rule_compare_agreement(pair(tmp_path / "b", kappa=0.06, agreement=False)) == []
+    runs = pair(tmp_path / "c", kappa=0.06)
+    runs[1].agreement = [a for a in runs[1].agreement if a[0] == "by name only"]
+    assert len(xr.rule_compare_agreement(runs)) == 1, "only the variant both runs hold"
+
+
+def test_time_rule_names_the_largest_role_and_the_replay_caveat(tmp_path: Path):
+    (said,) = xr.rule_compare_time(pair(tmp_path, judge_calls=15, judge_replays=0))
+    assert "`beta` was slower than `alpha` in model time: 0.5 against 0.3 model-minutes" in said
+    assert "The largest change is the judge, from 0.3 to 0.5 minutes." in said
+    assert "2 of 14 calls in `alpha`, 0 of 19 in `beta`" in said and "compares fresh calls only" in said
+    (fast,) = xr.rule_compare_time(pair(tmp_path / "f", judge_calls=10, judge_replays=9, judge_ms=1000.0))
+    assert "faster" in fast
+    (same_share,) = xr.rule_compare_time([facts_of(tmp_path / "x", "alpha"), facts_of(tmp_path / "y", "beta", judge_ms=4000.0)])
+    assert "cache replay" not in same_share, "the same share of replays needs no caveat"
+
+
+def test_time_rule_stays_silent_when_small_unmeasured_or_offline(tmp_path: Path):
+    assert xr.rule_compare_time(pair(tmp_path / "a", judge_ms=2050.0)) == []
+    assert xr.rule_compare_time(pair(tmp_path / "b", judge_ms=4000.0, db=False)) == []
+    assert xr.rule_compare_time(pair(tmp_path / "c", judge_ms=4000.0, offline=True)) == []
+    assert xr._seconds(facts_of(tmp_path / "d", "off", offline=True)) is None
+
+
+# -- the page, the CLI argument, absence
+
+
+def compare_export(tmp_path: Path, compared: list[Path], *, extra: list[str] | None = None) -> tuple[int, Path]:
+    run = build_compare_run(tmp_path / "base", "alpha")
+    human = build_human(tmp_path)
+    flags = [arg for d in compared for arg in ("--compare", str(d))]
+    return export(tmp_path, run, human=human, extra=flags + (extra or []))
+
+
+def test_compare_writes_the_page_and_the_figure_and_lists_only_what_differs(tmp_path: Path):
+    b = build_compare_run(tmp_path / "other", "beta", tau_fit=0.9, judge_calls=15, judge_replays=0, codes=30)
+    code, out = compare_export(tmp_path, [b])
+    assert code == 0
+    names = files_under(out)
+    assert "17-comparison.md" in names and "comparison.svg" in names
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    assert "| `rules.tau_fit` | 0.30 | 0.90 |" in page
+    assert "tau_high" not in page, "an unchanged setting is not listed"
+    assert "| judge calls, in all | 10 | 15 | +5 (+50.0%) |" in page
+    assert "| codes created | 20 | 30 | +10 (+50.0%) |" in page
+    assert "![runs compared](comparison.svg)" in page and "## Realisations" in page
+    assert page.index("## Configuration") < page.index("## `beta` against `alpha`") < page.index("## Realisations")
+    assert "none says why" in page
+    svg_root((out / "comparison.svg").read_text(encoding="utf-8"))
+    readme = (out / "README.md").read_text(encoding="utf-8")
+    assert "[17-comparison.md](17-comparison.md)" in readme
+
+
+def test_without_compare_there_is_no_comparison_page(tmp_path: Path):
+    code, out = compare_export(tmp_path, [])
+    assert code == 0
+    assert "17-comparison.md" not in files_under(out) and "comparison.svg" not in files_under(out)
+    assert "`17-comparison.md`" in (out / "README.md").read_text(encoding="utf-8")
+
+
+def test_compare_may_be_repeated_and_must_name_a_directory(tmp_path: Path):
+    b = build_compare_run(tmp_path / "o1", "beta", tau_fit=0.9)
+    c = build_compare_run(tmp_path / "o2", "gamma", tau_fit=0.95)
+    code, out = compare_export(tmp_path, [b, c])
+    assert code == 0
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    assert "## `beta` against `alpha`" in page and "## `gamma` against `alpha`" in page
+    assert "| `rules.tau_fit` | 0.30 | 0.90 | 0.95 |" in page
+    assert 'class="s3"' in (out / "comparison.svg").read_text(encoding="utf-8")
+    code, _ = compare_export(tmp_path / "again", [tmp_path / "nope"])
+    assert code == 2
+
+
+def test_a_compared_run_is_fed_to_the_guard(tmp_path: Path):
+    """If it were not, a sentence only that run holds would pass; it names itself, so it must not."""
+    only_here = "A lamplighter repaired the clocktower stairs every Thursday."  # in no other fixture
+    b = build_compare_run(tmp_path / "other", only_here)
+    _write_json(b / "assignments.json", [{"response_id": 1, "segment": only_here, "code": "x"}])
+    code, out = compare_export(tmp_path, [b])
+    assert code == 1, "the page names the run by its id, which is a response in that run's own files"
+    assert not list(out.rglob("*")) or not any(p.is_file() for p in out.rglob("*"))
+
+
+def test_a_compared_run_without_stats_is_skipped_with_a_reason(tmp_path: Path, capsys):
+    good = build_compare_run(tmp_path / "o1", "beta", tau_fit=0.9)
+    bad = build_compare_run(tmp_path / "o2", "gamma", stats=False)
+    code, out = compare_export(tmp_path, [good, bad])
+    assert code == 0
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    assert "*Not compared: no `stats.json` in `gamma`" in page and "## `gamma` against" not in page
+    assert "gamma" in (out / "README.md").read_text(encoding="utf-8") and "skip" in capsys.readouterr().out
+    code, out = compare_export(tmp_path / "all", [bad])
+    assert code == 0 and "17-comparison.md" not in files_under(out), "nothing left to compare with"
+
+
+def test_a_run_without_a_database_or_agreement_is_compared_on_what_it_has(tmp_path: Path):
+    b = build_compare_run(tmp_path / "other", "beta", db=False, agreement=False, codes=30, judge_calls=15)
+    code, out = compare_export(tmp_path, [b])
+    assert code == 0
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    assert "no `gaf.sqlite` for `beta`" in page and "| codes created | 20 | 30 |" in page
+    assert "| `beta` | *not available* |" in page
+    assert "| judge calls, in all | 10 | - | - |" in page, "A's count is shown; B has none, so no change is claimed"
+    assert "more judge calls" not in page, "no count for B, so no rule about it"
+    svg = (out / "comparison.svg").read_text(encoding="utf-8")
+    assert "not available" in svg
+
+
+def test_an_offline_run_in_a_comparison_is_named_and_gets_no_model_claim(tmp_path: Path):
+    b = build_compare_run(tmp_path / "other", "beta", offline=True, judge_calls=15, judge_ms=9000.0, codes=30)
+    code, out = compare_export(tmp_path, [b])
+    assert code == 0
+    page = (out / "17-comparison.md").read_text(encoding="utf-8")
+    assert "an offline stand-in: no model was called" in page
+    assert "judge calls than" not in page and "model time" not in page and "model-minutes" not in page
+    assert "created 10 more codes" in page, "a count of codes is not a claim about a model"
+    assert "not available" in (out / "comparison.svg").read_text(encoding="utf-8"), "no model minutes for the offline run"
+
+
+def test_two_runs_with_one_run_id_are_told_apart(tmp_path: Path):
+    a, b = facts_of(tmp_path / "x", "same"), facts_of(tmp_path / "y", "same")
+    xr._unique_names([a, b], [tmp_path / "x", tmp_path / "y"])
+    assert a.name == "same (x)" and b.name == "same (y)"
+
+
+def test_the_comparison_files_are_byte_identical_and_free_of_respondent_text(tmp_path: Path):
+    b = build_compare_run(tmp_path / "other", "beta", tau_fit=0.9, judge_calls=15)
+    code, out_a = compare_export(tmp_path, [b])
+    assert code == 0
+    run, human = tmp_path / "base" / "alpha", tmp_path / "human"
+    code_b, out_b = export(tmp_path, run, human=human, out="second", extra=["--compare", str(b)])
+    assert code_b == 0
+    for name in ("17-comparison.md", "comparison.svg"):
+        body = (out_a / name).read_bytes()
+        assert body == (out_b / name).read_bytes(), name
+        text = body.decode("utf-8").casefold()
+        assert PLANTED.casefold()[:30] not in text and PLANTED_TWO.casefold()[:30] not in text

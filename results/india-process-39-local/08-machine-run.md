@@ -83,12 +83,13 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M1 | WARN | coder_unmatched | positive_outlook<->(unmatched) | Coder A proposed 'positive_outlook' and the other coder proposed nothing that could be assigned to it. | 1 |
 | M1 | WARN | coder_unmatched | sector-focus-digital_marketing<->(unmatched) | Coder A proposed 'sector-focus-digital_marketing' and the other coder proposed nothing that could be assigned to it. | 1 |
 | M1 | WARN | coder_unmatched | transportation-autonomous_vehicles<->(unmatched) | Coder A proposed 'transportation-autonomous_vehicles' and the other coder proposed nothing that could be assigned to it. | 1 |
-| M1 | WARN | coders_dispute | AI-productivity_enhancement<->personalisation-virtual_trials | Coders dispute: 'AI-productivity_enhancement' and 'personalisation-virtual_trials' match at only cosine 0.413 (< tau_low 0.45). | 1 |
+| M1 | WARN | coders_dispute | *message withheld: shares wording with a response* | *message withheld: shares wording with a response* | 1 |
 | M1 | WARN | coders_dispute | AI-role-expansion<->education-literacy_requirement | Coders dispute: 'AI-role-expansion' and 'education-literacy_requirement' match at only cosine 0.399 (< tau_low 0.45). | 1 |
 | M1 | WARN | coders_dispute | AI-sector-focus-cyber_security<->security-cyber_security | Coders dispute: 'AI-sector-focus-cyber_security' and 'security-cyber_security' match at only cosine 0.423 (< tau_low 0.45). | 1 |
 | M1 | WARN | coders_dispute | perception-central_role<->AI-multi-use | Coders dispute: 'perception-central_role' and 'AI-multi-use' match at only cosine 0.414 (< tau_low 0.45). | 1 |
 | M1 | WARN | coders_dispute | positive_outlook<->AI-enhanced-communication | Coders dispute: 'positive_outlook' and 'AI-enhanced-communication' match at only cosine 0.432 (< tau_low 0.45). | 1 |
 | M1 | WARN | coders_dispute | positive_outlook<->safety-improvements-shelter_security | Coders dispute: 'positive_outlook' and 'safety-improvements-shelter_security' match at only cosine 0.214 (< tau_low 0.45). | 1 |
+| M1 | WARN | grey_zone_judged | *message withheld: shares wording with a response* | *message withheld: shares wording with a response* | 4 |
 | M1 | WARN | grey_zone_judged | AI-automation_of_repetitive_tasks<->AI-daily_life_assistance | Grey zone ruled KEEP: 'AI-automation_of_repetitive_tasks' and 'AI-daily_life_assistance' match at cosine 0.678, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-automation_of_repetitive_tasks<->AI-productivity_enhancement | Grey zone ruled KEEP: 'AI-automation_of_repetitive_tasks' and 'AI-productivity_enhancement' match at cosine 0.539, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-automation_of_repetitive_tasks<->utility-operational_automation | Grey zone ruled DROP: 'AI-automation_of_repetitive_tasks' and 'utility-operational_automation' match at cosine 0.784, between tau_low 0.45 and tau_high 0.80. | 1 |
@@ -102,7 +103,6 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M1 | WARN | grey_zone_judged | AI-economic_efficiency<->economic_impact-cost_reduction | Grey zone ruled DROP: 'AI-economic_efficiency' and 'economic_impact-cost_reduction' match at cosine 0.748, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-efficiency<->utility-time_reduction | Grey zone ruled DROP: 'AI-efficiency' and 'utility-time_reduction' match at cosine 0.681, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-employment_transformation<->labor-job_transformation | Grey zone ruled KEEP: 'AI-employment_transformation' and 'labor-job_transformation' match at cosine 0.649, between tau_low 0.45 and tau_high 0.80. | 1 |
-| M1 | WARN | grey_zone_judged | AI-employment_transformation<->personalisation | Grey zone ruled KEEP: 'AI-employment_transformation' and 'personalisation' match at cosine 0.478, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-enhanced-communication<->impact-digital_connectivity | Grey zone ruled KEEP: 'AI-enhanced-communication' and 'impact-digital_connectivity' match at cosine 0.512, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-entrepreneurial-support<->ai_utility-organizational_tools | Grey zone ruled DROP: 'AI-entrepreneurial-support' and 'ai_utility-organizational_tools' match at cosine 0.697, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-facilitated-collaboration<->impact-collaborative_work | Grey zone ruled DROP: 'AI-facilitated-collaboration' and 'impact-collaborative_work' match at cosine 0.556, between tau_low 0.45 and tau_high 0.80. | 1 |
@@ -114,7 +114,6 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M1 | WARN | grey_zone_judged | AI-omnipotence<->AI-multi-use | Grey zone ruled DROP: 'AI-omnipotence' and 'AI-multi-use' match at cosine 0.604, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-omnipotence<->AI-omnipotence | Grey zone ruled DROP: 'AI-omnipotence' and 'AI-omnipotence' match at cosine 0.721, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-omnipotence<->ai-reliability | Grey zone ruled DROP: 'AI-omnipotence' and 'ai-reliability' match at cosine 0.607, between tau_low 0.45 and tau_high 0.80. | 1 |
-| M1 | WARN | grey_zone_judged | AI-personalisation<->utility-personalization | Grey zone ruled DROP: 'AI-personalisation' and 'utility-personalization' match at cosine 0.738, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-positive_outlook<->impact-positive_outcomes | Grey zone ruled DROP: 'AI-positive_outlook' and 'impact-positive_outcomes' match at cosine 0.625, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-positive_outlook<->impact-technological_advancement | Grey zone ruled KEEP: 'AI-positive_outlook' and 'impact-technological_advancement' match at cosine 0.588, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | AI-positive_outlook<->utility-work_efficiency | Grey zone ruled KEEP: 'AI-positive_outlook' and 'utility-work_efficiency' match at cosine 0.465, between tau_low 0.45 and tau_high 0.80. | 1 |
@@ -175,8 +174,6 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M1 | WARN | grey_zone_judged | negative_impacts-misuse<->negative_impacts-laziness | Grey zone ruled KEEP: 'negative_impacts-misuse' and 'negative_impacts-laziness' match at cosine 0.647, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | negative_impacts-misuse<->negative_impacts-misuse | Grey zone ruled DROP: 'negative_impacts-misuse' and 'negative_impacts-misuse' match at cosine 0.752, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | negative_impacts-misuse<->risk-malicious_use | Grey zone ruled DROP: 'negative_impacts-misuse' and 'risk-malicious_use' match at cosine 0.736, between tau_low 0.45 and tau_high 0.80. | 1 |
-| M1 | WARN | grey_zone_judged | personalisation<->daily_life_assistance | Grey zone ruled KEEP: 'personalisation' and 'daily_life_assistance' match at cosine 0.496, between tau_low 0.45 and tau_high 0.80. | 1 |
-| M1 | WARN | grey_zone_judged | personalisation<->personalisation | Grey zone ruled DROP: 'personalisation' and 'personalisation' match at cosine 0.727, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | positive_outcomes-work_relief<->AI-positive_outlook | Grey zone ruled KEEP: 'positive_outcomes-work_relief' and 'AI-positive_outlook' match at cosine 0.568, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | positive_outcomes-work_relief<->benefit-reduced_stress | Grey zone ruled KEEP: 'positive_outcomes-work_relief' and 'benefit-reduced_stress' match at cosine 0.768, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | positive_outcomes-work_relief<->economic_impact-universal_basic_income | Grey zone ruled KEEP: 'positive_outcomes-work_relief' and 'economic_impact-universal_basic_income' match at cosine 0.482, between tau_low 0.45 and tau_high 0.80. | 1 |
@@ -201,6 +198,8 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M1 | WARN | grey_zone_judged | ubiquity<->labor-competitive_advantage | Grey zone ruled KEEP: 'ubiquity' and 'labor-competitive_advantage' match at cosine 0.498, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | user_experience_relaxation<->experience-convenience_of_travel | Grey zone ruled DROP: 'user_experience_relaxation' and 'experience-convenience_of_travel' match at cosine 0.681, between tau_low 0.45 and tau_high 0.80. | 1 |
 | M1 | WARN | grey_zone_judged | user_experience_relaxation<->user_experience_relaxation | Grey zone ruled DROP: 'user_experience_relaxation' and 'user_experience_relaxation' match at cosine 0.742, between tau_low 0.45 and tau_high 0.80. | 1 |
+| M2 | WARN | route_judge | *message withheld: shares wording with a response* | *message withheld: shares wording with a response* | 4 |
+| M2 | WARN | route_judge | *message withheld: shares wording with a response* | Routes JUDGE against 'impact-work_ease' at cosine 0.593, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | AI-automation_of_repetitive_tasks | Routes JUDGE against 'AI-automation_of_repetitive_tasks' at cosine 0.693, in the grey zone [0.45, 0.80); the judge ruled MERGE. | 1 |
 | M2 | WARN | route_judge | AI-automation_of_repetitive_tasks | Routes JUDGE against 'AI-multi-use' at cosine 0.681, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | AI-automation_of_repetitive_tasks | Routes JUDGE against 'impact-work_ease' at cosine 0.653, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
@@ -233,7 +232,6 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M2 | WARN | route_judge | AI-omnipotence | Routes JUDGE against 'AI-productivity_enhancement' at cosine 0.664, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | AI-perception-central_role | Routes JUDGE against 'AI-perception-central_role' at cosine 0.724, in the grey zone [0.45, 0.80); the judge ruled MERGE. | 1 |
 | M2 | WARN | route_judge | AI-perception-central_role | Routes JUDGE against 'AI-positive_outlook' at cosine 0.542, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
-| M2 | WARN | route_judge | AI-personalisation | Routes JUDGE against 'impact-work_ease' at cosine 0.593, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | AI-positive_outlook | Routes JUDGE against 'AI-positive_outlook' at cosine 0.643, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | AI-positive_outlook | Routes JUDGE against 'AI-positive_outlook' at cosine 0.763, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | AI-positive_outlook | Routes JUDGE against 'AI-positive_outlook' at cosine 0.780, in the grey zone [0.45, 0.80); the judge ruled MERGE. | 1 |
@@ -332,10 +330,6 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M2 | WARN | route_judge | negative_impacts-misuse | Routes JUDGE against 'negative_impacts-misuse' at cosine 0.709, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | perception-central_role | Routes JUDGE against 'AI-perception-central_role' at cosine 0.769, in the grey zone [0.45, 0.80); the judge ruled MERGE. | 1 |
 | M2 | WARN | route_judge | perception-technological_luck | Routes JUDGE against 'AI-positive_outlook' at cosine 0.512, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
-| M2 | WARN | route_judge | personalisation | Routes JUDGE against 'AI-personalisation' at cosine 0.765, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
-| M2 | WARN | route_judge | personalisation | Routes JUDGE against 'personalisation' at cosine 0.664, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
-| M2 | WARN | route_judge | personalisation | Routes JUDGE against 'personalisation' at cosine 0.774, in the grey zone [0.45, 0.80); the judge ruled MERGE. | 1 |
-| M2 | WARN | route_judge | personalisation-virtual_trials | Routes JUDGE against 'personalisation' at cosine 0.670, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | positive_outcomes-work_relief | Routes JUDGE against 'AI-productivity_enhancement' at cosine 0.638, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
 | M2 | WARN | route_judge | positive_outcomes-work_relief | Routes JUDGE against 'positive_outcomes-work_relief' at cosine 0.708, in the grey zone [0.45, 0.80); the judge ruled MERGE. | 1 |
 | M2 | WARN | route_judge | positive_outlook | Routes JUDGE against 'AI-enhanced-communication' at cosine 0.708, in the grey zone [0.45, 0.80); the judge ruled CREATE. | 1 |
@@ -369,16 +363,16 @@ The two most-used machine codes account for 32 of 316 assignments: `AI-productiv
 | M3 | WARN | fit_incomplete | positive_outlook | Judge ruled INCOMPLETE on 'positive_outlook' in response 52 (fit 0.289 < tau_fit 0.30): the code did not describe this response segment completely; kept and flagged for the slow loop, with no replacement code invented. | 1 |
 | M3 | WARN | fit_incomplete | positive_outlook | Judge ruled INCOMPLETE on 'positive_outlook' in response 94 (fit 0.289 < tau_fit 0.30): the code did not describe this response segment completely; kept and flagged for the slow loop, with no replacement code invented. | 1 |
 | S1 | ERROR | missing_evidence | impact-women_safety | Candidate cites no evidence, so it cannot be traced back to the corpus. | 1 |
+| S2 | ERROR | no_verified_evidence | *message withheld: shares wording with a response* | No quote could be verified against the response, so the candidate has no evidence left to stand on. | 1 |
 | S2 | ERROR | no_verified_evidence | AI-ubiquity | No quote could be verified against the response, so the candidate has no evidence left to stand on. | 1 |
-| S2 | ERROR | no_verified_evidence | personalisation | No quote could be verified against the response, so the candidate has no evidence left to stand on. | 1 |
 | S2b | WARN | quote_too_long | AI-productivity_enhancement | Quote spans 3 sentences; coding should be applied at the level of phrase or sentence (at most 2). | 2 |
 | S2b | WARN | quote_too_long | automation_of_repetitive_tasks | Quote spans 3 sentences; coding should be applied at the level of phrase or sentence (at most 2). | 1 |
 | S2b | WARN | quote_too_long | transportation-autonomous_vehicles | Quote spans 3 sentences; coding should be applied at the level of phrase or sentence (at most 2). | 1 |
+| S3 | WARN | sub_code_first | *message withheld: shares wording with a response* | *message withheld: shares wording with a response* | 3 |
 | S3 | WARN | sub_code_first | complex_problem_solving | The family 'complex_problem_solving' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 2 |
 | S3 | WARN | sub_code_first | daily_life_assistance | The family 'daily_life_assistance' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 2 |
 | S3 | WARN | sub_code_first | economic_efficiency | The family 'economic_efficiency' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 1 |
 | S3 | WARN | sub_code_first | economic_impact | The family 'economic_impact' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 1 |
-| S3 | WARN | sub_code_first | personalisation | The family 'personalisation' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 3 |
 | S3 | WARN | sub_code_first | positive_outlook | The family 'positive_outlook' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 14 |
 | S3 | WARN | sub_code_first | sector_transformation | The family 'sector_transformation' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 1 |
 | S3 | WARN | sub_code_first | user_experience_relaxation | The family 'user_experience_relaxation' already exists in the codebook; consider a sub-code of it before adding another top-level code. | 2 |
