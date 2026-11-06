@@ -17,7 +17,8 @@ what has not been tried. Each folder has its own README with the tables behind t
   within chance. Rolled up to his 15 families the same runs reach kappa +0.29 to +0.56, above a
   shuffled-response chance level, but not clearly above a predictor that only repeats his most
   common themes (18 of 20 comparisons cannot tell them apart). So part of the leaf-level zero is
-  vocabulary; the rest is not yet diagnosed ([agreement-checks.md](agreement-checks.md)).
+  vocabulary; the rest is not yet diagnosed ([agreement-checks.md](agreement-checks.md)). Rescoring against his refined edition leaves the leaf-level picture unchanged
+  (kappa -0.080 to +0.027, provisional; [agreement-refined.md](agreement-refined.md)).
 - **Nothing tried so far moves that number upward.** More responses (39 to 200), different
   thresholds, three different coder models and two temperatures changed the size of the codebook a
   lot (12 to 48 families, 23 to 162 codes) and agreement hardly at all. The one change that clearly
@@ -35,6 +36,7 @@ what has not been tried. Each folder has its own README with the tables behind t
 |---|---|
 | [`HOW-THE-RESULTS-WERE-REACHED.md`](HOW-THE-RESULTS-WERE-REACHED.md) | The run history: twelve steps, each with the question it asked, what changed, what happened and what it led to. |
 | [`agreement-checks.md`](agreement-checks.md) | Agreement with the PI with intervals, a chance level, a trivial predictor, a family-level roll-up, and four-fold calibration. |
+| [`agreement-refined.md`](agreement-refined.md) | The same ten runs rescored against the PI's refined codebook of 6 November (67 leaf codes instead of 116 subcodes). Provisional: the reference is rebuilt from his Notes. |
 | [`india-process-39-local/`](india-process-39-local/README.md) | The 39 responses the PI coded, coded cold by local models, plus eight comparison runs on the same 39 (a threshold change, three coder swaps, a judge swap, a repeat, two temperature-0.7 repeats). Start at `00-at-a-glance.md`; the side-by-side is `17-comparison.md`. |
 | [`india-process-1-200-local/`](india-process-1-200-local/README.md) | All 200 responses coded cold by local models: vocabulary growth, saturation, the full analysis tail. |
 
